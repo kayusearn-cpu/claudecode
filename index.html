@@ -52,37 +52,54 @@
         const BACKEND_URL = "https://sportprediction.onrender.com";
 
         // ─── Status helpers ───────────────────────────────────────────────────────
-        const FINISHED_STATUSES   = ['FT', 'AET', 'PEN'];
+        // API sends "Pen." (with dot) not "PEN" for penalty shootout result
+        const FINISHED_STATUSES   = ['FT', 'AET', 'PEN', 'Pen.'];
         const CANCELLED_STATUSES  = ['Postp.', 'Canc.', 'Susp.', 'WO', 'AWD', 'ABD'];
         const UPCOMING_STATUSES   = ['NS', 'TBD'];
+        // Upcoming matches use kick-off time as status, e.g. "13:00", "23:30"
+        const TIME_RE = /^\d{2}:\d{2}$/;
+        // ft.score format from API: "[2-1]"
+        const FT_SCORE_RE = /\[(\d+)-(\d+)\]/;
 
         const getMatchCategory = (status) => {
             if (!status) return 'unknown';
             if (FINISHED_STATUSES.includes(status))  return 'finished';
             if (CANCELLED_STATUSES.includes(status)) return 'cancelled';
             if (UPCOMING_STATUSES.includes(status))  return 'upcoming';
-            return 'live'; // 1H, HT, 2H, ET, P, BT, or a numeric minute string
+            if (TIME_RE.test(status))                return 'upcoming'; // kick-off time
+            return 'live'; // numeric minute, HT, ET, BT, etc.
         };
 
         const getStatusLabel = (status) => {
-            if (!status)          return '';
-            if (status === 'HT')  return 'HT';
-            if (status === 'FT')  return 'FT';
-            if (status === 'AET') return 'AET';
-            if (status === 'PEN') return 'PEN';
-            if (status === 'ET')  return 'ET';
-            if (status === 'P')   return 'PEN';
-            if (status === 'BT')  return 'BT';
-            if (status === 'NS')  return 'Soon';
+            if (!status)                             return '';
+            if (status === 'HT')                     return 'HT';
+            if (status === 'FT')                     return 'FT';
+            if (status === 'AET')                    return 'AET';
+            if (status === 'PEN' || status === 'Pen.') return 'PEN';
+            if (status === 'ET')                     return 'ET';
+            if (status === 'P')                      return 'PEN';
+            if (status === 'BT')                     return 'BT';
+            if (status === 'NS')                     return 'Soon';
+            if (TIME_RE.test(status))                return status; // show kick-off time
             const min = parseInt(status);
-            if (!isNaN(min))      return `${min}'`;
+            if (!isNaN(min))                         return `${min}'`;
             return status;
         };
 
         const getScore = (match) => {
+            const cat = getMatchCategory(match.status);
+            // Finished matches: real score is in ft.score as "[2-1]", home.goals is always "0"
+            if (cat === 'finished') {
+                const raw = match.ft?.score;
+                if (raw) {
+                    const m = FT_SCORE_RE.exec(raw);
+                    if (m) return `${m[1]} - ${m[2]}`;
+                }
+            }
+            // Live/upcoming: use home.goals / away.goals directly
             const h = match.home?.goals;
             const a = match.away?.goals;
-            if (h === null || h === undefined || a === null || a === undefined) return 'vs';
+            if (!h || !a || h === '?' || a === '?') return 'vs';
             return `${h} - ${a}`;
         };
 
