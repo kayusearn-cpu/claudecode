@@ -8,45 +8,26 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 
-// ─── Simple in-memory cache ───────────────────────────────────────────────────
-// Prevents hammering the API-Football daily quota (100 calls/day on free plan).
-// The frontend polls every 60 s — this ensures only 1 upstream call per minute
-// regardless of how many users hit the server simultaneously.
+// ─── Cache ────────────────────────────────────────────────────────────────────
 let scoresCache     = null;
 let scoresCacheTime = 0;
-const SCORES_TTL    = 60 * 1000; // 60 seconds
+const SCORES_TTL    = 60 * 1000; // 60 s
 
-// ─── Status normaliser ────────────────────────────────────────────────────────
-// Maps API-Football status codes to the format the frontend already understands:
-//   live  → elapsed minute as string ("45", "87")
-//   HT/FT/AET/PEN → kept as-is
-//   NS    → kick-off time in HH:MM (UTC), e.g. "13:00"
-//   postponed/cancelled → "Postp." / "Canc." etc.
+// ─── Status normaliser (API-Football → frontend format) ───────────────────────
 function mapStatus(short, elapsed, fixtureDate) {
     switch (short) {
-        case '1H':
-        case '2H':
-        case 'ET':
+        case '1H': case '2H': case 'ET':
             return elapsed ? String(elapsed) : short;
-        case 'HT':
-        case 'BT':
-        case 'FT':
-        case 'AET':
+        case 'HT': case 'BT': case 'FT': case 'AET':
             return short;
-        case 'PEN':
-        case 'P':
+        case 'PEN': case 'P':
             return 'PEN';
         case 'PST':  return 'Postp.';
         case 'CANC': return 'Canc.';
         case 'SUSP': return 'Susp.';
-        case 'WO':
-        case 'AWD':
-        case 'ABD':
-        case 'INT':
+        case 'WO': case 'AWD': case 'ABD': case 'INT':
             return short;
-        case 'NS':
-        default:
-            // Upcoming: show kick-off time so the frontend renders it correctly
+        case 'NS': default:
             if (fixtureDate) {
                 try {
                     const d  = new Date(fixtureDate);
@@ -59,104 +40,154 @@ function mapStatus(short, elapsed, fixtureDate) {
     }
 }
 
+// ─── Transform API-Football fixtures → livescore shape ────────────────────────
+function buildFromAPIFootball(fixtures) {
+    const leagueMap = {};
+    const today = new Date().toISOString().split('T')[0];
+
+    fixtures.forEach(f => {
+        const key = String(f.league.id);
+        if (!leagueMap[key]) {
+            leagueMap[key] = { id: key, name: f.league.name, country: f.league.country, match: [] };
+        }
+        const status = mapStatus(f.fixture.status.short, f.fixture.status.elapsed, f.fixture.date);
+        const ht = f.score.halftime;
+        const ft = f.score.fulltime;
+
+        leagueMap[key].match.push({
+            id:        String(f.fixture.id),
+            static_id: String(f.fixture.id),
+            date:      f.fixture.date ? f.fixture.date.split('T')[0] : today,
+            time:      f.fixture.date ? (f.fixture.date.split('T')[1] || '').substring(0, 5) : '',
+            status,
+            home: {
+                id:    String(f.teams.home.id),
+                name:  f.teams.home.name,
+                goals: (f.goals.home !== null && f.goals.home !== undefined) ? String(f.goals.home) : null,
+            },
+            away: {
+                id:    String(f.teams.away.id),
+                name:  f.teams.away.name,
+                goals: (f.goals.away !== null && f.goals.away !== undefined) ? String(f.goals.away) : null,
+            },
+            ht: (ht && ht.home !== null && ht.home !== undefined) ? { score: `[${ht.home}-${ht.away}]` } : null,
+            ft: (ft && ft.home !== null && ft.home !== undefined) ? { score: `[${ft.home}-${ft.away}]` } : null,
+        });
+    });
+
+    return {
+        livescore: {
+            updated: new Date().toISOString(),
+            sport:   'soccer',
+            source:  'api-football',
+            league:  Object.values(leagueMap),
+        },
+    };
+}
+
 // ─── /api/scores ──────────────────────────────────────────────────────────────
-// Previously used StatPal (different ID system → predictions always wrong).
-// Now uses API-Football so fixture IDs match the /api/get-predictions endpoint.
-// Response is normalised to the same shape the frontend already parses.
+//  Priority 1: API-Football fixtures?date=today  (IDs match predictions ✓)
+//  Priority 2: StatPal livescores fallback        (always has data)
 app.get('/api/scores', async (req, res) => {
-    const apiKey = process.env.API_FOOTBALL_KEY;
-
-    if (!apiKey) {
-        return res.status(500).json({ error: 'API_FOOTBALL_KEY environment variable is not set' });
-    }
-
-    // Serve stale cache rather than an upstream error when possible
-    const cacheIsFresh = scoresCache && (Date.now() - scoresCacheTime < SCORES_TTL);
-    if (cacheIsFresh) {
+    // Serve cache if still fresh
+    if (scoresCache && (Date.now() - scoresCacheTime < SCORES_TTL)) {
         return res.json(scoresCache);
     }
 
-    try {
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD (UTC)
+    const apfKey     = process.env.API_FOOTBALL_KEY;
+    const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
+    const today      = new Date().toISOString().split('T')[0];
 
-        const upstream = await axios.get('https://v3.football.api-sports.io/fixtures', {
-            params:  { date: today },
-            headers: { 'x-apisports-key': apiKey },
+    // ── Attempt 1: API-Football ──────────────────────────────────────────────
+    if (apfKey) {
+        try {
+            const upstream = await axios.get('https://v3.football.api-sports.io/fixtures', {
+                params:  { date: today },
+                headers: { 'x-apisports-key': apfKey },
+                timeout: 10000,
+            });
+
+            const body     = upstream.data;
+            const fixtures = body.response || [];
+            // API-Football returns errors inside the JSON body (HTTP 200) — must check explicitly
+            const hasErrors = body.errors &&
+                (Array.isArray(body.errors) ? body.errors.length > 0 : Object.keys(body.errors).length > 0);
+
+            if (hasErrors) {
+                console.warn('API-Football errors:', JSON.stringify(body.errors));
+            } else if (fixtures.length > 0) {
+                const result    = buildFromAPIFootball(fixtures);
+                scoresCache     = result;
+                scoresCacheTime = Date.now();
+                console.log(`API-Football: ${fixtures.length} fixtures loaded`);
+                return res.json(result);
+            } else {
+                console.warn('API-Football returned 0 fixtures — falling back to StatPal');
+            }
+        } catch (err) {
+            console.error('API-Football request failed:', err.message);
+        }
+    } else {
+        console.warn('API_FOOTBALL_KEY not set — using StatPal only');
+    }
+
+    // ── Attempt 2: StatPal fallback ──────────────────────────────────────────
+    try {
+        const upstream = await axios.get('https://statpal.io/api/v1/soccer/livescores', {
+            params:  { access_key: statpalKey },
             timeout: 10000,
         });
 
-        const fixtures = upstream.data.response || [];
-
-        // Group by league — matches the data.livescore.league[] shape the frontend expects
-        const leagueMap = {};
-        fixtures.forEach(f => {
-            const key = String(f.league.id);
-            if (!leagueMap[key]) {
-                leagueMap[key] = {
-                    id:      key,
-                    name:    f.league.name,
-                    country: f.league.country,
-                    match:   [],
-                };
-            }
-
-            const status = mapStatus(
-                f.fixture.status.short,
-                f.fixture.status.elapsed,
-                f.fixture.date,
-            );
-
-            const ht = f.score.halftime;
-            const ft = f.score.fulltime;
-
-            leagueMap[key].match.push({
-                id:        String(f.fixture.id),
-                static_id: String(f.fixture.id),
-                date:      f.fixture.date ? f.fixture.date.split('T')[0] : today,
-                time:      f.fixture.date ? (f.fixture.date.split('T')[1] || '').substring(0, 5) : '',
-                status,
-                home: {
-                    id:    String(f.teams.home.id),
-                    name:  f.teams.home.name,
-                    goals: (f.goals.home !== null && f.goals.home !== undefined)
-                               ? String(f.goals.home) : null,
-                },
-                away: {
-                    id:    String(f.teams.away.id),
-                    name:  f.teams.away.name,
-                    goals: (f.goals.away !== null && f.goals.away !== undefined)
-                               ? String(f.goals.away) : null,
-                },
-                ht: (ht && ht.home !== null && ht.home !== undefined)
-                        ? { score: `[${ht.home}-${ht.away}]` } : null,
-                ft: (ft && ft.home !== null && ft.home !== undefined)
-                        ? { score: `[${ft.home}-${ft.away}]` } : null,
-            });
-        });
-
-        const result = {
-            livescore: {
-                updated: new Date().toISOString(),
-                sport:   'soccer',
-                league:  Object.values(leagueMap),
-            },
-        };
+        // StatPal returns its own shape — pass through as-is (frontend already parses it)
+        const result = upstream.data;
+        if (result.livescore) result.livescore.source = 'statpal';
 
         scoresCache     = result;
         scoresCacheTime = Date.now();
-        res.json(result);
-
-    } catch (error) {
-        console.error('API-Football Scores Error:', error.response?.data || error.message);
-        // Return stale cache rather than a hard error if available
-        if (scoresCache) return res.json(scoresCache);
-        res.status(500).json({ error: 'Failed to fetch live sports data' });
+        console.log('StatPal fallback: data loaded');
+        return res.json(result);
+    } catch (err) {
+        console.error('StatPal fallback failed:', err.message);
     }
+
+    // ── Last resort: return stale cache or hard error ────────────────────────
+    if (scoresCache) {
+        console.warn('Serving stale cache');
+        return res.json(scoresCache);
+    }
+    res.status(500).json({ error: 'Failed to fetch live sports data from all sources' });
+});
+
+// ─── /api/status — quick diagnostics endpoint ─────────────────────────────────
+app.get('/api/status', async (req, res) => {
+    const apfKey = process.env.API_FOOTBALL_KEY;
+    const result = { api_football_key_set: !!apfKey, api_football: null, cache: null };
+
+    if (scoresCache) {
+        result.cache = {
+            source:       scoresCache.livescore?.source,
+            league_count: scoresCache.livescore?.league?.length,
+            updated:      scoresCache.livescore?.updated,
+            age_seconds:  Math.round((Date.now() - scoresCacheTime) / 1000),
+        };
+    }
+
+    if (apfKey) {
+        try {
+            const check = await axios.get('https://v3.football.api-sports.io/status', {
+                headers: { 'x-apisports-key': apfKey },
+                timeout: 8000,
+            });
+            result.api_football = check.data.response || check.data;
+        } catch (e) {
+            result.api_football = { error: e.message };
+        }
+    }
+
+    res.json(result);
 });
 
 // ─── /api/get-predictions ─────────────────────────────────────────────────────
-// Unchanged — still calls API-Football predictions.
-// Now that /api/scores also uses API-Football, fixture IDs will match correctly.
 app.get('/api/get-predictions', async (req, res) => {
     const fixtureId = req.query.fixture;
     const apiKey    = process.env.API_FOOTBALL_KEY;
@@ -164,7 +195,6 @@ app.get('/api/get-predictions', async (req, res) => {
     if (!fixtureId) {
         return res.status(400).json({ error: 'Please provide a fixture ID' });
     }
-
     if (!apiKey) {
         console.error('CRITICAL: API_FOOTBALL_KEY is not set');
         return res.status(500).json({ error: 'Backend configuration error: API Key missing.' });
@@ -178,7 +208,7 @@ app.get('/api/get-predictions', async (req, res) => {
         });
         res.json(response.data);
     } catch (error) {
-        console.error('API-Sports Predictions Error:', error.response?.data || error.message);
+        console.error('Predictions Error:', error.response?.data || error.message);
         const status  = error.response?.status  || 500;
         const details = error.response?.data ? JSON.stringify(error.response.data) : error.message;
         res.status(status).json({ error: 'Failed to fetch predictions', details });
