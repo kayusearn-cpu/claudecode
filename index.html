@@ -345,9 +345,18 @@ const IcoThreads = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="c
 const IcoMail    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>;
 
 const MagicLogo = ({size=26}) => {
+    const [err, setErr] = useState(false);
     const r = Math.round(size * 0.25);
+    if (!err) {
+        return (
+            <img src="/logo.png" width={size} height={size}
+                style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}}
+                alt="Magic Analysis"
+                onError={()=>setErr(true)}/>
+        );
+    }
     return (
-        <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}} role="img" aria-label="Magic Analysis">
+        <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}}>
             <rect width="40" height="40" fill="#1D1D1F"/>
             <path d="M8 30 L8 11 L20 24 L32 11 L32 30" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
             <circle cx="31" cy="10" r="4.5" fill="#007AFF"/>
