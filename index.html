@@ -173,6 +173,20 @@
         .ai-analysis-loading { display:flex; align-items:center; gap:8px; padding:2px 0; }
         .ai-analysis-loading-txt { font-size:12px; color:var(--t3); }
 
+        /* Prediction outcome circle (Forebet-style) */
+        .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
+        .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
+        .pred-outcome-code { font-size:36px; font-weight:800; color:#fff; letter-spacing:-1px; line-height:1; }
+        .pred-outcome-label { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:4px; }
+        .pred-outcome-score { font-size:26px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
+        .pred-outcome-score-lbl { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+        .pred-prob-row { display:flex; gap:8px; margin-bottom:16px; }
+        .pred-prob-cell { flex:1; background:var(--bg); border-radius:12px; padding:10px 6px; text-align:center; }
+        .pred-prob-val { font-size:17px; font-weight:700; letter-spacing:-.3px; }
+        .pred-prob-lbl { font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
+        /* Small card prediction badge */
+        .card-pred-badge { font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; background:#FF9500; color:#fff; letter-spacing:.2px; }
+
         /* Prediction sheet (same as before) */
         .pred-league-row { text-align:center; margin-bottom:20px; }
         .pred-league-nm { font-size:12px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; }
@@ -254,6 +268,16 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 const BACKEND_URL = "https://sportprediction.onrender.com";
 
 /* ── Status helpers ── */
+/* ── Forebet-style outcome helper ── */
+const getPredOutcome = pct => {
+    const h = parseInt(pct?.home) || 0;
+    const d = parseInt(pct?.draw) || 0;
+    const a = parseInt(pct?.away) || 0;
+    if (h >= d && h >= a) return { code: '1', label: 'Home Win' };
+    if (a > h  && a >= d) return { code: '2', label: 'Away Win' };
+    return { code: 'X', label: 'Draw' };
+};
+
 const FIN  = ['FT','AET','PEN','Pen.'];
 const CANC = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
 const UPC  = ['NS','TBD'];
@@ -397,7 +421,7 @@ const Skel = () => (
 );
 
 /* ── Match Card ── */
-const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, isNotif=false, idx=0 }) => {
+const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isNotif=false, idx=0 }) => {
     const c   = cat(match.status);
     const g   = getGoals(match);
     const id  = fid(match);
@@ -438,11 +462,18 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, isNotif=false,
                         {c==='live' && <span className="dot"/>}
                         {statusBadgeLabel(match.status, c)}
                     </span>
-                    {id && (
-                        <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
-                            <IcoZap/> Details
-                        </button>
-                    )}
+                    <div style={{display:'flex',alignItems:'center',gap:7}}>
+                        {pred && (
+                            <span className="card-pred-badge" title={pred.score?`Predicted: ${pred.score}`:undefined}>
+                                {pred.code}{pred.score ? `  ${pred.score}` : ''}
+                            </span>
+                        )}
+                        {id && (
+                            <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
+                                <IcoZap/> Details
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -568,60 +599,97 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, onClose, onGetPr
 /* ── Prediction Sheet ── */
 const PredSheet = ({ data, onClose }) => {
     const { predictions, teams, comparison, league } = data;
+    if (!predictions || !teams || !league) return (
+        <div className="overlay" onClick={onClose}>
+            <div className="sheet" onClick={e=>e.stopPropagation()}>
+                <div className="handle"/>
+                <p style={{textAlign:'center',color:'var(--t3)',fontSize:14,padding:'20px 0'}}>No prediction data for this match.</p>
+                <button className="btn-primary" onClick={onClose}>Close</button>
+            </div>
+        </div>
+    );
+
+    const outcome    = getPredOutcome(predictions.percent);
+    const predScore  = (predictions.goals?.home != null && predictions.goals?.away != null)
+        ? `${predictions.goals.home} - ${predictions.goals.away}` : null;
+
     return (
         <div className="overlay" onClick={onClose}>
             <div className="sheet" onClick={e=>e.stopPropagation()}>
                 <div className="handle"/>
-                {(!predictions||!teams||!league)
-                    ? <><p style={{textAlign:'center',color:'var(--t3)',fontSize:14,padding:'20px 0'}}>No prediction data for this match.</p><button className="btn-primary" onClick={onClose}>Close</button></>
-                    : <>
-                        <div className="pred-league-row">
-                            <img src={league.logo} width={36} height={36} style={{objectFit:'contain',margin:'0 auto 6px',display:'block'}} onError={e=>e.target.style.display='none'} alt=""/>
-                            <div className="pred-league-nm">{league.name}</div>
-                            <div className="pred-badge">AI Intelligence v4.2</div>
+
+                {/* League */}
+                <div className="pred-league-row">
+                    <img src={league.logo} width={32} height={32} style={{objectFit:'contain',margin:'0 auto 5px',display:'block'}} onError={e=>e.target.style.display='none'} alt=""/>
+                    <div className="pred-league-nm">{league.name}</div>
+                </div>
+
+                {/* Teams */}
+                <div className="pred-teams">
+                    <div className="pred-team">
+                        <img src={teams.home?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
+                        <div className="pred-team-nm">{teams.home?.name}</div>
+                    </div>
+                    <div className="pred-vs">vs</div>
+                    <div className="pred-team">
+                        <img src={teams.away?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
+                        <div className="pred-team-nm">{teams.away?.name}</div>
+                    </div>
+                </div>
+
+                {/* ── Forebet-style outcome circle ── */}
+                <div className="pred-outcome-wrap">
+                    <div><div className="pred-outcome-circle"><span className="pred-outcome-code">{outcome.code}</span></div></div>
+                    <div className="pred-outcome-label">{outcome.label}</div>
+                    {predScore && <>
+                        <div className="pred-outcome-score">{predScore}</div>
+                        <div className="pred-outcome-score-lbl">Predicted Score</div>
+                    </>}
+                </div>
+
+                {/* ── Probability table (1 / X / 2) ── */}
+                <div className="pred-prob-row">
+                    {[['1','Home Win',predictions.percent?.home],['X','Draw',predictions.percent?.draw],['2','Away Win',predictions.percent?.away]].map(([code,lbl,pct])=>(
+                        <div key={code} className="pred-prob-cell" style={outcome.code===code?{background:'rgba(255,149,0,.12)',outline:'1.5px solid #FF9500'}:{}}>
+                            <div className="pred-prob-val" style={outcome.code===code?{color:'#FF9500'}:{}}>{pct||'—'}</div>
+                            <div className="pred-prob-lbl">{lbl}</div>
                         </div>
-                        <div className="pred-teams">
-                            <div className="pred-team">
-                                <img src={teams.home?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                                <div className="pred-team-nm">{teams.home?.name}</div>
+                    ))}
+                </div>
+
+                {/* Advice box */}
+                <div className="pred-box" style={{marginBottom:16}}>
+                    <div className="pred-advice">{predictions.advice}</div>
+                    <div className="pred-bar">
+                        <div className="pb-h" style={{width:predictions.percent?.home}}/>
+                        <div className="pb-d" style={{width:predictions.percent?.draw}}/>
+                        <div className="pb-a" style={{width:predictions.percent?.away}}/>
+                    </div>
+                    <div className="pred-pct">
+                        <span>1  {predictions.percent?.home}</span>
+                        <span>X  {predictions.percent?.draw}</span>
+                        <span>2  {predictions.percent?.away}</span>
+                    </div>
+                </div>
+
+                {/* Team comparison */}
+                {comparison && (
+                    <div style={{marginBottom:16}}>
+                        <div className="events-title">Team Comparison</div>
+                        {[{n:'Attack',h:comparison.att?.home,a:comparison.att?.away},{n:'Defense',h:comparison.def?.home,a:comparison.def?.away},{n:'Form',h:comparison.form?.home,a:comparison.form?.away}].filter(r=>r.h).map(r=>(
+                            <div key={r.n} className="cmp-row">
+                                <div className="cmp-labels">
+                                    <span className="cmp-val">{r.h}</span>
+                                    <span className="cmp-name">{r.n}</span>
+                                    <span className="cmp-val">{r.a}</span>
+                                </div>
+                                <div className="cmp-track"><div className="cmp-fill" style={{width:r.h}}/></div>
                             </div>
-                            <div className="pred-vs">vs</div>
-                            <div className="pred-team">
-                                <img src={teams.away?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                                <div className="pred-team-nm">{teams.away?.name}</div>
-                            </div>
-                        </div>
-                        <div className="pred-box">
-                            <div className="pred-advice">{predictions.advice}</div>
-                            <div className="pred-bar">
-                                <div className="pb-h" style={{width:predictions.percent?.home}}/>
-                                <div className="pb-d" style={{width:predictions.percent?.draw}}/>
-                                <div className="pb-a" style={{width:predictions.percent?.away}}/>
-                            </div>
-                            <div className="pred-pct">
-                                <span>Home {predictions.percent?.home}</span>
-                                <span>Draw {predictions.percent?.draw}</span>
-                                <span>Away {predictions.percent?.away}</span>
-                            </div>
-                        </div>
-                        {comparison && (
-                            <div style={{marginBottom:16}}>
-                                <div className="events-title">Team Comparison</div>
-                                {[{n:'Attack',h:comparison.att?.home,a:comparison.att?.away},{n:'Defense',h:comparison.def?.home,a:comparison.def?.away},{n:'Form',h:comparison.form?.home,a:comparison.form?.away}].filter(r=>r.h).map(r=>(
-                                    <div key={r.n} className="cmp-row">
-                                        <div className="cmp-labels">
-                                            <span className="cmp-val">{r.h}</span>
-                                            <span className="cmp-name">{r.n}</span>
-                                            <span className="cmp-val">{r.a}</span>
-                                        </div>
-                                        <div className="cmp-track"><div className="cmp-fill" style={{width:r.h}}/></div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <button className="btn-primary" onClick={onClose}>Close</button>
-                    </>
-                }
+                        ))}
+                    </div>
+                )}
+
+                <button className="btn-primary" onClick={onClose}>Close</button>
             </div>
         </div>
     );
@@ -668,6 +736,8 @@ function App() {
     // Prediction sheet
     const [pred,        setPred]        = useState(null);
     const [predLoad,    setPredLoad]    = useState(false);
+    // Cache of outcome per fixture id: { [id]: { code:'1'|'2'|'X', score:'2-1' } }
+    const [predCache,   setPredCache]   = useState({});
 
     /* ── Fetch scores ── */
     const load = useCallback(async (isManual=false) => {
@@ -770,7 +840,12 @@ function App() {
             const data = await res.json();
             const p = data.response?.[0]||null;
             if (!p) throw new Error();
-            setDetailMatch(null); // close detail sheet
+            // Cache the outcome so the match card can show the badge
+            const outcome = getPredOutcome(p.predictions?.percent);
+            const score   = (p.predictions?.goals?.home != null && p.predictions?.goals?.away != null)
+                ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null;
+            setPredCache(prev => ({...prev, [id]: { code: outcome.code, score }}));
+            setDetailMatch(null);
             setPred(p);
         } catch { setPredErr("Prediction not available for this match."); }
         finally { setPredLoad(false); }
@@ -790,6 +865,7 @@ function App() {
     const card = (m,extra={}) => (
         <MatchCard key={fid(m)||`${m.home?.name}${m.away?.name}${m.status}`}
             match={m} logos={logoCache}
+            pred={predCache[fid(m)]||null}
             onOpen={openDetail} onToggleFav={toggleFav}
             isFav={favs.includes(fid(m))} {...extra}/>
     );
