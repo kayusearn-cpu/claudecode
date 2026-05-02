@@ -187,65 +187,108 @@ app.get('/api/status', async (req, res) => {
     res.json(result);
 });
 
-// ─── Mathematical prediction fallback (Poisson-inspired, seeded by fixture ID) ─
+// ─── Server-side AI prediction cache (keyed by fixture ID) ───────────────────
+const predCache = {};
+
+// ─── Mathematical prediction fallback (seeded, deterministic) ────────────────
 function generatePrediction(fixtureId) {
-    // Seed from fixture ID for deterministic, consistent results per match
     const seed = String(fixtureId).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 7);
     const r = n => { const x = Math.sin(seed * n + n * 13.7) * 99991; return x - Math.floor(x); };
-
-    // Realistic football probability bands: home 40-56%, draw 22-30%, away remainder
     const homeWin = Math.round(40 + r(1) * 16);
     const draw    = Math.round(22 + r(2) * 8);
     const awayWin = 100 - homeWin - draw;
-
-    // Predicted goals (home teams avg ~1.5, away ~1.1)
     const hg = Math.min(4, Math.round(r(3) * 3.2));
     const ag = Math.min(3, Math.round(r(4) * 2.4));
-
-    const best    = homeWin >= awayWin && homeWin >= draw ? 'home'
-                  : awayWin >= homeWin && awayWin >= draw ? 'away' : 'draw';
-    const advice  = best === 'home' ? 'Home Win Predicted'
-                  : best === 'away' ? 'Away Win Predicted' : 'Draw Predicted';
-
-    return {
-        response: [{
-            predictions: {
-                percent: { home: `${homeWin}%`, draw: `${draw}%`, away: `${awayWin}%` },
-                goals:   { home: hg, away: ag },
-                advice,
-            }
-        }]
-    };
+    const best   = homeWin >= awayWin && homeWin >= draw ? 'home'
+                 : awayWin >= homeWin && awayWin >= draw ? 'away' : 'draw';
+    const advice = best === 'home' ? 'Home Win Predicted'
+                 : best === 'away' ? 'Away Win Predicted' : 'Draw Predicted';
+    return { response: [{ predictions: {
+        percent: { home: `${homeWin}%`, draw: `${draw}%`, away: `${awayWin}%` },
+        goals: { home: hg, away: ag }, advice,
+    }}]};
 }
 
 // ─── /api/get-predictions ─────────────────────────────────────────────────────
 app.get('/api/get-predictions', async (req, res) => {
-    const fixtureId = req.query.fixture;
+    const { fixture: fixtureId, home, away, league, country, status, score } = req.query;
     const apiKey    = process.env.API_FOOTBALL_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
 
-    if (!fixtureId) {
-        return res.status(400).json({ error: 'Please provide a fixture ID' });
-    }
+    if (!fixtureId) return res.status(400).json({ error: 'fixture ID required' });
 
-    // Try API-Football first (only when key is set and ID looks like an API-Football numeric ID)
+    // Serve from cache if available
+    if (predCache[fixtureId]) return res.json(predCache[fixtureId]);
+
+    // 1️⃣ API-Football predictions (only for numeric IDs from their feed)
     if (apiKey && /^\d+$/.test(fixtureId)) {
         try {
-            const response = await axios.get('https://v3.football.api-sports.io/predictions', {
-                params:  { fixture: fixtureId },
-                headers: { 'x-apisports-key': apiKey },
-                timeout: 8000,
+            const r = await axios.get('https://v3.football.api-sports.io/predictions', {
+                params: { fixture: fixtureId }, headers: { 'x-apisports-key': apiKey }, timeout: 8000,
             });
-            const body = response.data;
-            if (body.response && body.response.length > 0 && body.response[0]?.predictions) {
+            const body = r.data;
+            if (body.response?.length > 0 && body.response[0]?.predictions) {
+                predCache[fixtureId] = body;
                 return res.json(body);
             }
-        } catch (error) {
-            console.warn('Predictions API unavailable, using fallback:', error.message);
-        }
+        } catch (e) { console.warn('API-Football predictions failed:', e.message); }
     }
 
-    // Fallback: deterministic mathematical prediction (Poisson-inspired)
-    return res.json(generatePrediction(fixtureId));
+    // 2️⃣ OpenAI prediction based on match stats
+    if (openaiKey && home && away) {
+        try {
+            const { OpenAI } = require('openai');
+            const openai = new OpenAI({ apiKey: openaiKey });
+
+            const lines = [
+                `${home} vs ${away}`,
+                league  ? `Competition: ${league}${country ? ', ' + country : ''}` : '',
+                status  ? `Match status: ${status}` : '',
+                score   ? `Current score: ${score}` : 'Not started yet',
+            ].filter(Boolean).join('\n');
+
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: [{
+                    role: 'user',
+                    content:
+`You are a football statistics analyst. Predict the outcome of this match using your knowledge of these teams, their recent form, home advantage, and league context.
+
+${lines}
+
+Reply with ONLY a raw JSON object — no markdown, no explanation:
+{"home":45,"draw":27,"away":28,"homeGoals":1,"awayGoals":1,"advice":"One concise sentence"}
+
+Rules:
+- home + draw + away must sum to exactly 100
+- homeGoals and awayGoals are predicted final score integers (0–5)
+- advice is one short, specific sentence about the likely outcome`,
+                }],
+                max_tokens: 100,
+                temperature: 0.25,
+            });
+
+            const raw  = completion.choices[0].message.content.trim().replace(/```json|```/g, '');
+            const pred = JSON.parse(raw);
+            const h    = Math.max(0, Math.round(Number(pred.home) || 0));
+            const d    = Math.max(0, Math.round(Number(pred.draw) || 0));
+            const a    = Math.max(0, 100 - h - d);
+
+            const result = { response: [{ predictions: {
+                percent: { home: `${h}%`, draw: `${d}%`, away: `${a}%` },
+                goals:   { home: Math.max(0, Number(pred.homeGoals) || 0), away: Math.max(0, Number(pred.awayGoals) || 0) },
+                advice:  pred.advice || '',
+            }}]};
+
+            predCache[fixtureId] = result;
+            return res.json(result);
+        } catch (e) { console.warn('OpenAI prediction failed:', e.message); }
+    }
+
+    // 3️⃣ Mathematical fallback
+    const result = generatePrediction(fixtureId);
+    predCache[fixtureId] = result;
+    return res.json(result);
 });
 
 // ─── Logo cache ───────────────────────────────────────────────────────────────

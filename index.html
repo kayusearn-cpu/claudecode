@@ -821,13 +821,23 @@ function App() {
     const fetchingRef = useRef(new Set());
     const resolvedRef = useRef(new Set());
 
-    /* ── Fetch one prediction and store in cache ── */
-    const fetchOnePred = useCallback(async id => {
+    /* ── Fetch one prediction — passes full match context to backend ── */
+    const fetchOnePred = useCallback(async (id, matchData) => {
         if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
         fetchingRef.current.add(id);
         setPredCache(prev => ({...prev, [id]: { loading: true }}));
         try {
-            const res  = await fetch(`${BACKEND_URL}/api/get-predictions?fixture=${id}`);
+            const params = new URLSearchParams({ fixture: id });
+            if (matchData) {
+                const g = getGoals(matchData);
+                if (matchData.home?.name) params.set('home', matchData.home.name);
+                if (matchData.away?.name) params.set('away', matchData.away.name);
+                if (matchData.leagueName) params.set('league', matchData.leagueName);
+                if (matchData.country)    params.set('country', matchData.country);
+                if (matchData.status)     params.set('status', statusLabel(matchData.status) || matchData.status);
+                if (g) params.set('score', `${g.h}-${g.a}`);
+            }
+            const res  = await fetch(`${BACKEND_URL}/api/get-predictions?${params}`);
             const data = await res.json();
             const p    = data.response?.[0];
             if (!p?.predictions) throw new Error();
@@ -851,13 +861,13 @@ function App() {
         }
     }, []);
 
-    /* ── Auto-fetch predictions for all matches ── */
+    /* ── Auto-fetch predictions — passes each full match object ── */
     const autoFetchPredictions = useCallback(async ms => {
-        const ids = [...new Set(ms.map(m => fid(m)).filter(Boolean))];
-        for (const id of ids) {
-            if (resolvedRef.current.has(id) || fetchingRef.current.has(id)) continue;
-            await fetchOnePred(id);
-            await new Promise(r => setTimeout(r, 300));
+        for (const m of ms) {
+            const id = fid(m);
+            if (!id || resolvedRef.current.has(id) || fetchingRef.current.has(id)) continue;
+            await fetchOnePred(id, m);
+            await new Promise(r => setTimeout(r, 400));
         }
     }, [fetchOnePred]);
 
