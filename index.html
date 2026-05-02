@@ -188,6 +188,22 @@
         .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
         .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
 
+        /* Front prediction column — Forebet-style, always visible on the card */
+        .card-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; }
+        .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .card-scores-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; min-width:20px; }
+        .pred-front { display:flex; flex-direction:column; align-items:center; gap:3px; }
+        .pred-front-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.45); flex-shrink:0; }
+        .pred-front-score { font-size:9px; font-weight:700; color:var(--t2); letter-spacing:.2px; }
+        .pred-front-probs { display:flex; gap:6px; }
+        .pred-front-prob { display:flex; flex-direction:column; align-items:center; }
+        .pred-front-pct { font-size:10px; font-weight:700; color:var(--t2); line-height:1.2; }
+        .pred-front-code { font-size:8px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; }
+        .pred-front-prob.hi .pred-front-pct { color:#FF9500; }
+        .pred-front-prob.hi .pred-front-code { color:rgba(255,149,0,.7); }
+        .pred-skel-circle { width:44px; height:44px; border-radius:50%; flex-shrink:0; }
+
         /* Prediction outcome circle (Forebet-style) */
         .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
         .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
@@ -441,6 +457,7 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
     const g   = getGoals(match);
     const id  = fid(match);
     const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
+    const hasPred = pred && !pred.loading && pred.code;
 
     return (
         <div
@@ -455,23 +472,58 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         <IcoHeart on={isFav}/>
                     </button>
                 </div>
-                <div className="card-body">
-                    {/* Small logos if available */}
-                    <div className="card-logo-col">
-                        <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
-                        <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
+
+                {/* Main row: teams | score | prediction circle */}
+                <div className="card-row">
+                    <div className="card-left">
+                        <div className="card-logo-col">
+                            <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
+                            <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
+                        </div>
+                        <div className="card-teams">
+                            <span className="team-nm">{match.home?.name||'—'}</span>
+                            <span className="team-nm">{match.away?.name||'—'}</span>
+                        </div>
                     </div>
-                    <div className="card-teams">
-                        <span className="team-nm">{match.home?.name||'—'}</span>
-                        <span className="team-nm">{match.away?.name||'—'}</span>
-                    </div>
-                    <div className="card-scores">
-                        {g
-                            ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
-                            : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
-                        }
+
+                    <div className="card-right-col">
+                        {/* Current score */}
+                        <div className="card-scores-col">
+                            {g
+                                ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
+                                : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
+                            }
+                        </div>
+
+                        {/* Prediction column — always rendered */}
+                        {(!pred || pred.loading) && (
+                            <div className="pred-front">
+                                <div className="pred-skel-circle skel"/>
+                                <div style={{width:44,height:10,marginTop:3,borderRadius:4}} className="skel"/>
+                            </div>
+                        )}
+                        {hasPred && (
+                            <div className="pred-front" onClick={e=>e.stopPropagation()}>
+                                <div className="pred-front-circle">{pred.code}</div>
+                                {pred.score && <div className="pred-front-score">{pred.score}</div>}
+                                <div className="pred-front-probs">
+                                    {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
+                                        <div key={code} className={`pred-front-prob${pred.code===code?' hi':''}`}>
+                                            <span className="pred-front-pct">{pct||'—'}</span>
+                                            <span className="pred-front-code">{code}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {pred && !pred.loading && !pred.code && (
+                            <div className="pred-front">
+                                <div style={{width:44,height:44,borderRadius:'50%',background:'var(--bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'var(--t3)'}}>?</div>
+                            </div>
+                        )}
                     </div>
                 </div>
+
                 <div className="card-foot">
                     <span className={`s-badge ${badgeClass}`}>
                         {c==='live' && <span className="dot"/>}
@@ -483,31 +535,6 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         </button>
                     )}
                 </div>
-                {/* Forebet-style prediction block */}
-                {pred?.loading && <div className="pred-card-skel"/>}
-                {pred && !pred.loading && pred.code && (
-                    <div className="pred-card-block" onClick={e=>e.stopPropagation()}>
-                        <div className="pred-card-inner">
-                            <div className="pred-card-circle">{pred.code}</div>
-                            <div className="pred-card-mid">
-                                <div className="pred-card-label">{pred.label}</div>
-                                <div className="pred-card-score">
-                                    {pred.score ? `Score: ${pred.score}` : ''}
-                                    {pred.score && pred.advice ? '  ·  ' : ''}
-                                    {pred.advice || ''}
-                                </div>
-                            </div>
-                            <div className="pred-card-pcts">
-                                {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
-                                    <div key={code} className={`pred-card-pct${pred.code===code?' hi':''}`}>
-                                        <div className="pred-card-pct-val">{pct||'—'}</div>
-                                        <div className="pred-card-pct-code">{code}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -794,99 +821,6 @@ function App() {
     const fetchingRef = useRef(new Set());
     const resolvedRef = useRef(new Set());
 
-    /* ── Fetch scores ── */
-    const load = useCallback(async (isManual=false) => {
-        setLoading(true); setErr(null);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        const wt = setTimeout(() => setWaking(true), 4000);
-        try {
-            const ctrl = new AbortController();
-            const tt   = setTimeout(()=>ctrl.abort(), 35000);
-            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
-            clearTimeout(tt); clearTimeout(wt); setWaking(false);
-            if (!res.ok) throw new Error(`${res.status}`);
-            const data = await res.json();
-            if (data.livescore?.league) {
-                const flat=[], leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
-                leagues.forEach(lg=>{
-                    if(!lg.match)return;
-                    const items=Array.isArray(lg.match)?lg.match:[lg.match];
-                    items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
-                });
-                setMatches(flat);
-                fetchLogosForMatches(flat.slice(0,30));
-            } else throw new Error("Bad format");
-        } catch(e) {
-            clearTimeout(wt); setWaking(false);
-            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
-        } finally { setLoading(false); }
-    }, []);
-
-    /* ── Background logo pre-fetch for cards ── */
-    const fetchLogosForMatches = useCallback(async (ms) => {
-        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
-        for (const name of names) {
-            if (logoCache[name] !== undefined) continue;
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                setLogoCache(prev => ({...prev, [name]: data.logo || null}));
-            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
-            await new Promise(r=>setTimeout(r,120)); // gentle rate-limit
-        }
-    }, [logoCache]);
-
-    useEffect(() => {
-        const t=setTimeout(()=>setSplash(false),3000);
-        load();
-        const iv=setInterval(()=>load(false), 60000);
-        return ()=>{ clearTimeout(t); clearInterval(iv); };
-    }, [load]);
-
-    useEffect(() => {
-        if (matches.length > 0) autoFetchPredictions(matches);
-    }, [matches, autoFetchPredictions]);
-
-    /* ── Open match detail ── */
-    const openDetail = useCallback(async m => {
-        setDetailMatch(m);
-        setAnalysis(null);
-        setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
-
-        // Fetch logos
-        const getLogo = async name => {
-            if (logoCache[name] !== undefined) return logoCache[name];
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                return data.logo||null;
-            } catch { return null; }
-        };
-
-        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
-        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
-        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
-
-        // Fetch AI analysis
-        setAnalysisLoading(true);
-        try {
-            const g = getGoals(m);
-            const p = new URLSearchParams({
-                home:   m.home?.name||'',
-                away:   m.away?.name||'',
-                league: m.leagueName||'',
-                status: statusLabel(m.status)||m.status||'',
-                score:  g?`${g.h}-${g.a}`:'Not started',
-                ht:     m.ht?.score||''
-            });
-            const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
-            const data = await res.json();
-            setAnalysis(data.analysis||null);
-        } catch { setAnalysis(null); }
-        finally { setAnalysisLoading(false); }
-    }, [logoCache]);
-
     /* ── Fetch one prediction and store in cache ── */
     const fetchOnePred = useCallback(async id => {
         if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
@@ -926,6 +860,94 @@ function App() {
             await new Promise(r => setTimeout(r, 300));
         }
     }, [fetchOnePred]);
+
+    /* ── Fetch scores ── */
+    const load = useCallback(async (isManual=false) => {
+        setLoading(true); setErr(null);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        const wt = setTimeout(() => setWaking(true), 4000);
+        try {
+            const ctrl = new AbortController();
+            const tt   = setTimeout(()=>ctrl.abort(), 35000);
+            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
+            clearTimeout(tt); clearTimeout(wt); setWaking(false);
+            if (!res.ok) throw new Error(`${res.status}`);
+            const data = await res.json();
+            if (data.livescore?.league) {
+                const flat=[], leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
+                leagues.forEach(lg=>{
+                    if(!lg.match)return;
+                    const items=Array.isArray(lg.match)?lg.match:[lg.match];
+                    items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
+                });
+                setMatches(flat);
+                fetchLogosForMatches(flat.slice(0,30));
+                autoFetchPredictions(flat);
+            } else throw new Error("Bad format");
+        } catch(e) {
+            clearTimeout(wt); setWaking(false);
+            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
+        } finally { setLoading(false); }
+    }, [autoFetchPredictions]);
+
+    /* ── Background logo pre-fetch for cards ── */
+    const fetchLogosForMatches = useCallback(async (ms) => {
+        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
+        for (const name of names) {
+            if (logoCache[name] !== undefined) continue;
+            try {
+                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                setLogoCache(prev => ({...prev, [name]: data.logo || null}));
+            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
+            await new Promise(r=>setTimeout(r,120));
+        }
+    }, [logoCache]);
+
+    useEffect(() => {
+        const t=setTimeout(()=>setSplash(false),3000);
+        load();
+        const iv=setInterval(()=>load(false), 60000);
+        return ()=>{ clearTimeout(t); clearInterval(iv); };
+    }, [load]);
+
+    /* ── Open match detail ── */
+    const openDetail = useCallback(async m => {
+        setDetailMatch(m);
+        setAnalysis(null);
+        setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
+
+        const getLogo = async name => {
+            if (logoCache[name] !== undefined) return logoCache[name];
+            try {
+                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                return data.logo||null;
+            } catch { return null; }
+        };
+
+        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
+        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
+        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
+
+        setAnalysisLoading(true);
+        try {
+            const g = getGoals(m);
+            const p = new URLSearchParams({
+                home:   m.home?.name||'',
+                away:   m.away?.name||'',
+                league: m.leagueName||'',
+                status: statusLabel(m.status)||m.status||'',
+                score:  g?`${g.h}-${g.a}`:'Not started',
+                ht:     m.ht?.score||''
+            });
+            const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
+            const data = await res.json();
+            setAnalysis(data.analysis||null);
+        } catch { setAnalysis(null); }
+        finally { setAnalysisLoading(false); }
+    }, [logoCache]);
 
     const toggleFav = useCallback(id=>{
         if(!id)return;
