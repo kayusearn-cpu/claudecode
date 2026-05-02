@@ -215,6 +215,49 @@ app.get('/api/get-predictions', async (req, res) => {
     }
 });
 
+// ─── Logo cache ───────────────────────────────────────────────────────────────
+const logoCache = {};
+
+app.get('/api/team-logo', async (req, res) => {
+    const name = req.query.name;
+    if (!name) return res.status(400).json({ logo: null });
+    const key = name.toLowerCase().trim();
+    if (logoCache[key] !== undefined) return res.json({ logo: logoCache[key] });
+    try {
+        const r = await axios.get('https://www.thesportsdb.com/api/v1/json/3/searchteams.php', {
+            params:  { t: name },
+            timeout: 5000,
+        });
+        const logo = r.data?.teams?.[0]?.strTeamBadge || null;
+        logoCache[key] = logo;
+        res.json({ logo });
+    } catch (_) {
+        logoCache[key] = null;
+        res.json({ logo: null });
+    }
+});
+
+// ─── OpenAI match analysis ────────────────────────────────────────────────────
+app.get('/api/match-analysis', async (req, res) => {
+    const { home, away, league, status, score, ht } = req.query;
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.json({ analysis: null });
+    try {
+        const { OpenAI } = require('openai');
+        const openai = new OpenAI({ apiKey });
+        const prompt = `Brief 2-3 sentence football match analysis: ${home} vs ${away}, ${league}, Score: ${score}, Status: ${status}, HT: ${ht || 'N/A'}. Be concise and insightful.`;
+        const r = await openai.chat.completions.create({
+            model:      'gpt-3.5-turbo',
+            messages:   [{ role: 'user', content: prompt }],
+            max_tokens: 120,
+        });
+        res.json({ analysis: r.choices[0].message.content });
+    } catch (e) {
+        console.error('OpenAI error:', e.message);
+        res.json({ analysis: null });
+    }
+});
+
 app.listen(port, () => {
     console.log(`MagicBettingTips backend running on port ${port}`);
 });
