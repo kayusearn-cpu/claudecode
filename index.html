@@ -309,18 +309,21 @@ const getPredOutcome = pct => {
     return { code: 'X', label: 'Draw' };
 };
 
-/* ── Local prediction fallback — runs in-browser, no server needed ── */
-const localPredict = (id) => {
-    const seed = String(id).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 7);
-    const r = n => { const x = Math.sin(seed * n + n * 13.7) * 99991; return x - Math.floor(x); };
-    const hp = Math.round(40 + r(1) * 16);
-    const dp = Math.round(22 + r(2) * 8);
+/* ── Local prediction fallback — seeded from team names for consistency ── */
+const localPredict = (id, home, away) => {
+    // Seed from team names so Arsenal vs Chelsea always gets the same prediction
+    const str  = `${(home||'').toLowerCase().trim()}|${(away||'').toLowerCase().trim()}`;
+    const seed = (str||String(id)).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 17);
+    const r    = n => { const x = Math.sin(seed * n + n * 17.3) * 99991; return x - Math.floor(x); };
+    // Home teams win ~46% statistically; model a realistic range
+    const hp = Math.round(38 + r(1) * 18);   // 38–56%
+    const dp = Math.round(20 + r(2) * 10);   // 20–30%
     const ap = 100 - hp - dp;
-    const hg = Math.min(4, Math.round(r(3) * 3.2));
-    const ag = Math.min(3, Math.round(r(4) * 2.4));
+    const hg = Math.min(4, Math.round(r(3) * 3.0));
+    const ag = Math.min(3, Math.round(r(4) * 2.2));
     const code  = hp >= ap && hp >= dp ? '1' : ap > hp && ap >= dp ? '2' : 'X';
     const label = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-    return { loading:false, code, label, score:`${hg}-${ag}`, advice:`${label} Predicted`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
+    return { loading:false, code, label, score:`${hg}-${ag}`, advice:`${label} predicted`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
 };
 
 const FIN  = ['FT','AET','PEN','Pen.'];
@@ -872,8 +875,8 @@ function App() {
             }
         } catch { /* fall through to local model */ }
 
-        // Local mathematical model — always produces a result, no server needed
-        setPredCache(prev => ({...prev, [id]: cached || localPredict(id)}));
+        // Local model — seeded by team names for consistent, team-aware predictions
+        setPredCache(prev => ({...prev, [id]: cached || localPredict(id, matchData?.home?.name, matchData?.away?.name)}));
         fetchingRef.current.delete(id);
         resolvedRef.current.add(id);
     }, []);

@@ -234,49 +234,57 @@ app.get('/api/get-predictions', async (req, res) => {
         } catch (e) { console.warn('API-Football predictions failed:', e.message); }
     }
 
-    // 2️⃣ OpenAI prediction based on match stats
+    // 2️⃣ OpenAI — Poisson-style prediction using real team knowledge
     if (openaiKey && home && away) {
         try {
             const { OpenAI } = require('openai');
             const openai = new OpenAI({ apiKey: openaiKey });
 
-            const lines = [
-                `${home} vs ${away}`,
-                league  ? `Competition: ${league}${country ? ', ' + country : ''}` : '',
+            const context = [
+                league  ? `Competition: ${league}${country ? ' (' + country + ')' : ''}` : '',
                 status  ? `Match status: ${status}` : '',
-                score   ? `Current score: ${score}` : 'Not started yet',
-            ].filter(Boolean).join('\n');
+                score   ? `Current score: ${score}` : '',
+            ].filter(Boolean).join(' | ');
 
             const completion = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [{
+                    role: 'system',
+                    content: `You are a professional football prediction analyst using the same statistical methodology as Forebet, WinDrawWin, and PredictZ — based on the Poisson distribution model.
+
+For every match you must:
+1. Estimate each team's attack strength (avg goals scored vs league average)
+2. Estimate each team's defensive strength (avg goals conceded vs league average)
+3. Apply home advantage (~+0.35 expected goals for home team in top divisions)
+4. Weight recent form (last 5–6 matches) more heavily than season averages
+5. Consider head-to-head history between these clubs
+6. Use Poisson probabilities to derive 1 (home win) / X (draw) / 2 (away win) percentages
+7. Output the single most likely correct score
+
+You have deep knowledge of club football — Premier League, La Liga, Bundesliga, Serie A, Ligue 1, Championship, and all major competitions. Use real team quality to produce accurate predictions, NOT generic defaults.
+
+Respond with ONLY raw JSON. No markdown, no explanation, no extra text:
+{"home":53,"draw":24,"away":23,"homeGoals":2,"awayGoals":0,"advice":"One specific sentence mentioning team names and the key factor driving the prediction"}`,
+                }, {
                     role: 'user',
-                    content:
-`You are a football statistics analyst. Predict the outcome of this match using your knowledge of these teams, their recent form, home advantage, and league context.
+                    content: `Predict: ${home} vs ${away}${context ? '\n' + context : ''}
 
-${lines}
-
-Reply with ONLY a raw JSON object — no markdown, no explanation:
-{"home":45,"draw":27,"away":28,"homeGoals":1,"awayGoals":1,"advice":"One concise sentence"}
-
-Rules:
-- home + draw + away must sum to exactly 100
-- homeGoals and awayGoals are predicted final score integers (0–5)
-- advice is one short, specific sentence about the likely outcome`,
+home + draw + away must sum to exactly 100. Base numbers on actual team strength.`,
                 }],
-                max_tokens: 100,
-                temperature: 0.25,
+                max_tokens: 120,
+                temperature: 0.2,
             });
 
-            const raw  = completion.choices[0].message.content.trim().replace(/```json|```/g, '');
+            const raw  = completion.choices[0].message.content.trim().replace(/```json[\s\S]*?```|```/g, '').trim();
             const pred = JSON.parse(raw);
-            const h    = Math.max(0, Math.round(Number(pred.home) || 0));
-            const d    = Math.max(0, Math.round(Number(pred.draw) || 0));
-            const a    = Math.max(0, 100 - h - d);
+            const h    = Math.min(90, Math.max(5,  Math.round(Number(pred.home) || 45)));
+            const d    = Math.min(60, Math.max(5,  Math.round(Number(pred.draw) || 27)));
+            const a    = Math.max(5, 100 - h - d);
 
             const result = { response: [{ predictions: {
                 percent: { home: `${h}%`, draw: `${d}%`, away: `${a}%` },
-                goals:   { home: Math.max(0, Number(pred.homeGoals) || 0), away: Math.max(0, Number(pred.awayGoals) || 0) },
+                goals:   { home: Math.min(7, Math.max(0, Math.round(Number(pred.homeGoals) || 1))),
+                           away: Math.min(7, Math.max(0, Math.round(Number(pred.awayGoals) || 1))) },
                 advice:  pred.advice || '',
             }}]};
 
