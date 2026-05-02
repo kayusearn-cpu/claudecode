@@ -188,21 +188,23 @@
         .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
         .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
 
-        /* Front prediction column — Forebet-style, always visible on the card */
-        .card-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-        .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; }
-        .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        /* Pred column — Forebet style, pinned right with vertical separator */
+        .card-row { display:flex; align-items:center; gap:0; margin-bottom:8px; }
+        .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; padding-right:10px; }
+        .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; border-left:.5px solid var(--sep2); padding-left:11px; }
         .card-scores-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; min-width:20px; }
-        .pred-front { display:flex; flex-direction:column; align-items:center; gap:3px; }
-        .pred-front-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.45); flex-shrink:0; }
-        .pred-front-score { font-size:9px; font-weight:700; color:var(--t2); letter-spacing:.2px; }
-        .pred-front-probs { display:flex; gap:6px; }
+        .pred-front { display:flex; flex-direction:column; align-items:center; gap:2px; }
+        .pred-front-circle { width:40px; height:40px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:#fff; box-shadow:0 2px 8px rgba(255,149,0,.4); flex-shrink:0; }
+        .pred-front-circle.draw { background:#86868B; box-shadow:none; }
+        .pred-front-score { font-size:10px; font-weight:700; color:var(--t2); letter-spacing:.1px; }
+        .pred-front-probs { display:flex; gap:5px; margin-top:1px; }
         .pred-front-prob { display:flex; flex-direction:column; align-items:center; }
-        .pred-front-pct { font-size:10px; font-weight:700; color:var(--t2); line-height:1.2; }
+        .pred-front-pct { font-size:9px; font-weight:700; color:var(--t2); line-height:1.2; }
         .pred-front-code { font-size:8px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; }
         .pred-front-prob.hi .pred-front-pct { color:#FF9500; }
         .pred-front-prob.hi .pred-front-code { color:rgba(255,149,0,.7); }
-        .pred-skel-circle { width:44px; height:44px; border-radius:50%; flex-shrink:0; }
+        .pred-front-prob.hi-draw .pred-front-pct { color:#86868B; }
+        .pred-skel-circle { width:40px; height:40px; border-radius:50%; flex-shrink:0; }
 
         /* Prediction outcome circle (Forebet-style) */
         .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
@@ -309,22 +311,160 @@ const getPredOutcome = pct => {
     return { code: 'X', label: 'Draw' };
 };
 
-/* ── Local prediction fallback — seeded from team names for consistency ── */
-const localPredict = (id, home, away) => {
-    // Seed from team names so Arsenal vs Chelsea always gets the same prediction
-    const str  = `${(home||'').toLowerCase().trim()}|${(away||'').toLowerCase().trim()}`;
-    const seed = (str||String(id)).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 17);
-    const r    = n => { const x = Math.sin(seed * n + n * 17.3) * 99991; return x - Math.floor(x); };
-    // Home teams win ~46% statistically; model a realistic range
-    const hp = Math.round(38 + r(1) * 18);   // 38–56%
-    const dp = Math.round(20 + r(2) * 10);   // 20–30%
-    const ap = 100 - hp - dp;
-    const hg = Math.min(4, Math.round(r(3) * 3.0));
-    const ag = Math.min(3, Math.round(r(4) * 2.2));
-    const code  = hp >= ap && hp >= dp ? '1' : ap > hp && ap >= dp ? '2' : 'X';
-    const label = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-    return { loading:false, code, label, score:`${hg}-${ag}`, advice:`${label} predicted`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
+
+/* ══════════════════════════════════════════════════════════════════════
+   WEIGHTED POISSON DISTRIBUTION PREDICTION ENGINE
+   Methodology: attack/defence ratings → expected goals → 7×7 matrix
+   ══════════════════════════════════════════════════════════════════════ */
+
+const RATINGS = {
+  /* Premier League */
+  'Arsenal':{a:2.05,d:0.72},'Manchester City':{a:2.20,d:0.68},'Liverpool':{a:2.15,d:0.78},
+  'Chelsea':{a:1.72,d:0.98},'Tottenham':{a:1.78,d:1.08},'Manchester United':{a:1.48,d:1.20},
+  'Newcastle United':{a:1.68,d:0.88},'Aston Villa':{a:1.82,d:0.92},'West Ham':{a:1.38,d:1.15},
+  'Brighton':{a:1.60,d:0.98},'Brentford':{a:1.52,d:1.02},'Fulham':{a:1.38,d:1.08},
+  'Wolves':{a:1.18,d:1.18},'Crystal Palace':{a:1.18,d:1.08},'Everton':{a:1.08,d:1.18},
+  'Nottingham Forest':{a:1.28,d:0.98},'Bournemouth':{a:1.40,d:1.12},
+  'Leicester City':{a:1.40,d:1.10},'Southampton':{a:1.00,d:1.35},'Ipswich Town':{a:1.05,d:1.28},
+  'Luton Town':{a:0.98,d:1.38},'Sheffield United':{a:0.88,d:1.48},'Burnley':{a:0.92,d:1.42},
+  /* Championship */
+  'Leeds United':{a:1.55,d:1.05},'Sunderland':{a:1.38,d:1.10},'Middlesbrough':{a:1.30,d:1.10},
+  'Coventry City':{a:1.25,d:1.15},'Sheffield Wednesday':{a:1.20,d:1.25},'Norwich City':{a:1.32,d:1.08},
+  'Watford':{a:1.35,d:1.10},'Swansea City':{a:1.20,d:1.15},'Millwall':{a:1.12,d:1.10},
+  'Hull City':{a:1.25,d:1.15},'Portsmouth':{a:1.30,d:1.12},'Preston North End':{a:1.10,d:1.15},
+  'Birmingham City':{a:1.05,d:1.30},'Cardiff City':{a:1.05,d:1.25},'QPR':{a:1.10,d:1.22},
+  'Stoke City':{a:1.10,d:1.20},'Bristol City':{a:1.10,d:1.18},'Derby County':{a:1.25,d:1.18},
+  'Blackburn Rovers':{a:1.20,d:1.18},'Oxford United':{a:1.15,d:1.22},'Plymouth Argyle':{a:1.08,d:1.28},
+  'Charlton Athletic':{a:1.12,d:1.20},'Luton':{a:0.98,d:1.38},
+  /* La Liga */
+  'Real Madrid':{a:2.30,d:0.70},'Barcelona':{a:2.22,d:0.78},'Atletico Madrid':{a:1.72,d:0.74},
+  'Sevilla':{a:1.40,d:1.08},'Real Sociedad':{a:1.52,d:0.98},'Villarreal':{a:1.50,d:1.02},
+  'Athletic Club':{a:1.40,d:0.98},'Real Betis':{a:1.32,d:1.08},'Valencia':{a:1.20,d:1.18},
+  'Girona':{a:1.62,d:0.98},'Celta Vigo':{a:1.28,d:1.18},'Osasuna':{a:1.08,d:1.08},
+  'Getafe':{a:1.02,d:1.12},'Rayo Vallecano':{a:1.08,d:1.18},'Mallorca':{a:1.08,d:1.08},
+  'Alaves':{a:0.98,d:1.28},'Espanyol':{a:1.05,d:1.25},'Cadiz':{a:0.88,d:1.38},
+  'Las Palmas':{a:1.08,d:1.28},'Granada':{a:0.88,d:1.38},
+  /* Bundesliga */
+  'Bayern Munich':{a:2.50,d:0.74},'Bayer Leverkusen':{a:2.12,d:0.78},
+  'Borussia Dortmund':{a:1.92,d:0.92},'RB Leipzig':{a:1.90,d:0.84},
+  'Eintracht Frankfurt':{a:1.52,d:1.02},'Stuttgart':{a:1.62,d:0.98},
+  'Wolfsburg':{a:1.38,d:1.08},'Freiburg':{a:1.28,d:0.98},'Hoffenheim':{a:1.38,d:1.08},
+  'Mainz':{a:1.18,d:1.12},'Werder Bremen':{a:1.38,d:1.18},'Augsburg':{a:1.08,d:1.18},
+  'Heidenheim':{a:1.18,d:1.18},'Borussia Mönchengladbach':{a:1.38,d:1.08},
+  /* Serie A */
+  'Inter Milan':{a:2.12,d:0.68},'AC Milan':{a:1.88,d:0.84},'Juventus':{a:1.78,d:0.78},
+  'Napoli':{a:1.80,d:0.88},'Atalanta':{a:2.02,d:0.88},'Roma':{a:1.58,d:0.98},
+  'Lazio':{a:1.52,d:1.02},'Fiorentina':{a:1.52,d:0.98},'Bologna':{a:1.52,d:0.92},
+  'Torino':{a:1.18,d:1.08},'Monza':{a:1.18,d:1.12},'Genoa':{a:1.08,d:1.18},
+  'Udinese':{a:1.08,d:1.18},'Cagliari':{a:0.98,d:1.22},'Lecce':{a:0.98,d:1.22},
+  'Empoli':{a:0.98,d:1.18},'Sassuolo':{a:1.28,d:1.18},'Hellas Verona':{a:1.08,d:1.28},
+  /* Ligue 1 */
+  'Paris Saint-Germain':{a:2.42,d:0.72},'Monaco':{a:1.92,d:0.88},'Lille':{a:1.62,d:0.88},
+  'Nice':{a:1.52,d:0.92},'Marseille':{a:1.60,d:0.98},'Lyon':{a:1.52,d:1.02},
+  'Lens':{a:1.52,d:0.92},'Rennes':{a:1.40,d:0.98},'Brest':{a:1.30,d:1.02},
+  'Nantes':{a:1.08,d:1.12},'Strasbourg':{a:1.18,d:1.18},'Reims':{a:1.08,d:1.08},
+  'Toulouse':{a:1.18,d:1.08},'Montpellier':{a:1.08,d:1.22},'Le Havre':{a:1.08,d:1.18},
+  'Lorient':{a:0.98,d:1.28},'Metz':{a:0.98,d:1.32},'Clermont':{a:0.92,d:1.32},
+  /* Other major */
+  'PSV':{a:2.30,d:0.72},'Ajax':{a:2.08,d:0.88},'Feyenoord':{a:2.10,d:0.82},
+  'AZ Alkmaar':{a:1.72,d:0.92},'Twente':{a:1.60,d:0.90},
+  'Celtic':{a:2.20,d:0.72},'Rangers':{a:1.88,d:0.82},
+  'Benfica':{a:2.05,d:0.78},'Porto':{a:2.00,d:0.80},'Sporting CP':{a:1.95,d:0.82},
+  'Galatasaray':{a:1.80,d:0.88},'Fenerbahce':{a:1.75,d:0.90},'Besiktas':{a:1.55,d:1.05},
 };
+
+const TEAM_ALIASES = {
+  'man city':'Manchester City','man utd':'Manchester United','man united':'Manchester United',
+  'spurs':'Tottenham','tottenham hotspur':'Tottenham','wolverhampton wanderers':'Wolves',
+  'wolverhampton':'Wolves','newcastle':'Newcastle United','nottm forest':'Nottingham Forest',
+  'west ham united':'West Ham','brighton & hove albion':'Brighton','brighton and hove albion':'Brighton',
+  'atletico de madrid':'Atletico Madrid','atlético madrid':'Atletico Madrid','athletic bilbao':'Athletic Club',
+  'athletic de bilbao':'Athletic Club','real betis balompie':'Real Betis',
+  'borussia dortmund':'Borussia Dortmund','dortmund':'Borussia Dortmund','bvb':'Borussia Dortmund',
+  'bayer 04':'Bayer Leverkusen','leverkusen':'Bayer Leverkusen',
+  "borussia m'gladbach":'Borussia Mönchengladbach','gladbach':'Borussia Mönchengladbach',
+  'inter':'Inter Milan','internazionale':'Inter Milan','ac milan':'AC Milan',
+  'juve':'Juventus','as roma':'Roma','psg':'Paris Saint-Germain',
+  'paris sg':'Paris Saint-Germain','paris saint germain':'Paris Saint-Germain',
+  'psv eindhoven':'PSV','az':'AZ Alkmaar','sporting':'Sporting CP','sporting lisbon':'Sporting CP',
+  'fc porto':'Porto',
+};
+
+const LEAGUE_AVGS = {
+  'Premier League':{h:1.53,a:1.15},'Championship':{h:1.50,a:1.10},'League One':{h:1.48,a:1.08},
+  'La Liga':{h:1.58,a:1.16},'Bundesliga':{h:1.73,a:1.32},'2. Bundesliga':{h:1.60,a:1.20},
+  'Serie A':{h:1.47,a:1.10},'Ligue 1':{h:1.46,a:1.10},'Eredivisie':{h:1.82,a:1.40},
+  'Primeira Liga':{h:1.55,a:1.12},'Scottish Premiership':{h:1.60,a:1.20},
+  'Super Lig':{h:1.60,a:1.18},'Champions League':{h:1.80,a:1.40},
+  'Europa League':{h:1.65,a:1.25},'default':{h:1.50,a:1.10},
+};
+
+const resolveTeam = name => {
+  if (!name) return null;
+  if (RATINGS[name]) return name;
+  const k = name.toLowerCase().trim();
+  if (TEAM_ALIASES[k]) return TEAM_ALIASES[k];
+  for (const rk of Object.keys(RATINGS)) {
+    if (rk.toLowerCase() === k) return rk;
+    if (k.length > 4 && (rk.toLowerCase().includes(k) || k.includes(rk.toLowerCase()))) return rk;
+  }
+  return null;
+};
+
+const resolveLeague = lg => {
+  if (!lg) return 'default';
+  for (const lk of Object.keys(LEAGUE_AVGS)) {
+    if (lk !== 'default' && lg.toLowerCase().includes(lk.toLowerCase())) return lk;
+  }
+  return 'default';
+};
+
+const poissonP = (lam, k) => {
+  if (lam <= 0) return k === 0 ? 1 : 0;
+  let logP = -lam + k * Math.log(lam);
+  for (let i = 1; i <= k; i++) logP -= Math.log(i);
+  return Math.exp(logP);
+};
+
+/* Main prediction engine — deterministic Poisson model */
+const poissonPredict = (homeName, awayName, leagueName) => {
+  const DEF = { a: 1.0, d: 1.0 };
+  const hk  = resolveTeam(homeName);
+  const ak  = resolveTeam(awayName);
+  const hR  = hk ? RATINGS[hk] : DEF;
+  const aR  = ak ? RATINGS[ak] : DEF;
+  const lk  = resolveLeague(leagueName);
+  const avg = LEAGUE_AVGS[lk] || LEAGUE_AVGS.default;
+
+  /* λ formula from spec: Home = hAtk × aDef × leagueHomeAvg × 1.10 */
+  const lamH = hR.a * aR.d * avg.h * 1.10;
+  const lamA = aR.a * hR.d * avg.a;
+
+  /* 7×7 probability matrix (0-0 to 6-6) */
+  let hw = 0, dw = 0, aw = 0, bestP = 0, bestHG = 1, bestAG = 0;
+  for (let hg = 0; hg <= 6; hg++) {
+    for (let ag = 0; ag <= 6; ag++) {
+      const p = poissonP(lamH, hg) * poissonP(lamA, ag);
+      if (hg > ag) hw += p; else if (hg === ag) dw += p; else aw += p;
+      if (p > bestP) { bestP = p; bestHG = hg; bestAG = ag; }
+    }
+  }
+
+  const tot  = hw + dw + aw;
+  const hp   = Math.round((hw / tot) * 100);
+  const dp   = Math.round((dw / tot) * 100);
+  const ap   = Math.max(0, 100 - hp - dp);
+  const code = hp >= ap && hp >= dp ? '1' : ap > hp && ap >= dp ? '2' : 'X';
+  const lbl  = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
+
+  return {
+    loading: false, code, label: lbl,
+    score: `${bestHG}-${bestAG}`,
+    advice: `${lbl} — xG: ${lamH.toFixed(2)} vs ${lamA.toFixed(2)}`,
+    hp: `${hp}%`, dp: `${dp}%`, ap: `${ap}%`,
+  };
+};
+
 
 const FIN  = ['FT','AET','PEN','Pen.'];
 const CANC = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
@@ -521,15 +661,18 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         )}
                         {hasPred && (
                             <div className="pred-front" onClick={e=>e.stopPropagation()}>
-                                <div className="pred-front-circle">{pred.code}</div>
+                                <div className={`pred-front-circle${pred.code==='X'?' draw':''}`}>{pred.code}</div>
                                 {pred.score && <div className="pred-front-score">{pred.score}</div>}
                                 <div className="pred-front-probs">
-                                    {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
-                                        <div key={code} className={`pred-front-prob${pred.code===code?' hi':''}`}>
-                                            <span className="pred-front-pct">{pct||'—'}</span>
-                                            <span className="pred-front-code">{code}</span>
-                                        </div>
-                                    ))}
+                                    {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>{
+                                        const hi = pred.code===code;
+                                        return (
+                                            <div key={code} className={`pred-front-prob${hi?(code==='X'?' hi-draw':' hi'):''}`}>
+                                                <span className="pred-front-pct">{pct||'—'}</span>
+                                                <span className="pred-front-code">{code}</span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
@@ -668,24 +811,36 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 )}
                 {pred && !pred.loading && pred.code && (
-                    <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'16px',marginBottom:14}}>
-                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.45)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:10}}>Match Prediction</div>
-                        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
-                            <div style={{width:56,height:56,borderRadius:'50%',background:'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:'0 3px 12px rgba(255,149,0,.45)'}}>{pred.code}</div>
+                    <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'18px',marginBottom:14}}>
+                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:14}}>Poisson Prediction</div>
+                        {/* Outcome circle + label + predicted score */}
+                        <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
+                            <div style={{width:60,height:60,borderRadius:'50%',background:pred.code==='X'?'#86868B':'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:pred.code==='X'?'none':'0 4px 16px rgba(255,149,0,.5)'}}>
+                                {pred.code}
+                            </div>
                             <div>
-                                <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:3}}>{pred.label}</div>
-                                {pred.score && <div style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>Predicted score: {pred.score}</div>}
-                                {pred.advice && <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:2}}>{pred.advice}</div>}
+                                <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:4}}>{pred.label}</div>
+                                {pred.score && <div style={{fontSize:22,fontWeight:700,color:pred.code==='X'?'#86868B':'#FF9500',letterSpacing:'-.5px'}}>{pred.score}</div>}
+                                <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:1}}>Predicted score</div>
                             </div>
                         </div>
-                        <div style={{display:'flex',gap:8}}>
-                            {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>(
-                                <div key={code} style={{flex:1,textAlign:'center',background:pred.code===code?'rgba(255,149,0,.2)':'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 4px',outline:pred.code===code?'1.5px solid #FF9500':'none'}}>
-                                    <div style={{fontSize:16,fontWeight:800,color:pred.code===code?'#FF9500':'#fff'}}>{pct||'—'}</div>
-                                    <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:1}}>{lbl}</div>
-                                </div>
-                            ))}
+                        {/* Probability breakdown */}
+                        <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:8}}>Probability Breakdown</div>
+                        <div style={{display:'flex',gap:6}}>
+                            {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>{
+                                const active = pred.code===code;
+                                const isDraw = code==='X';
+                                const col    = active ? (isDraw?'#86868B':'#FF9500') : '#fff';
+                                return (
+                                    <div key={code} style={{flex:1,textAlign:'center',background:active?(isDraw?'rgba(134,134,139,.18)':'rgba(255,149,0,.18)'):'rgba(255,255,255,.06)',borderRadius:10,padding:'10px 4px',outline:active?`1.5px solid ${isDraw?'#86868B':'#FF9500'}`:'none'}}>
+                                        <div style={{fontSize:20,fontWeight:800,color:col,letterSpacing:'-.3px'}}>{pct||'—'}</div>
+                                        <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:3}}>{lbl}</div>
+                                        <div style={{fontSize:14,fontWeight:700,color:active?col:'rgba(255,255,255,.3)',marginTop:2}}>{code}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
+                        {pred.advice && <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginTop:12,textAlign:'center',fontStyle:'italic'}}>{pred.advice}</div>}
                     </div>
                 )}
                 {pred && !pred.loading && !pred.code && (
@@ -875,8 +1030,8 @@ function App() {
             }
         } catch { /* fall through to local model */ }
 
-        // Local model — seeded by team names for consistent, team-aware predictions
-        setPredCache(prev => ({...prev, [id]: cached || localPredict(id, matchData?.home?.name, matchData?.away?.name)}));
+        // Poisson engine — deterministic, team-aware, zero server dependency
+        setPredCache(prev => ({...prev, [id]: cached || poissonPredict(matchData?.home?.name, matchData?.away?.name, matchData?.leagueName)}));
         fetchingRef.current.delete(id);
         resolvedRef.current.add(id);
     }, []);
