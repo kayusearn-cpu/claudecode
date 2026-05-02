@@ -173,6 +173,21 @@
         .ai-analysis-loading { display:flex; align-items:center; gap:8px; padding:2px 0; }
         .ai-analysis-loading-txt { font-size:12px; color:var(--t3); }
 
+        /* Prediction card block (Forebet-style, shown on every card) */
+        .pred-card-block { margin-top:9px; border-radius:11px; background:#1D1D1F; overflow:hidden; }
+        .pred-card-inner { display:flex; align-items:center; gap:12px; padding:11px 13px; }
+        .pred-card-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 2px 10px rgba(255,149,0,.45); }
+        .pred-card-mid { flex:1; min-width:0; }
+        .pred-card-label { font-size:13px; font-weight:700; color:#fff; letter-spacing:-.1px; }
+        .pred-card-score { font-size:11px; color:rgba(255,255,255,.55); font-weight:500; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .pred-card-pcts { display:flex; gap:6px; flex-shrink:0; }
+        .pred-card-pct { text-align:center; min-width:30px; }
+        .pred-card-pct-val { font-size:12px; font-weight:700; color:#fff; }
+        .pred-card-pct-code { font-size:9px; color:rgba(255,255,255,.4); font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+        .pred-card-pct.hi .pred-card-pct-val { color:#FF9500; }
+        .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
+        .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
+
         /* Prediction outcome circle (Forebet-style) */
         .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
         .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
@@ -462,26 +477,44 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         {c==='live' && <span className="dot"/>}
                         {statusBadgeLabel(match.status, c)}
                     </span>
-                    <div style={{display:'flex',alignItems:'center',gap:7}}>
-                        {pred && (
-                            <span className="card-pred-badge" title={pred.score?`Predicted: ${pred.score}`:undefined}>
-                                {pred.code}{pred.score ? `  ${pred.score}` : ''}
-                            </span>
-                        )}
-                        {id && (
-                            <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
-                                <IcoZap/> Details
-                            </button>
-                        )}
-                    </div>
+                    {id && (
+                        <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
+                            <IcoZap/> Details
+                        </button>
+                    )}
                 </div>
+                {/* Forebet-style prediction block */}
+                {pred?.loading && <div className="pred-card-skel"/>}
+                {pred && !pred.loading && pred.code && (
+                    <div className="pred-card-block" onClick={e=>e.stopPropagation()}>
+                        <div className="pred-card-inner">
+                            <div className="pred-card-circle">{pred.code}</div>
+                            <div className="pred-card-mid">
+                                <div className="pred-card-label">{pred.label}</div>
+                                <div className="pred-card-score">
+                                    {pred.score ? `Score: ${pred.score}` : ''}
+                                    {pred.score && pred.advice ? '  ·  ' : ''}
+                                    {pred.advice || ''}
+                                </div>
+                            </div>
+                            <div className="pred-card-pcts">
+                                {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
+                                    <div key={code} className={`pred-card-pct${pred.code===code?' hi':''}`}>
+                                        <div className="pred-card-pct-val">{pct||'—'}</div>
+                                        <div className="pred-card-pct-code">{code}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
 /* ── Detail Sheet ── */
-const DetailSheet = ({ match, logos, analysis, analysisLoading, onClose, onGetPrediction }) => {
+const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose }) => {
     const c      = cat(match.status);
     const g      = getGoals(match);
     const events = parseEvents(match);
@@ -584,11 +617,35 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, onClose, onGetPr
                     </div>
                 )}
 
-                {/* Prediction CTA */}
-                {fid(match) && (
-                    <button className="btn-primary" style={{marginBottom:10}} onClick={onGetPrediction}>
-                        Get AI Prediction
-                    </button>
+                {/* Prediction block inline */}
+                {pred?.loading && (
+                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'16px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
+                        <div className="spin-sm"/><span style={{fontSize:12,color:'var(--t3)'}}>Loading prediction…</span>
+                    </div>
+                )}
+                {pred && !pred.loading && pred.code && (
+                    <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'16px',marginBottom:14}}>
+                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.45)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:10}}>Match Prediction</div>
+                        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
+                            <div style={{width:56,height:56,borderRadius:'50%',background:'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:'0 3px 12px rgba(255,149,0,.45)'}}>{pred.code}</div>
+                            <div>
+                                <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:3}}>{pred.label}</div>
+                                {pred.score && <div style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>Predicted score: {pred.score}</div>}
+                                {pred.advice && <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:2}}>{pred.advice}</div>}
+                            </div>
+                        </div>
+                        <div style={{display:'flex',gap:8}}>
+                            {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>(
+                                <div key={code} style={{flex:1,textAlign:'center',background:pred.code===code?'rgba(255,149,0,.2)':'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 4px',outline:pred.code===code?'1.5px solid #FF9500':'none'}}>
+                                    <div style={{fontSize:16,fontWeight:800,color:pred.code===code?'#FF9500':'#fff'}}>{pct||'—'}</div>
+                                    <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:1}}>{lbl}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {pred && !pred.loading && !pred.code && (
+                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available for this match.</div>
                 )}
                 <button className="btn-secondary" onClick={onClose}>Close</button>
             </div>
@@ -723,7 +780,6 @@ function App() {
     const [loading,     setLoading]     = useState(true);
     const [waking,      setWaking]      = useState(false);
     const [err,         setErr]         = useState(null);
-    const [predErr,     setPredErr]     = useState(null);
     const [csSport,     setCsSport]     = useState(null);
     const [showToast,   setShowToast]   = useState(false);
     // Team logo cache: name → url
@@ -733,11 +789,10 @@ function App() {
     const [detailLogos, setDetailLogos] = useState({ home:null, away:null, homeLoading:false, awayLoading:false });
     const [analysis,    setAnalysis]    = useState(null);
     const [analysisLoading, setAnalysisLoading] = useState(false);
-    // Prediction sheet
-    const [pred,        setPred]        = useState(null);
-    const [predLoad,    setPredLoad]    = useState(false);
-    // Cache of outcome per fixture id: { [id]: { code:'1'|'2'|'X', score:'2-1' } }
+    // predCache: { [fixtureId]: { loading, code, label, score, advice, hp, dp, ap } }
     const [predCache,   setPredCache]   = useState({});
+    const fetchingRef = useRef(new Set());
+    const resolvedRef = useRef(new Set());
 
     /* ── Fetch scores ── */
     const load = useCallback(async (isManual=false) => {
@@ -760,7 +815,6 @@ function App() {
                     items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
                 });
                 setMatches(flat);
-                // Pre-fetch logos for visible teams in background
                 fetchLogosForMatches(flat.slice(0,30));
             } else throw new Error("Bad format");
         } catch(e) {
@@ -789,6 +843,10 @@ function App() {
         const iv=setInterval(()=>load(false), 60000);
         return ()=>{ clearTimeout(t); clearInterval(iv); };
     }, [load]);
+
+    useEffect(() => {
+        if (matches.length > 0) autoFetchPredictions(matches);
+    }, [matches, autoFetchPredictions]);
 
     /* ── Open match detail ── */
     const openDetail = useCallback(async m => {
@@ -829,27 +887,45 @@ function App() {
         finally { setAnalysisLoading(false); }
     }, [logoCache]);
 
-    /* ── Get prediction ── */
-    const fetchPred = useCallback(async m => {
-        const id = fid(m);
-        if (!id) { setPredErr("No fixture ID — prediction unavailable."); return; }
-        setPredErr(null); setPredLoad(true);
+    /* ── Fetch one prediction and store in cache ── */
+    const fetchOnePred = useCallback(async id => {
+        if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
+        fetchingRef.current.add(id);
+        setPredCache(prev => ({...prev, [id]: { loading: true }}));
         try {
             const res  = await fetch(`${BACKEND_URL}/api/get-predictions?fixture=${id}`);
-            if (!res.ok) throw new Error();
             const data = await res.json();
-            const p = data.response?.[0]||null;
-            if (!p) throw new Error();
-            // Cache the outcome so the match card can show the badge
-            const outcome = getPredOutcome(p.predictions?.percent);
-            const score   = (p.predictions?.goals?.home != null && p.predictions?.goals?.away != null)
-                ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null;
-            setPredCache(prev => ({...prev, [id]: { code: outcome.code, score }}));
-            setDetailMatch(null);
-            setPred(p);
-        } catch { setPredErr("Prediction not available for this match."); }
-        finally { setPredLoad(false); }
+            const p    = data.response?.[0];
+            if (!p?.predictions) throw new Error();
+            const outcome  = getPredOutcome(p.predictions.percent);
+            const hasScore = p.predictions.goals?.home != null && p.predictions.goals?.away != null;
+            setPredCache(prev => ({...prev, [id]: {
+                loading: false,
+                code:    outcome.code,
+                label:   outcome.label,
+                score:   hasScore ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null,
+                advice:  p.predictions.advice || null,
+                hp:      p.predictions.percent?.home || '—',
+                dp:      p.predictions.percent?.draw || '—',
+                ap:      p.predictions.percent?.away || '—',
+            }}));
+        } catch {
+            setPredCache(prev => ({...prev, [id]: { loading: false, code: null }}));
+        } finally {
+            fetchingRef.current.delete(id);
+            resolvedRef.current.add(id);
+        }
     }, []);
+
+    /* ── Auto-fetch predictions for all matches ── */
+    const autoFetchPredictions = useCallback(async ms => {
+        const ids = [...new Set(ms.map(m => fid(m)).filter(Boolean))];
+        for (const id of ids) {
+            if (resolvedRef.current.has(id) || fetchingRef.current.has(id)) continue;
+            await fetchOnePred(id);
+            await new Promise(r => setTimeout(r, 300));
+        }
+    }, [fetchOnePred]);
 
     const toggleFav = useCallback(id=>{
         if(!id)return;
@@ -937,7 +1013,6 @@ function App() {
                         </div>
                         {waking && <div className="wake-bar"><div className="spin" style={{flexShrink:0}}/><span style={{fontSize:13,fontWeight:500,color:'var(--t2)'}}>Waking up server — up to 30 s on first load…</span></div>}
                         {err&&!loading && <div className="err-bar"><span className="err-txt">{err}</span><button className="retry-btn" onClick={()=>load(true)}>Retry</button></div>}
-                        {predErr && <div className="alert-bar"><span style={{flex:1,fontSize:13,fontWeight:500}}>{predErr}</span><button className="x-btn" onClick={()=>setPredErr(null)}>×</button></div>}
 
                         <Grp label="🔴 Live Now"/>
                         {loading?[1,2,3].map(i=><Skel key={i}/>):live.length>0?live.map(m=>card(m)):<div style={{background:'var(--surface)',borderRadius:'var(--r)',boxShadow:'var(--card-shadow)',padding:'32px 20px',textAlign:'center',marginBottom:9}}><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No live matches right now</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Live matches appear here automatically.</div></div>}
@@ -1021,22 +1096,9 @@ function App() {
                     logos={detailLogos}
                     analysis={analysis}
                     analysisLoading={analysisLoading}
+                    pred={predCache[fid(detailMatch)]||null}
                     onClose={()=>{setDetailMatch(null);setAnalysis(null);}}
-                    onGetPrediction={()=>fetchPred(detailMatch)}
                 />
-            )}
-
-            {/* Prediction sheet */}
-            {pred && <PredSheet data={pred} onClose={()=>setPred(null)}/>}
-
-            {/* Prediction loading */}
-            {predLoad && (
-                <div className="pred-loading">
-                    <div className="pred-loading-box">
-                        <div className="spin" style={{width:26,height:26,borderWidth:2.5}}/>
-                        <span className="pred-loading-txt">Loading prediction</span>
-                    </div>
-                </div>
             )}
 
             {/* Bottom nav */}
