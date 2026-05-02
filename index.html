@@ -495,10 +495,13 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                             }
                         </div>
 
-                        {/* Prediction: loading skeleton */}
-                        {pred?.loading && <div className="pred-skel-circle skel"/>}
-
-                        {/* Prediction: outcome circle + probs + predicted score */}
+                        {/* Prediction column — always rendered */}
+                        {(!pred || pred.loading) && (
+                            <div className="pred-front">
+                                <div className="pred-skel-circle skel"/>
+                                <div style={{width:44,height:10,marginTop:3,borderRadius:4}} className="skel"/>
+                            </div>
+                        )}
                         {hasPred && (
                             <div className="pred-front" onClick={e=>e.stopPropagation()}>
                                 <div className="pred-front-circle">{pred.code}</div>
@@ -513,9 +516,11 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                                 </div>
                             </div>
                         )}
-
-                        {/* Spacer when no prediction available */}
-                        {pred && !pred.loading && !pred.code && <div style={{width:44}}/>}
+                        {pred && !pred.loading && !pred.code && (
+                            <div className="pred-front">
+                                <div style={{width:44,height:44,borderRadius:'50%',background:'var(--bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'var(--t3)'}}>?</div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -816,99 +821,6 @@ function App() {
     const fetchingRef = useRef(new Set());
     const resolvedRef = useRef(new Set());
 
-    /* ── Fetch scores ── */
-    const load = useCallback(async (isManual=false) => {
-        setLoading(true); setErr(null);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        const wt = setTimeout(() => setWaking(true), 4000);
-        try {
-            const ctrl = new AbortController();
-            const tt   = setTimeout(()=>ctrl.abort(), 35000);
-            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
-            clearTimeout(tt); clearTimeout(wt); setWaking(false);
-            if (!res.ok) throw new Error(`${res.status}`);
-            const data = await res.json();
-            if (data.livescore?.league) {
-                const flat=[], leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
-                leagues.forEach(lg=>{
-                    if(!lg.match)return;
-                    const items=Array.isArray(lg.match)?lg.match:[lg.match];
-                    items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
-                });
-                setMatches(flat);
-                fetchLogosForMatches(flat.slice(0,30));
-            } else throw new Error("Bad format");
-        } catch(e) {
-            clearTimeout(wt); setWaking(false);
-            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
-        } finally { setLoading(false); }
-    }, []);
-
-    /* ── Background logo pre-fetch for cards ── */
-    const fetchLogosForMatches = useCallback(async (ms) => {
-        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
-        for (const name of names) {
-            if (logoCache[name] !== undefined) continue;
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                setLogoCache(prev => ({...prev, [name]: data.logo || null}));
-            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
-            await new Promise(r=>setTimeout(r,120)); // gentle rate-limit
-        }
-    }, [logoCache]);
-
-    useEffect(() => {
-        const t=setTimeout(()=>setSplash(false),3000);
-        load();
-        const iv=setInterval(()=>load(false), 60000);
-        return ()=>{ clearTimeout(t); clearInterval(iv); };
-    }, [load]);
-
-    useEffect(() => {
-        if (matches.length > 0) autoFetchPredictions(matches);
-    }, [matches, autoFetchPredictions]);
-
-    /* ── Open match detail ── */
-    const openDetail = useCallback(async m => {
-        setDetailMatch(m);
-        setAnalysis(null);
-        setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
-
-        // Fetch logos
-        const getLogo = async name => {
-            if (logoCache[name] !== undefined) return logoCache[name];
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                return data.logo||null;
-            } catch { return null; }
-        };
-
-        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
-        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
-        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
-
-        // Fetch AI analysis
-        setAnalysisLoading(true);
-        try {
-            const g = getGoals(m);
-            const p = new URLSearchParams({
-                home:   m.home?.name||'',
-                away:   m.away?.name||'',
-                league: m.leagueName||'',
-                status: statusLabel(m.status)||m.status||'',
-                score:  g?`${g.h}-${g.a}`:'Not started',
-                ht:     m.ht?.score||''
-            });
-            const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
-            const data = await res.json();
-            setAnalysis(data.analysis||null);
-        } catch { setAnalysis(null); }
-        finally { setAnalysisLoading(false); }
-    }, [logoCache]);
-
     /* ── Fetch one prediction and store in cache ── */
     const fetchOnePred = useCallback(async id => {
         if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
@@ -948,6 +860,94 @@ function App() {
             await new Promise(r => setTimeout(r, 300));
         }
     }, [fetchOnePred]);
+
+    /* ── Fetch scores ── */
+    const load = useCallback(async (isManual=false) => {
+        setLoading(true); setErr(null);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        const wt = setTimeout(() => setWaking(true), 4000);
+        try {
+            const ctrl = new AbortController();
+            const tt   = setTimeout(()=>ctrl.abort(), 35000);
+            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
+            clearTimeout(tt); clearTimeout(wt); setWaking(false);
+            if (!res.ok) throw new Error(`${res.status}`);
+            const data = await res.json();
+            if (data.livescore?.league) {
+                const flat=[], leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
+                leagues.forEach(lg=>{
+                    if(!lg.match)return;
+                    const items=Array.isArray(lg.match)?lg.match:[lg.match];
+                    items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
+                });
+                setMatches(flat);
+                fetchLogosForMatches(flat.slice(0,30));
+                autoFetchPredictions(flat);
+            } else throw new Error("Bad format");
+        } catch(e) {
+            clearTimeout(wt); setWaking(false);
+            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
+        } finally { setLoading(false); }
+    }, [autoFetchPredictions]);
+
+    /* ── Background logo pre-fetch for cards ── */
+    const fetchLogosForMatches = useCallback(async (ms) => {
+        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
+        for (const name of names) {
+            if (logoCache[name] !== undefined) continue;
+            try {
+                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                setLogoCache(prev => ({...prev, [name]: data.logo || null}));
+            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
+            await new Promise(r=>setTimeout(r,120));
+        }
+    }, [logoCache]);
+
+    useEffect(() => {
+        const t=setTimeout(()=>setSplash(false),3000);
+        load();
+        const iv=setInterval(()=>load(false), 60000);
+        return ()=>{ clearTimeout(t); clearInterval(iv); };
+    }, [load]);
+
+    /* ── Open match detail ── */
+    const openDetail = useCallback(async m => {
+        setDetailMatch(m);
+        setAnalysis(null);
+        setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
+
+        const getLogo = async name => {
+            if (logoCache[name] !== undefined) return logoCache[name];
+            try {
+                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                return data.logo||null;
+            } catch { return null; }
+        };
+
+        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
+        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
+        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
+
+        setAnalysisLoading(true);
+        try {
+            const g = getGoals(m);
+            const p = new URLSearchParams({
+                home:   m.home?.name||'',
+                away:   m.away?.name||'',
+                league: m.leagueName||'',
+                status: statusLabel(m.status)||m.status||'',
+                score:  g?`${g.h}-${g.a}`:'Not started',
+                ht:     m.ht?.score||''
+            });
+            const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
+            const data = await res.json();
+            setAnalysis(data.analysis||null);
+        } catch { setAnalysis(null); }
+        finally { setAnalysisLoading(false); }
+    }, [logoCache]);
 
     const toggleFav = useCallback(id=>{
         if(!id)return;
