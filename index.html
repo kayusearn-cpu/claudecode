@@ -188,6 +188,22 @@
         .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
         .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
 
+        /* Front prediction column — Forebet-style, always visible on the card */
+        .card-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+        .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; }
+        .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+        .card-scores-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; min-width:20px; }
+        .pred-front { display:flex; flex-direction:column; align-items:center; gap:3px; }
+        .pred-front-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.45); flex-shrink:0; }
+        .pred-front-score { font-size:9px; font-weight:700; color:var(--t2); letter-spacing:.2px; }
+        .pred-front-probs { display:flex; gap:6px; }
+        .pred-front-prob { display:flex; flex-direction:column; align-items:center; }
+        .pred-front-pct { font-size:10px; font-weight:700; color:var(--t2); line-height:1.2; }
+        .pred-front-code { font-size:8px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; }
+        .pred-front-prob.hi .pred-front-pct { color:#FF9500; }
+        .pred-front-prob.hi .pred-front-code { color:rgba(255,149,0,.7); }
+        .pred-skel-circle { width:44px; height:44px; border-radius:50%; flex-shrink:0; }
+
         /* Prediction outcome circle (Forebet-style) */
         .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
         .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
@@ -441,6 +457,7 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
     const g   = getGoals(match);
     const id  = fid(match);
     const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
+    const hasPred = pred && !pred.loading && pred.code;
 
     return (
         <div
@@ -455,23 +472,53 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         <IcoHeart on={isFav}/>
                     </button>
                 </div>
-                <div className="card-body">
-                    {/* Small logos if available */}
-                    <div className="card-logo-col">
-                        <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
-                        <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
+
+                {/* Main row: teams | score | prediction circle */}
+                <div className="card-row">
+                    <div className="card-left">
+                        <div className="card-logo-col">
+                            <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
+                            <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
+                        </div>
+                        <div className="card-teams">
+                            <span className="team-nm">{match.home?.name||'—'}</span>
+                            <span className="team-nm">{match.away?.name||'—'}</span>
+                        </div>
                     </div>
-                    <div className="card-teams">
-                        <span className="team-nm">{match.home?.name||'—'}</span>
-                        <span className="team-nm">{match.away?.name||'—'}</span>
-                    </div>
-                    <div className="card-scores">
-                        {g
-                            ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
-                            : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
-                        }
+
+                    <div className="card-right-col">
+                        {/* Current score */}
+                        <div className="card-scores-col">
+                            {g
+                                ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
+                                : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
+                            }
+                        </div>
+
+                        {/* Prediction: loading skeleton */}
+                        {pred?.loading && <div className="pred-skel-circle skel"/>}
+
+                        {/* Prediction: outcome circle + probs + predicted score */}
+                        {hasPred && (
+                            <div className="pred-front" onClick={e=>e.stopPropagation()}>
+                                <div className="pred-front-circle">{pred.code}</div>
+                                {pred.score && <div className="pred-front-score">{pred.score}</div>}
+                                <div className="pred-front-probs">
+                                    {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
+                                        <div key={code} className={`pred-front-prob${pred.code===code?' hi':''}`}>
+                                            <span className="pred-front-pct">{pct||'—'}</span>
+                                            <span className="pred-front-code">{code}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Spacer when no prediction available */}
+                        {pred && !pred.loading && !pred.code && <div style={{width:44}}/>}
                     </div>
                 </div>
+
                 <div className="card-foot">
                     <span className={`s-badge ${badgeClass}`}>
                         {c==='live' && <span className="dot"/>}
@@ -483,31 +530,6 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                         </button>
                     )}
                 </div>
-                {/* Forebet-style prediction block */}
-                {pred?.loading && <div className="pred-card-skel"/>}
-                {pred && !pred.loading && pred.code && (
-                    <div className="pred-card-block" onClick={e=>e.stopPropagation()}>
-                        <div className="pred-card-inner">
-                            <div className="pred-card-circle">{pred.code}</div>
-                            <div className="pred-card-mid">
-                                <div className="pred-card-label">{pred.label}</div>
-                                <div className="pred-card-score">
-                                    {pred.score ? `Score: ${pred.score}` : ''}
-                                    {pred.score && pred.advice ? '  ·  ' : ''}
-                                    {pred.advice || ''}
-                                </div>
-                            </div>
-                            <div className="pred-card-pcts">
-                                {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
-                                    <div key={code} className={`pred-card-pct${pred.code===code?' hi':''}`}>
-                                        <div className="pred-card-pct-val">{pct||'—'}</div>
-                                        <div className="pred-card-pct-code">{code}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
