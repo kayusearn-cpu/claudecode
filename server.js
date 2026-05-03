@@ -342,6 +342,79 @@ app.get('/api/match-analysis', async (req, res) => {
     }
 });
 
+// ─── Football-data.org upcoming fixtures ─────────────────────────────────────
+let upcomingCache     = null;
+let upcomingCacheTime = 0;
+const UPCOMING_TTL    = 5 * 60 * 1000; // 5 min — free tier: 10 req/min
+
+app.get('/api/upcoming', async (req, res) => {
+    if (upcomingCache && (Date.now() - upcomingCacheTime < UPCOMING_TTL)) {
+        return res.json(upcomingCache);
+    }
+    const key = process.env.FOOTBALL_DATA_KEY;
+    if (!key) return res.json({ matches: [] });
+
+    const today    = new Date().toISOString().split('T')[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+    try {
+        const r = await axios.get('https://api.football-data.org/v4/matches', {
+            params:  { dateFrom: today, dateTo: tomorrow },
+            headers: { 'X-Auth-Token': key },
+            timeout: 10000,
+        });
+
+        // Respect rate-limit header as instructed by football-data.org
+        const rem = parseInt(r.headers['x-requests-available-minute'] || '99', 10);
+        if (rem < 3) console.warn(`football-data.org rate limit low: ${rem} remaining this minute`);
+
+        const matches = (r.data.matches || []).map(m => {
+            const date = m.utcDate ? m.utcDate.split('T')[0] : today;
+            const time = m.utcDate ? m.utcDate.split('T')[1].substring(0, 5) : '';
+            let status;
+            switch (m.status) {
+                case 'IN_PLAY':   status = 'LIVE';   break;
+                case 'PAUSED':    status = 'HT';     break;
+                case 'FINISHED':  status = 'FT';     break;
+                case 'POSTPONED': status = 'Postp.'; break;
+                case 'SUSPENDED': status = 'Susp.';  break;
+                case 'CANCELLED': status = 'Canc.';  break;
+                default:          status = time || 'NS';
+            }
+            return {
+                id:        String(m.id),
+                static_id: String(m.id),
+                date, time, status,
+                leagueName: m.competition?.name || '',
+                country:    m.area?.name        || '',
+                home: {
+                    id:    String(m.homeTeam?.id   || ''),
+                    name:  m.homeTeam?.shortName   || m.homeTeam?.name || '',
+                    goals: m.score?.fullTime?.home != null ? String(m.score.fullTime.home) : null,
+                },
+                away: {
+                    id:    String(m.awayTeam?.id   || ''),
+                    name:  m.awayTeam?.shortName   || m.awayTeam?.name || '',
+                    goals: m.score?.fullTime?.away != null ? String(m.score.fullTime.away) : null,
+                },
+                ht: m.score?.halfTime?.home != null
+                    ? { score: `[${m.score.halfTime.home}-${m.score.halfTime.away}]` } : null,
+                ft: m.score?.fullTime?.home != null
+                    ? { score: `[${m.score.fullTime.home}-${m.score.fullTime.away}]` } : null,
+            };
+        });
+
+        upcomingCache     = { matches };
+        upcomingCacheTime = Date.now();
+        console.log(`football-data.org: ${matches.length} matches loaded`);
+        return res.json(upcomingCache);
+    } catch (e) {
+        console.error('football-data.org failed:', e.message);
+        if (upcomingCache) return res.json(upcomingCache); // serve stale
+        return res.json({ matches: [] });
+    }
+});
+
 app.listen(port, () => {
     console.log(`MagicBettingTips backend running on port ${port}`);
 });
