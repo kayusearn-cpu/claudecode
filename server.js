@@ -164,7 +164,8 @@ function buildFromAPIFootball(fixtures) {
 }
 
 // ─── /api/scores ──────────────────────────────────────────────────────────────
-//  Priority: Sportmonks → API-Football → StatPal → stale cache
+//  Priority: StatPal → API-Football → Sportmonks → stale cache
+//  StatPal covers 100+ global leagues; Sportmonks free plan only covers a few.
 app.get('/api/scores', async (req, res) => {
     if (scoresCache && (Date.now() - scoresCacheTime < SCORES_TTL)) return res.json(scoresCache);
 
@@ -173,19 +174,21 @@ app.get('/api/scores', async (req, res) => {
     const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
     const today      = new Date().toISOString().split('T')[0];
 
-    // ── 1: Sportmonks ─────────────────────────────────────────────────────────
-    if (smKey) {
-        try {
-            const fixtures = await smFixturesByDate(today, smKey);
-            if (fixtures.length > 0) {
-                const result = buildFromSportmonks(fixtures);
-                scoresCache = result; scoresCacheTime = Date.now();
-                console.log(`Sportmonks: ${fixtures.length} fixtures loaded`);
-                return res.json(result);
-            }
-            console.warn('Sportmonks: 0 fixtures for today');
-        } catch (e) { console.error('Sportmonks failed:', e.message); }
-    }
+    // ── 1: StatPal ────────────────────────────────────────────────────────────
+    try {
+        const r = await axios.get('https://statpal.io/api/v1/soccer/livescores', {
+            params: { access_key: statpalKey }, timeout: 10000,
+        });
+        const result = r.data;
+        if (result.livescore) result.livescore.source = 'statpal';
+        const count = result.livescore?.league?.length || 0;
+        if (count > 0) {
+            scoresCache = result; scoresCacheTime = Date.now();
+            console.log(`StatPal: ${count} leagues loaded`);
+            return res.json(result);
+        }
+        console.warn('StatPal: returned 0 leagues');
+    } catch (e) { console.error('StatPal failed:', e.message); }
 
     // ── 2: API-Football ───────────────────────────────────────────────────────
     if (apfKey) {
@@ -204,17 +207,19 @@ app.get('/api/scores', async (req, res) => {
         } catch (e) { console.error('API-Football failed:', e.message); }
     }
 
-    // ── 3: StatPal ────────────────────────────────────────────────────────────
-    try {
-        const r = await axios.get('https://statpal.io/api/v1/soccer/livescores', {
-            params: { access_key: statpalKey }, timeout: 10000,
-        });
-        const result = r.data;
-        if (result.livescore) result.livescore.source = 'statpal';
-        scoresCache = result; scoresCacheTime = Date.now();
-        console.log('StatPal: data loaded');
-        return res.json(result);
-    } catch (e) { console.error('StatPal failed:', e.message); }
+    // ── 3: Sportmonks (limited league coverage on free plan) ──────────────────
+    if (smKey) {
+        try {
+            const fixtures = await smFixturesByDate(today, smKey);
+            if (fixtures.length > 0) {
+                const result = buildFromSportmonks(fixtures);
+                scoresCache = result; scoresCacheTime = Date.now();
+                console.log(`Sportmonks: ${fixtures.length} fixtures loaded`);
+                return res.json(result);
+            }
+            console.warn('Sportmonks: 0 fixtures for today');
+        } catch (e) { console.error('Sportmonks failed:', e.message); }
+    }
 
     if (scoresCache) { console.warn('Serving stale cache'); return res.json(scoresCache); }
     res.status(500).json({ error: 'All data sources failed' });
