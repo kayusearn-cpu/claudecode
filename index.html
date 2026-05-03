@@ -1069,6 +1069,7 @@ function App() {
                 setMatches(flat);
                 fetchLogosForMatches(flat.slice(0,30));
                 autoFetchPredictions(flat);
+                fetchUpcomingMatches(flat);
             } else throw new Error("Bad format");
         } catch(e) {
             clearTimeout(wt); setWaking(false);
@@ -1089,6 +1090,29 @@ function App() {
             await new Promise(r=>setTimeout(r,120));
         }
     }, [logoCache]);
+
+    /* ── Fetch upcoming fixtures from football-data.org via backend ── */
+    const fetchUpcomingMatches = useCallback(async (existingFlat) => {
+        const existingPairs = new Set(
+            existingFlat.map(m => `${(m.home?.name||'').toLowerCase()}|${(m.away?.name||'').toLowerCase()}`)
+        );
+        try {
+            const res  = await fetch(`${BACKEND_URL}/api/upcoming`, { signal: AbortSignal.timeout(12000) });
+            const data = await res.json();
+            const newMatches = (data.matches || []).filter(m => {
+                if (!m.home?.name || !m.away?.name) return false;
+                const pair = `${m.home.name.toLowerCase()}|${m.away.name.toLowerCase()}`;
+                if (existingPairs.has(pair)) return false;
+                existingPairs.add(pair);
+                return true;
+            });
+            if (newMatches.length > 0) {
+                setMatches(prev => [...prev, ...newMatches]);
+                fetchLogosForMatches(newMatches.slice(0, 20));
+                autoFetchPredictions(newMatches);
+            }
+        } catch (e) { console.warn('Upcoming fetch failed:', e.message); }
+    }, [autoFetchPredictions]);
 
     useEffect(() => {
         const t=setTimeout(()=>setSplash(false),3000);
