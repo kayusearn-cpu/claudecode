@@ -1086,6 +1086,10 @@ function App() {
                     const items=Array.isArray(lg.match)?lg.match:[lg.match];
                     items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
                 });
+                // Pre-populate logo cache from Sportmonks image_path (skips TheSportsDB lookup)
+                const smLogos = {};
+                flat.forEach(m=>{ if(m.home?.logo) smLogos[m.home.name]=m.home.logo; if(m.away?.logo) smLogos[m.away.name]=m.away.logo; });
+                if(Object.keys(smLogos).length>0) setLogoCache(prev=>({...prev,...smLogos}));
                 setMatches(flat);
                 fetchLogosForMatches(flat.slice(0,30));
                 autoFetchPredictions(flat);
@@ -1127,6 +1131,9 @@ function App() {
                 return true;
             });
             if (newMatches.length > 0) {
+                const smLogos = {};
+                newMatches.forEach(m=>{ if(m.home?.logo) smLogos[m.home.name]=m.home.logo; if(m.away?.logo) smLogos[m.away.name]=m.away.logo; });
+                if(Object.keys(smLogos).length>0) setLogoCache(prev=>({...prev,...smLogos}));
                 setMatches(prev => [...prev, ...newMatches]);
                 fetchLogosForMatches(newMatches.slice(0, 20));
                 autoFetchPredictions(newMatches);
