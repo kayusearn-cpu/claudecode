@@ -446,13 +446,27 @@ const poissonP = (lam, k) => {
   return Math.exp(logP);
 };
 
+/* Deterministic float in [0,1] from a string — for unknown-team ratings */
+const nameHash = s => {
+  let h = 5381;
+  for (let i = 0; i < (s || '').length; i++) h = (Math.imul(h, 33) ^ s.charCodeAt(i)) | 0;
+  return ((h >>> 0) % 9973) / 9973;
+};
+
 /* Main prediction engine — deterministic Poisson model */
 const poissonPredict = (homeName, awayName, leagueName) => {
-  const DEF = { a: 1.0, d: 1.0 };
   const hk  = resolveTeam(homeName);
   const ak  = resolveTeam(awayName);
-  const hR  = hk ? RATINGS[hk] : DEF;
-  const aR  = ak ? RATINGS[ak] : DEF;
+  // Unknown teams get unique ratings derived from their name — prevents all unknowns
+  // producing the same output when both sides aren't in the RATINGS table.
+  const teamRating = (name, known) => {
+    if (known) return RATINGS[known];
+    const r1 = nameHash(name || 'x');
+    const r2 = nameHash((name || 'x') + '_d');
+    return { a: 0.78 + r1 * 0.88, d: 0.78 + r2 * 0.72 };
+  };
+  const hR  = teamRating(homeName, hk);
+  const aR  = teamRating(awayName, ak);
   const lk  = resolveLeague(leagueName);
   const avg = LEAGUE_AVGS[lk] || LEAGUE_AVGS.default;
 
