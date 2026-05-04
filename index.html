@@ -846,7 +846,14 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                 )}
                 {pred && !pred.loading && pred.code && (
                     <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'18px',marginBottom:14}}>
-                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:14}}>Poisson Prediction</div>
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+                            <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.5px'}}>Weighted Prediction</div>
+                            <div style={{display:'flex',alignItems:'center',gap:4,flexWrap:'wrap',justifyContent:'flex-end'}}>
+                                {pred.confidence!=null&&<span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,.55)',background:'rgba(255,255,255,.1)',padding:'2px 7px',borderRadius:100}}>{Math.round(pred.confidence*100)}% conf.</span>}
+                                {pred.aiUsed&&<span style={{fontSize:9,fontWeight:700,color:'#0A84FF',background:'rgba(10,132,255,.2)',padding:'2px 7px',borderRadius:100}}>AI Resolved</span>}
+                                {(pred.sources||[]).map(s=><span key={s} style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',background:'rgba(255,255,255,.08)',padding:'2px 6px',borderRadius:100}}>{s}</span>)}
+                            </div>
+                        </div>
                         {/* Outcome circle + label + predicted score */}
                         <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
                             <div style={{width:60,height:60,borderRadius:'50%',background:pred.code==='X'?'#86868B':'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:pred.code==='X'?'none':'0 4px 16px rgba(255,149,0,.5)'}}>
@@ -1052,14 +1059,17 @@ function App() {
                 const outcome  = getPredOutcome(p.predictions.percent);
                 const hasScore = p.predictions.goals?.home != null && p.predictions.goals?.away != null;
                 cached = {
-                    loading: false,
-                    code:    outcome.code,
-                    label:   outcome.label,
-                    score:   hasScore ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null,
-                    advice:  p.predictions.advice || null,
-                    hp:      p.predictions.percent?.home || '—',
-                    dp:      p.predictions.percent?.draw || '—',
-                    ap:      p.predictions.percent?.away || '—',
+                    loading:    false,
+                    code:       outcome.code,
+                    label:      outcome.label,
+                    score:      hasScore ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null,
+                    advice:     p.predictions.advice || null,
+                    hp:         p.predictions.percent?.home || '—',
+                    dp:         p.predictions.percent?.draw || '—',
+                    ap:         p.predictions.percent?.away || '—',
+                    confidence: data.meta?.confidence ?? null,
+                    sources:    data.meta?.sources    ?? [],
+                    aiUsed:     data.meta?.aiUsed     ?? false,
                 };
             }
         } catch { /* fall through to local model */ }
@@ -1340,6 +1350,13 @@ function App() {
                                                             </div>
                                                             {pred.score&&<div className="tip-score-line">Predicted score: {pred.score}</div>}
                                                             {pred.advice&&<div className="tip-advice">{pred.advice}</div>}
+                                                            {(pred.confidence!=null||(pred.sources?.length>0)||pred.aiUsed)&&(
+                                                                <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:4,justifyContent:'center',marginTop:8}}>
+                                                                    {pred.confidence!=null&&<span style={{fontSize:10,fontWeight:700,color:'var(--t3)',background:'var(--bg)',padding:'2px 8px',borderRadius:100}}>{Math.round(pred.confidence*100)}% conf.</span>}
+                                                                    {pred.aiUsed&&<span style={{fontSize:10,fontWeight:700,color:'var(--blue)',background:'rgba(0,122,255,.1)',padding:'2px 8px',borderRadius:100}}>AI Resolved</span>}
+                                                                    {(pred.sources||[]).map(s=><span key={s} style={{fontSize:10,fontWeight:600,color:'var(--t3)',background:'var(--bg)',padding:'2px 7px',borderRadius:100}}>{s}</span>)}
+                                                                </div>
+                                                            )}
                                                         </>
                                                     }
                                                 </div>
