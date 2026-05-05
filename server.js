@@ -1,641 +1,391 @@
-// backend/server.js
+'use strict';
 const express = require('express');
-const axios   = require('axios');
 const cors    = require('cors');
+const https   = require('https');
 
-const app  = express();
-const port = process.env.PORT || 3000;
-const SM   = 'https://api.sportmonks.com/v3/football';
-
+const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ─── Scores cache ─────────────────────────────────────────────────────────────
-let scoresCache     = null;
-let scoresCacheTime = 0;
-const SCORES_TTL    = 60 * 1000;
+const PORT       = process.env.PORT               || 3000;
+const OPENAI_KEY = process.env.OPENAI_API_KEY      || '';
+const TG_TOKEN   = process.env.TELEGRAM_BOT_TOKEN  || '';
+const ADMIN_ID   = process.env.TELEGRAM_ADMIN_ID   || '';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// WEIGHTED PREDICTION ENGINE
-// ═══════════════════════════════════════════════════════════════════════════════
+// ── In-memory store ───────────────────────────────────────────────────────────
+// matches: { [key]: { id, home:{name,score}, away:{name,score}, leagueName, country, time, status } }
+// preds:   { [key]: { h, d, a, score, advice, confidence, sources, aiUsed } }
+let store = { matches: {}, preds: {} };
 
-// Per-API accuracy stats (seeded with calibrated estimates, updated in-memory)
-const apiStats = {
-    sportmonks:     { wins: 62, losses: 38 },
-    'api-football': { wins: 55, losses: 45 },
-    openai:         { wins: 58, losses: 42 },
-    poisson:        { wins: 50, losses: 50 },
-};
-
-// League-specific multipliers — some APIs are stronger in certain competitions
-const LEAGUE_FACTORS = {
-    sportmonks: {
-        'Premier League': 1.15, 'La Liga': 1.12, 'Bundesliga': 1.10,
-        'Serie A': 1.10, 'Ligue 1': 1.08, 'Champions League': 1.12,
-        'Europa League': 1.08, default: 1.0,
-    },
-    'api-football': {
-        'Champions League': 1.15, 'Europa League': 1.10,
-        'Premier League': 1.08, default: 1.0,
-    },
-    openai:  { default: 1.05 },
-    poisson: { default: 0.90 },
-};
-
-function getWeight(source, leagueName) {
-    const stats    = apiStats[source] || { wins: 50, losses: 50 };
-    const accuracy = stats.wins / (stats.wins + stats.losses);
-    const factors  = LEAGUE_FACTORS[source] || {};
-    let lf = factors.default ?? 1.0;
-    if (leagueName) {
-        for (const [lg, f] of Object.entries(factors)) {
-            if (lg !== 'default' && leagueName.toLowerCase().includes(lg.toLowerCase())) {
-                lf = f; break;
-            }
-        }
-    }
-    return accuracy * lf;
+function matchKey(home, away) {
+    return `${(home || '').trim().toLowerCase()}|${(away || '').trim().toLowerCase()}`;
 }
 
-// Normalize any source response into standard prediction object
-function normPred(source, h, d, a, score) {
-    h = Math.max(0, Math.round(h));
-    d = Math.max(0, Math.round(d));
-    a = Math.max(0, Math.round(a));
-    const max = Math.max(h, d, a);
-    const prediction = (d === max && d >= h && d >= a) ? 'DRAW'
-        : (a > h) ? 'AWAY_WIN' : 'HOME_WIN';
-    return { source, prediction, h, d, a, score: score || null, confidence: max / 100 };
-}
-
-// Weighted aggregation — blends probabilities by API weight × confidence
-function aggregate(preds, leagueName) {
-    if (!preds.length) return null;
-    const outcomeScores = { HOME_WIN: 0, DRAW: 0, AWAY_WIN: 0 };
-    let wH = 0, wD = 0, wA = 0, wTotal = 0;
-
-    for (const p of preds) {
-        const w = getWeight(p.source, leagueName);
-        outcomeScores[p.prediction] += w * p.confidence;
-        wH += p.h * w; wD += p.d * w; wA += p.a * w;
-        wTotal += w;
-    }
-
-    const h = Math.round(wH / wTotal);
-    const d = Math.round(wD / wTotal);
-    const a = Math.max(0, 100 - h - d);
-
-    const sorted   = Object.entries(outcomeScores).sort((x, y) => y[1] - x[1]);
-    const winner   = sorted[0][0];
-    const topScore = sorted[0][1];
-    const total    = Object.values(outcomeScores).reduce((s, v) => s + v, 0);
-
-    // Conflict: top outcome holds <45% of weighted vote — too close to call alone
-    const isConflict = total > 0 && topScore / total < 0.45;
-    const confidence = total > 0 ? Math.round((topScore / total) * 100) / 100 : 0.5;
-
-    return { winner, h, d, a, confidence, isConflict, sources: preds.map(p => p.source) };
-}
-
-// Record actual result to update accuracy (called via /api/update-result)
-function recordResult(source, predicted, actual) {
-    if (!apiStats[source]) apiStats[source] = { wins: 50, losses: 50 };
-    if (predicted === actual) apiStats[source].wins++;
-    else apiStats[source].losses++;
-}
-
-// ─── Server-side Poisson engine ───────────────────────────────────────────────
-const SRV_RATINGS = {
-    'Arsenal':{a:2.05,d:0.72},'Manchester City':{a:2.20,d:0.68},'Liverpool':{a:2.15,d:0.78},
-    'Chelsea':{a:1.72,d:0.98},'Tottenham':{a:1.78,d:1.08},'Manchester United':{a:1.48,d:1.20},
-    'Newcastle United':{a:1.68,d:0.88},'Aston Villa':{a:1.82,d:0.92},
-    'Real Madrid':{a:2.30,d:0.70},'Barcelona':{a:2.22,d:0.78},'Atletico Madrid':{a:1.72,d:0.74},
-    'Bayern Munich':{a:2.50,d:0.74},'Bayer Leverkusen':{a:2.12,d:0.78},
-    'Borussia Dortmund':{a:1.92,d:0.92},'RB Leipzig':{a:1.90,d:0.84},
-    'Inter Milan':{a:2.12,d:0.68},'AC Milan':{a:1.88,d:0.84},'Juventus':{a:1.78,d:0.78},
-    'Napoli':{a:1.80,d:0.88},'Atalanta':{a:2.02,d:0.88},
-    'Paris Saint-Germain':{a:2.42,d:0.72},'Monaco':{a:1.92,d:0.88},
-    'PSV':{a:2.30,d:0.72},'Ajax':{a:2.08,d:0.88},'Feyenoord':{a:2.10,d:0.82},
-    'Celtic':{a:2.20,d:0.72},'Rangers':{a:1.88,d:0.82},
-    'Benfica':{a:2.05,d:0.78},'Porto':{a:2.00,d:0.80},'Sporting CP':{a:1.95,d:0.82},
-    'Galatasaray':{a:1.80,d:0.88},'Fenerbahce':{a:1.75,d:0.90},
-};
-const SRV_AVGS = {
-    'premier league':{h:1.53,a:1.15},'la liga':{h:1.58,a:1.16},
-    'bundesliga':{h:1.73,a:1.32},'serie a':{h:1.47,a:1.10},
-    'ligue 1':{h:1.46,a:1.10},'eredivisie':{h:1.82,a:1.40},
-    'champions league':{h:1.80,a:1.40},'europa league':{h:1.65,a:1.25},
-    'default':{h:1.50,a:1.10},
-};
-
-function srvHash(s) {
-    let h = 5381;
-    for (let i = 0; i < (s||'').length; i++) h = (((h << 5) + h) ^ s.charCodeAt(i)) >>> 0;
-    return (h % 9973) / 9973;
-}
-
-function srvPoisson(homeName, awayName, leagueName) {
-    const lk  = Object.keys(SRV_AVGS).find(k => k !== 'default' && (leagueName||'').toLowerCase().includes(k)) || 'default';
-    const avg  = SRV_AVGS[lk];
-    const getR = name => SRV_RATINGS[name] || {
-        a: 0.78 + srvHash(name||'x') * 0.88,
-        d: 0.78 + srvHash((name||'x') + '_d') * 0.72,
-    };
-    const hR = getR(homeName), aR = getR(awayName);
-    const lamH = hR.a * aR.d * avg.h * 1.10;
-    const lamA = aR.a * hR.d * avg.a;
-
-    const pP = (lam, k) => {
-        if (lam <= 0) return k === 0 ? 1 : 0;
-        let logP = -lam + k * Math.log(lam);
-        for (let i = 1; i <= k; i++) logP -= Math.log(i);
-        return Math.exp(logP);
-    };
-
-    let hw = 0, dw = 0, aw = 0, bestP = 0, bH = 1, bA = 0;
-    for (let hg = 0; hg <= 6; hg++) {
-        for (let ag = 0; ag <= 6; ag++) {
-            const p = pP(lamH, hg) * pP(lamA, ag);
-            if (hg > ag) hw += p; else if (hg === ag) dw += p; else aw += p;
-            if (p > bestP) { bestP = p; bH = hg; bA = ag; }
-        }
-    }
-    const tot = hw + dw + aw;
-    const h = Math.round((hw / tot) * 100), d = Math.round((dw / tot) * 100);
-    return { h, d, a: Math.max(0, 100 - h - d), score: `${bH}-${bA}` };
-}
-
-// ─── Sportmonks helpers ───────────────────────────────────────────────────────
-function smStatus(state, kickoffTime) {
-    if (!state) return kickoffTime || 'NS';
-    const d = state.developer_name || '';
-    if (d === 'NS')                                       return kickoffTime || 'NS';
-    if (['INPLAY_1ST_HALF','INPLAY_2ND_HALF','INPLAY_ET'].includes(d)) return state.short_name || 'LIVE';
-    if (d === 'INPLAY_HT')                                return 'HT';
-    if (['FT','FT_ONLY','AWARDED'].includes(d))           return 'FT';
-    if (d === 'AET')                                      return 'AET';
-    if (['PEN_BREAK','PENALTIES'].includes(d))            return 'PEN';
-    if (d === 'POSTP')                                    return 'Postp.';
-    if (d === 'CANCL')                                    return 'Canc.';
-    if (d === 'SUSP')                                     return 'Susp.';
-    return state.short_name || kickoffTime || 'NS';
-}
-
-function smGoal(scores, teamId, desc) {
-    return scores?.find(s => s.participant_id === teamId && s.description === desc)?.score?.goals ?? null;
-}
-
-function buildFromSportmonks(fixtures) {
-    const leagueMap = {};
-    fixtures.forEach(f => {
-        if (f.placeholder) return;
-        const home = f.participants?.find(p => p.meta?.location === 'home');
-        const away = f.participants?.find(p => p.meta?.location === 'away');
-        if (!home || !away) return;
-
-        const lid = String(f.league_id);
-        if (!leagueMap[lid]) {
-            leagueMap[lid] = { id: lid, name: f.league?.name || 'Unknown', country: f.league?.country?.name || '', match: [] };
-        }
-
-        const time   = f.starting_at?.split(' ')[1]?.substring(0, 5) || '';
-        const status = smStatus(f.state, time);
-        const hC = smGoal(f.scores, home.id, 'CURRENT');
-        const aC = smGoal(f.scores, away.id, 'CURRENT');
-        const hH = smGoal(f.scores, home.id, 'HT');
-        const aH = smGoal(f.scores, away.id, 'HT');
-        const isFt = status === 'FT' || status === 'AET';
-
-        leagueMap[lid].match.push({
-            id:        String(f.id),
-            static_id: String(f.id),
-            date:      f.starting_at?.split(' ')[0] || '',
-            time,
-            status,
-            home: { id: String(home.id), name: home.name, goals: hC !== null ? String(hC) : null, logo: home.image_path || null },
-            away: { id: String(away.id), name: away.name, goals: aC !== null ? String(aC) : null, logo: away.image_path || null },
-            ht:   hH !== null ? { score: `[${hH}-${aH}]` } : null,
-            ft:   isFt && hC !== null ? { score: `[${hC}-${aC}]` } : null,
-        });
+// ── Telegram helpers ──────────────────────────────────────────────────────────
+function tgPost(path, data) {
+    if (!TG_TOKEN) return;
+    const body = JSON.stringify(data);
+    const req  = https.request({
+        hostname: 'api.telegram.org',
+        path:     `/bot${TG_TOKEN}/${path}`,
+        method:   'POST',
+        headers:  { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
     });
-    return { livescore: { updated: new Date().toISOString(), sport: 'soccer', source: 'sportmonks', league: Object.values(leagueMap) } };
+    req.on('error', () => {});
+    req.write(body);
+    req.end();
 }
 
-async function smFixturesByDate(date, key, include = 'participants;league.country;state;scores') {
-    const all = [];
-    let page = 1, hasMore = true;
-    while (hasMore && page <= 4) {
-        const r = await axios.get(`${SM}/fixtures/date/${date}`, {
-            params: { include, api_token: key, per_page: 100, page },
-            timeout: 12000,
-        });
-        all.push(...(r.data?.data || []));
-        hasMore = r.data?.pagination?.has_more === true;
-        page++;
+const reply = (chatId, text) =>
+    tgPost('sendMessage', { chat_id: chatId, text, parse_mode: 'HTML' });
+
+// ── Telegram command handler ──────────────────────────────────────────────────
+/*
+  Commands:
+    /tip  Home | Away | League | Country | KickoffTime | H% | D% | A% | PredScore | Advice
+    /pred Home | Away | H% | D% | A% | PredScore | Advice
+    /live Home | Away | HomeGoals | AwayGoals | Minute
+    /ft   Home | Away | HomeGoals | AwayGoals
+    /del  Home | Away
+    /clear
+    /list
+    /help
+*/
+function handleMessage(msg) {
+    const chatId = msg.chat?.id;
+    const text   = (msg.text || '').trim();
+    if (!chatId || !text.startsWith('/')) return;
+
+    if (ADMIN_ID && String(msg.from?.id) !== String(ADMIN_ID)) {
+        reply(chatId, '⛔ Unauthorized');
+        return;
     }
-    return all;
-}
 
-// Returns raw { h, d, a, score } for aggregation
-function smParsePredictionsRaw(predictions) {
-    if (!predictions?.length) return null;
-    const ftP = predictions.find(p => p.type?.developer_name === 'FULLTIME_RESULT_PROBABILITY');
-    if (!ftP?.predictions) return null;
-    const { home = 33, away = 33, draw = 34 } = ftP.predictions;
-    const h = Math.round(home), d = Math.round(draw), a = Math.round(away);
-    const csP = predictions.find(p => p.type?.developer_name === 'CORRECT_SCORE_PROBABILITY');
-    let score = null;
-    if (csP?.predictions?.scores) {
-        let maxP = 0;
-        Object.entries(csP.predictions.scores).forEach(([sc, prob]) => {
-            if (typeof prob === 'number' && !sc.startsWith('Other') && prob > maxP) { maxP = prob; score = sc; }
-        });
-    }
-    return { h, d, a, score };
-}
+    const spaceIdx = text.indexOf(' ');
+    const cmd      = (spaceIdx === -1 ? text : text.slice(0, spaceIdx)).toLowerCase();
+    const rawArgs  = spaceIdx === -1 ? '' : text.slice(spaceIdx + 1);
+    const args     = rawArgs.split('|').map(s => s.trim());
 
-// ─── API-Football helpers ─────────────────────────────────────────────────────
-function mapApfStatus(short, elapsed, fixtureDate) {
-    switch (short) {
-        case '1H': case '2H': case 'ET': return elapsed ? String(elapsed) : short;
-        case 'HT': case 'BT': case 'FT': case 'AET': return short;
-        case 'PEN': case 'P':  return 'PEN';
-        case 'PST':  return 'Postp.';
-        case 'CANC': return 'Canc.';
-        case 'SUSP': return 'Susp.';
-        case 'WO': case 'AWD': case 'ABD': case 'INT': return short;
-        case 'NS': default:
-            if (fixtureDate) {
-                try {
-                    const d  = new Date(fixtureDate);
-                    const hh = String(d.getUTCHours()).padStart(2, '0');
-                    const mm = String(d.getUTCMinutes()).padStart(2, '0');
-                    return `${hh}:${mm}`;
-                } catch (_) {}
-            }
-            return 'NS';
-    }
-}
+    switch (cmd) {
 
-function buildFromAPIFootball(fixtures) {
-    const leagueMap = {}, today = new Date().toISOString().split('T')[0];
-    fixtures.forEach(f => {
-        const key = String(f.league.id);
-        if (!leagueMap[key]) leagueMap[key] = { id: key, name: f.league.name, country: f.league.country, match: [] };
-        const status = mapApfStatus(f.fixture.status.short, f.fixture.status.elapsed, f.fixture.date);
-        const ht = f.score.halftime, ft = f.score.fulltime;
-        leagueMap[key].match.push({
-            id: String(f.fixture.id), static_id: String(f.fixture.id),
-            date: f.fixture.date ? f.fixture.date.split('T')[0] : today,
-            time: f.fixture.date ? (f.fixture.date.split('T')[1] || '').substring(0, 5) : '',
-            status,
-            home: { id: String(f.teams.home.id), name: f.teams.home.name, goals: f.goals.home != null ? String(f.goals.home) : null },
-            away: { id: String(f.teams.away.id), name: f.teams.away.name, goals: f.goals.away != null ? String(f.goals.away) : null },
-            ht: (ht && ht.home != null) ? { score: `[${ht.home}-${ht.away}]` } : null,
-            ft: (ft && ft.home != null) ? { score: `[${ft.home}-${ft.away}]` } : null,
-        });
-    });
-    return { livescore: { updated: new Date().toISOString(), sport: 'soccer', source: 'api-football', league: Object.values(leagueMap) } };
-}
-
-// ─── /api/scores ──────────────────────────────────────────────────────────────
-//  Priority: StatPal → API-Football → Sportmonks → stale cache
-app.get('/api/scores', async (req, res) => {
-    if (scoresCache && (Date.now() - scoresCacheTime < SCORES_TTL)) return res.json(scoresCache);
-
-    const smKey      = process.env.SPORTMONKS_KEY;
-    const apfKey     = process.env.API_FOOTBALL_KEY;
-    const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
-    const today      = new Date().toISOString().split('T')[0];
-
-    // ── 1: StatPal ────────────────────────────────────────────────────────────
-    try {
-        const r = await axios.get('https://statpal.io/api/v1/soccer/livescores', {
-            params: { access_key: statpalKey }, timeout: 10000,
-        });
-        const result = r.data;
-        if (result.livescore) result.livescore.source = 'statpal';
-        const count = result.livescore?.league?.length || 0;
-        if (count > 0) {
-            scoresCache = result; scoresCacheTime = Date.now();
-            console.log(`StatPal: ${count} leagues loaded`);
-            return res.json(result);
+        case '/help': {
+            reply(chatId, [
+                '<b>Magic Analysis Bot Commands</b>',
+                '',
+                '<b>Add match + prediction:</b>',
+                '/tip Home | Away | League | Country | Time | H% | D% | A% | Score | Advice',
+                '<i>Example: /tip Arsenal | Chelsea | Premier League | England | 20:00 | 60 | 25 | 15 | 2-1 | Arsenal to win</i>',
+                '',
+                '<b>Add/update prediction only:</b>',
+                '/pred Home | Away | H% | D% | A% | Score | Advice',
+                '',
+                '<b>Update live score:</b>',
+                '/live Home | Away | HomeGoals | AwayGoals | Minute',
+                '<i>Example: /live Arsenal | Chelsea | 1 | 0 | 67</i>',
+                '',
+                '<b>Mark finished:</b>',
+                '/ft Home | Away | HomeGoals | AwayGoals',
+                '',
+                '<b>Remove a match:</b>',
+                '/del Home | Away',
+                '',
+                '<b>Clear all matches:</b>',
+                '/clear',
+                '',
+                '<b>List all matches:</b>',
+                '/list',
+            ].join('\n'));
+            break;
         }
-        console.warn('StatPal: returned 0 leagues');
-    } catch (e) { console.error('StatPal failed:', e.message); }
 
-    // ── 2: API-Football ───────────────────────────────────────────────────────
-    if (apfKey) {
-        try {
-            const r = await axios.get('https://v3.football.api-sports.io/fixtures', {
-                params: { date: today }, headers: { 'x-apisports-key': apfKey }, timeout: 10000,
-            });
-            const body = r.data, fixtures = body.response || [];
-            const hasErrors = body.errors && (Array.isArray(body.errors) ? body.errors.length > 0 : Object.keys(body.errors).length > 0);
-            if (!hasErrors && fixtures.length > 0) {
-                const result = buildFromAPIFootball(fixtures);
-                scoresCache = result; scoresCacheTime = Date.now();
-                console.log(`API-Football: ${fixtures.length} fixtures loaded`);
-                return res.json(result);
+        case '/tip': {
+            // /tip Home | Away | League | Country | Time | H% | D% | A% | Score | Advice
+            const [home, away, league, country, time, hp, dp, ap, score, ...advParts] = args;
+            if (!home || !away) {
+                reply(chatId, '❌ Minimum: /tip Home | Away\nFull: /tip Home | Away | League | Country | Time | H% | D% | A% | Score | Advice');
+                return;
             }
-        } catch (e) { console.error('API-Football failed:', e.message); }
-    }
-
-    // ── 3: Sportmonks (limited league coverage on free plan) ──────────────────
-    if (smKey) {
-        try {
-            const fixtures = await smFixturesByDate(today, smKey);
-            if (fixtures.length > 0) {
-                const result = buildFromSportmonks(fixtures);
-                scoresCache = result; scoresCacheTime = Date.now();
-                console.log(`Sportmonks: ${fixtures.length} fixtures loaded`);
-                return res.json(result);
+            const k = matchKey(home, away);
+            store.matches[k] = {
+                id:         k,
+                home:       { name: home.trim(), score: null },
+                away:       { name: away.trim(), score: null },
+                leagueName: league  || 'Unknown League',
+                country:    country || '',
+                time:       time    || '',
+                status:     'NS',
+            };
+            const h = parseInt(hp) || 0;
+            const d = parseInt(dp) || 0;
+            const a = parseInt(ap) || 0;
+            if (h || d || a) {
+                const total = h + d + a || 100;
+                store.preds[k] = {
+                    h:          Math.round(h * 100 / total),
+                    d:          Math.round(d * 100 / total),
+                    a:          Math.round(a * 100 / total),
+                    score:      score       || null,
+                    advice:     advParts.join('|').trim() || null,
+                    confidence: Math.round(Math.max(h, d, a) * 10 / total) / 10,
+                    sources:    ['manual'],
+                    aiUsed:     false,
+                };
             }
-            console.warn('Sportmonks: 0 fixtures for today');
-        } catch (e) { console.error('Sportmonks failed:', e.message); }
-    }
-
-    if (scoresCache) { console.warn('Serving stale cache'); return res.json(scoresCache); }
-    res.status(500).json({ error: 'All data sources failed' });
-});
-
-// ─── /api/status ──────────────────────────────────────────────────────────────
-app.get('/api/status', async (req, res) => {
-    const smKey  = process.env.SPORTMONKS_KEY;
-    const apfKey = process.env.API_FOOTBALL_KEY;
-    const result = { sportmonks_key_set: !!smKey, api_football_key_set: !!apfKey, cache: null };
-    if (scoresCache) result.cache = {
-        source:       scoresCache.livescore?.source,
-        league_count: scoresCache.livescore?.league?.length,
-        updated:      scoresCache.livescore?.updated,
-        age_seconds:  Math.round((Date.now() - scoresCacheTime) / 1000),
-    };
-    if (apfKey) {
-        try {
-            const c = await axios.get('https://v3.football.api-sports.io/status', { headers: { 'x-apisports-key': apfKey }, timeout: 8000 });
-            result.api_football = c.data.response || c.data;
-        } catch (e) { result.api_football = { error: e.message }; }
-    }
-    res.json(result);
-});
-
-// ─── /api/accuracy — view current API weights & stats ─────────────────────────
-app.get('/api/accuracy', (req, res) => {
-    const out = {};
-    for (const [src, stats] of Object.entries(apiStats)) {
-        const total    = stats.wins + stats.losses;
-        const accuracy = total > 0 ? Math.round((stats.wins / total) * 1000) / 10 : 50;
-        out[src] = {
-            wins: stats.wins, losses: stats.losses,
-            accuracy: `${accuracy}%`,
-            weight_default: Math.round(getWeight(src, null) * 1000) / 1000,
-        };
-    }
-    res.json({ api_weights: out });
-});
-
-// ─── /api/update-result — record actual match result to improve accuracy ───────
-// Body: { fixtureId, source, predicted: "HOME_WIN|DRAW|AWAY_WIN", actual: "HOME_WIN|DRAW|AWAY_WIN" }
-app.post('/api/update-result', (req, res) => {
-    const { source, predicted, actual } = req.body || {};
-    const valid = ['HOME_WIN', 'DRAW', 'AWAY_WIN'];
-    if (!source || !valid.includes(predicted) || !valid.includes(actual)) {
-        return res.status(400).json({ error: 'source, predicted and actual (HOME_WIN|DRAW|AWAY_WIN) required' });
-    }
-    recordResult(source, predicted, actual);
-    const stats = apiStats[source];
-    const total = stats.wins + stats.losses;
-    res.json({ source, accuracy: `${Math.round((stats.wins / total) * 1000) / 10}%`, wins: stats.wins, losses: stats.losses });
-});
-
-// ─── Prediction cache ─────────────────────────────────────────────────────────
-const predCache = {};
-
-// ─── /api/get-predictions — weighted aggregation engine ───────────────────────
-//  Flow: fetch Sportmonks + API-Football in parallel → add Poisson → aggregate
-//        → if conflict, use OpenAI to resolve → return with meta
-app.get('/api/get-predictions', async (req, res) => {
-    const { fixture: fixtureId, home, away, league, country, status, score } = req.query;
-    const smKey     = process.env.SPORTMONKS_KEY;
-    const apfKey    = process.env.API_FOOTBALL_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
-
-    if (!fixtureId) return res.status(400).json({ error: 'fixture ID required' });
-    if (predCache[fixtureId]) return res.json(predCache[fixtureId]);
-
-    const rawPreds = [];
-    const isNumericId = /^\d+$/.test(fixtureId);
-
-    // ── Fetch Sportmonks + API-Football in parallel ───────────────────────────
-    const [smRes, apfRes] = await Promise.allSettled([
-        smKey && isNumericId
-            ? axios.get(`${SM}/fixtures/${fixtureId}`, { params: { include: 'predictions.type', api_token: smKey }, timeout: 8000 })
-            : Promise.reject('skipped'),
-        apfKey && isNumericId
-            ? axios.get('https://v3.football.api-sports.io/predictions', { params: { fixture: fixtureId }, headers: { 'x-apisports-key': apfKey }, timeout: 8000 })
-            : Promise.reject('skipped'),
-    ]);
-
-    // Parse Sportmonks
-    if (smRes.status === 'fulfilled') {
-        const raw = smParsePredictionsRaw(smRes.value.data?.data?.predictions);
-        if (raw) rawPreds.push(normPred('sportmonks', raw.h, raw.d, raw.a, raw.score));
-        else console.warn('Sportmonks: predictions empty');
-    } else if (smRes.reason !== 'skipped') console.warn('Sportmonks pred failed:', smRes.reason?.message || smRes.reason);
-
-    // Parse API-Football
-    if (apfRes.status === 'fulfilled') {
-        const p = apfRes.value.data?.response?.[0]?.predictions;
-        if (p?.percent) {
-            const h = parseInt(p.percent.home) || 33;
-            const d = parseInt(p.percent.draw) || 33;
-            const a = parseInt(p.percent.away) || 34;
-            rawPreds.push(normPred('api-football', h, d, a, null));
+            const tot = h + d + a || 100;
+            const predTxt = (h || d || a)
+                ? `Prediction: ${Math.round(h*100/tot)}% / ${Math.round(d*100/tot)}% / ${Math.round(a*100/tot)}%${score ? ' · ' + score : ''}`
+                : 'No prediction yet — use /pred to add one';
+            reply(chatId, [
+                `✅ <b>${home} vs ${away}</b>`,
+                `${league || 'Unknown League'}${country ? ' · ' + country : ''}${time ? ' @ ' + time : ''}`,
+                predTxt,
+            ].join('\n'));
+            break;
         }
-    } else if (apfRes.reason !== 'skipped') console.warn('API-Football pred failed:', apfRes.reason?.message || apfRes.reason);
 
-    // ── Always add Poisson as a source ────────────────────────────────────────
-    if (home && away) {
-        const poi = srvPoisson(home, away, league);
-        rawPreds.push(normPred('poisson', poi.h, poi.d, poi.a, poi.score));
-    }
-
-    // ── Aggregate with weights ────────────────────────────────────────────────
-    const agg = aggregate(rawPreds, league);
-    if (!agg) {
-        // No sources at all — pure ID-seeded fallback
-        const seed = String(fixtureId).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 7);
-        const rng  = n => { const x = Math.sin(seed * n + 13.7) * 99991; return x - Math.floor(x); };
-        const h = Math.round(40 + rng(1) * 18), d = Math.round(22 + rng(2) * 10), a = Math.max(0, 100 - h - d);
-        const code  = h >= a && h >= d ? '1' : a > h && a >= d ? '2' : 'X';
-        const label = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-        const result = buildFinalResponse(h, d, a, null, `${label} (fallback)`, 0.5, [], false);
-        predCache[fixtureId] = result; return res.json(result);
-    }
-
-    let finalH = agg.h, finalD = agg.d, finalA = agg.a;
-    let finalScore = rawPreds.find(p => p.score)?.score || null;
-    let aiUsed = false;
-
-    // ── OpenAI conflict resolution (only when prediction is too close) ─────────
-    if (agg.isConflict && openaiKey && home && away) {
-        try {
-            const { OpenAI } = require('openai');
-            const openai     = new OpenAI({ apiKey: openaiKey });
-            const ctx = [
-                league  ? `Competition: ${league}${country ? ' (' + country + ')' : ''}` : '',
-                status  ? `Match status: ${status}` : '',
-                score   ? `Current score: ${score}` : '',
-                `Weighted model split — Home: ${agg.h}%, Draw: ${agg.d}%, Away: ${agg.a}%`,
-            ].filter(Boolean).join(' | ');
-            const completion = await openai.chat.completions.create({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: 'You are a football prediction analyst resolving a close prediction conflict. Multiple models disagree. Use tactical context to adjudicate. Respond ONLY with raw JSON: {"home":52,"draw":26,"away":22,"homeGoals":1,"awayGoals":0}' },
-                    { role: 'user',   content: `Resolve conflict for: ${home} vs ${away}\n${ctx}\nhome+draw+away must equal 100.` },
-                ],
-                max_tokens: 80, temperature: 0.15,
-            });
-            const pred = JSON.parse(completion.choices[0].message.content.trim().replace(/```json[\s\S]*?```|```/g, '').trim());
-            finalH = Math.min(90, Math.max(5, Math.round(Number(pred.home) || agg.h)));
-            finalD = Math.min(60, Math.max(5, Math.round(Number(pred.draw) || agg.d)));
-            finalA = Math.max(5, 100 - finalH - finalD);
-            if (pred.homeGoals != null && pred.awayGoals != null) {
-                finalScore = `${Math.round(pred.homeGoals)}-${Math.round(pred.awayGoals)}`;
+        case '/pred': {
+            // /pred Home | Away | H% | D% | A% | Score | Advice
+            const [home, away, hp, dp, ap, score, ...advParts] = args;
+            if (!home || !away) {
+                reply(chatId, '❌ Usage: /pred Home | Away | H% | D% | A% | Score | Advice');
+                return;
             }
-            aiUsed = true;
-            console.log(`OpenAI resolved conflict for ${home} vs ${away}`);
-        } catch (e) { console.warn('OpenAI conflict resolution failed:', e.message); }
+            const k = matchKey(home, away);
+            if (!store.matches[k]) {
+                reply(chatId, `⚠️ Match not found: ${home} vs ${away}\nAdd it first with /tip`);
+                return;
+            }
+            const h = parseInt(hp) || 0;
+            const d = parseInt(dp) || 0;
+            const a = parseInt(ap) || 0;
+            const total = h + d + a || 100;
+            store.preds[k] = {
+                h:          Math.round(h * 100 / total),
+                d:          Math.round(d * 100 / total),
+                a:          Math.round(a * 100 / total),
+                score:      score       || null,
+                advice:     advParts.join('|').trim() || null,
+                confidence: Math.round(Math.max(h, d, a) * 10 / total) / 10,
+                sources:    ['manual'],
+                aiUsed:     false,
+            };
+            reply(chatId, `✅ Prediction updated: <b>${home} vs ${away}</b>\n${Math.round(h*100/total)}% / ${Math.round(d*100/total)}% / ${Math.round(a*100/total)}%${score ? ' · ' + score : ''}`);
+            break;
+        }
+
+        case '/live': {
+            // /live Home | Away | HomeGoals | AwayGoals | Minute
+            const [home, away, hg, ag, min] = args;
+            if (!home || !away) {
+                reply(chatId, '❌ Usage: /live Home | Away | HomeGoals | AwayGoals | Minute');
+                return;
+            }
+            const k = matchKey(home, away);
+            if (!store.matches[k]) {
+                reply(chatId, `❌ Match not found: ${home} vs ${away}\nAdd it first with /tip`);
+                return;
+            }
+            store.matches[k].home.score = parseInt(hg) || 0;
+            store.matches[k].away.score = parseInt(ag) || 0;
+            store.matches[k].status     = min ? String(parseInt(min) || 'LIVE') : 'LIVE';
+            reply(chatId, `🔴 Live: <b>${home} ${hg}-${ag} ${away}</b>${min ? ' (' + min + "\')" : ''}`);
+            break;
+        }
+
+        case '/ft': {
+            // /ft Home | Away | HomeGoals | AwayGoals
+            const [home, away, hg, ag] = args;
+            if (!home || !away) {
+                reply(chatId, '❌ Usage: /ft Home | Away | HomeGoals | AwayGoals');
+                return;
+            }
+            const k = matchKey(home, away);
+            if (!store.matches[k]) {
+                reply(chatId, `❌ Match not found: ${home} vs ${away}`);
+                return;
+            }
+            store.matches[k].home.score = parseInt(hg) || 0;
+            store.matches[k].away.score = parseInt(ag) || 0;
+            store.matches[k].status     = 'FT';
+            reply(chatId, `✅ Full Time: <b>${home} ${hg}-${ag} ${away}</b>`);
+            break;
+        }
+
+        case '/del': {
+            const [home, away] = args;
+            if (!home || !away) {
+                reply(chatId, '❌ Usage: /del Home | Away');
+                return;
+            }
+            const k = matchKey(home, away);
+            const existed = !!store.matches[k];
+            delete store.matches[k];
+            delete store.preds[k];
+            reply(chatId, existed
+                ? `🗑️ Removed: <b>${home} vs ${away}</b>`
+                : `⚠️ Not found: ${home} vs ${away}`);
+            break;
+        }
+
+        case '/clear': {
+            const count = Object.keys(store.matches).length;
+            store = { matches: {}, preds: {} };
+            reply(chatId, `🗑️ Cleared all ${count} match(es). Ready for today's fixtures.`);
+            break;
+        }
+
+        case '/list': {
+            const keys = Object.keys(store.matches);
+            if (!keys.length) {
+                reply(chatId, '📋 No matches stored.\nAdd one with /tip');
+                return;
+            }
+            const lines = keys.map((k, i) => {
+                const m   = store.matches[k];
+                const p   = store.preds[k];
+                const sc  = m.home.score != null && m.away.score != null
+                    ? ` ${m.home.score}-${m.away.score}` : '';
+                const icon = m.status === 'FT' ? '✅' : m.status === 'NS' ? '🔵' : '🔴';
+                const pred = p ? ` [${p.h}/${p.d}/${p.a}]` : ' [no pred]';
+                return `${i + 1}. ${icon} <b>${m.home.name} vs ${m.away.name}</b>${sc}${pred}\n   ${m.leagueName}${m.time ? ' @ ' + m.time : ''}`;
+            });
+            reply(chatId, `<b>Stored matches (${keys.length}):</b>\n\n${lines.join('\n\n')}`);
+            break;
+        }
+
+        default:
+            reply(chatId, 'Unknown command. Type /help for the full list.');
     }
+}
 
-    const code  = finalH >= finalA && finalH >= finalD ? '1' : finalA > finalH && finalA >= finalD ? '2' : 'X';
-    const label = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-    const advice = `${label} — ${finalH}% home / ${finalD}% draw / ${finalA}% away`;
-
-    const result = buildFinalResponse(finalH, finalD, finalA, finalScore, advice, agg.confidence, agg.sources, aiUsed);
-    predCache[fixtureId] = result;
-    return res.json(result);
+// ── POST /telegram — Telegram webhook ────────────────────────────────────────
+app.post('/telegram', (req, res) => {
+    res.sendStatus(200); // always acknowledge immediately
+    if (req.body?.message) handleMessage(req.body.message);
 });
 
-function buildFinalResponse(h, d, a, score, advice, confidence, sources, aiUsed) {
-    const goalParts = score ? score.split('-').map(Number) : null;
-    return {
+// ── GET /api/scores — serve matches grouped by league ────────────────────────
+app.get('/api/scores', (req, res) => {
+    const byLeague = {};
+    for (const m of Object.values(store.matches)) {
+        const lg = m.leagueName || 'Other';
+        if (!byLeague[lg]) byLeague[lg] = { name: lg, country: m.country || '', match: [] };
+        byLeague[lg].match.push({
+            id:         m.id,
+            home:       { name: m.home.name, score: m.home.score },
+            away:       { name: m.away.name, score: m.away.score },
+            status:     m.status,
+            time:       m.time,
+            leagueName: m.leagueName,
+            country:    m.country,
+        });
+    }
+    res.json({ livescore: { league: Object.values(byLeague) } });
+});
+
+// ── GET /api/get-predictions — serve prediction from store ────────────────────
+app.get('/api/get-predictions', (req, res) => {
+    const k = matchKey(req.query.home || '', req.query.away || '');
+    const p = store.preds[k];
+    const m = store.matches[k];
+
+    if (!p) {
+        return res.json({
+            response: [{ predictions: { percent: { home: null, draw: null, away: null }, goals: null, advice: null } }],
+            meta:     { confidence: 0, sources: [], aiUsed: false },
+        });
+    }
+
+    const goalMatch = (p.score || '').match(/(\d+)\D+(\d+)/);
+    const winner    = p.h >= p.d && p.h >= p.a
+        ? `${m?.home.name || 'Home'} to win`
+        : p.a > p.h && p.a >= p.d
+            ? `${m?.away.name || 'Away'} to win`
+            : 'Draw likely';
+
+    res.json({
         response: [{
             predictions: {
-                percent: { home: `${h}%`, draw: `${d}%`, away: `${a}%` },
-                goals:   goalParts ? { home: goalParts[0], away: goalParts[1] } : null,
-                advice,
+                percent: { home: `${p.h}%`, draw: `${p.d}%`, away: `${p.a}%` },
+                goals:   goalMatch ? { home: goalMatch[1], away: goalMatch[2] } : null,
+                advice:  p.advice || winner,
             },
         }],
-        meta: { confidence, sources, aiUsed },
-    };
-}
-
-// ─── Logo cache ───────────────────────────────────────────────────────────────
-const logoCache = {};
-
-app.get('/api/team-logo', async (req, res) => {
-    const name = req.query.name;
-    if (!name) return res.status(400).json({ logo: null });
-    const key = name.toLowerCase().trim();
-    if (logoCache[key] !== undefined) return res.json({ logo: logoCache[key] });
-    try {
-        const r = await axios.get('https://www.thesportsdb.com/api/v1/json/3/searchteams.php', {
-            params: { t: name }, timeout: 5000,
-        });
-        const logo = r.data?.teams?.[0]?.strTeamBadge || null;
-        logoCache[key] = logo; res.json({ logo });
-    } catch (_) { logoCache[key] = null; res.json({ logo: null }); }
+        meta: {
+            confidence: p.confidence || 0.5,
+            sources:    p.sources    || ['manual'],
+            aiUsed:     p.aiUsed     || false,
+        },
+    });
 });
 
-// ─── Match analysis ───────────────────────────────────────────────────────────
+// ── GET /api/upcoming — matches already served via /api/scores ────────────────
+app.get('/api/upcoming', (req, res) => res.json({ matches: [] }));
+
+// ── GET /api/match-analysis — OpenAI (optional, only if key set) ──────────────
 app.get('/api/match-analysis', async (req, res) => {
-    const { home, away, league, status, score, ht } = req.query;
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) return res.json({ analysis: null });
+    if (!OPENAI_KEY) return res.json({ analysis: null });
+    const { home, away, league, status, score } = req.query;
     try {
-        const { OpenAI } = require('openai');
-        const openai = new OpenAI({ apiKey });
-        const r = await openai.chat.completions.create({
-            model:    'gpt-3.5-turbo',
-            messages: [{ role: 'user', content: `Brief 2-3 sentence football match analysis: ${home} vs ${away}, ${league}, Score: ${score}, Status: ${status}, HT: ${ht || 'N/A'}. Be concise and insightful.` }],
-            max_tokens: 120,
+        const prompt = `Football analyst. 2 sentences max. ${home} vs ${away} (${league}). Status: ${status}. Score: ${score}. Tactical insight + likely outcome.`;
+        const body   = JSON.stringify({
+            model:       'gpt-3.5-turbo',
+            messages:    [{ role: 'user', content: prompt }],
+            max_tokens:  100,
+            temperature: 0.7,
         });
-        res.json({ analysis: r.choices[0].message.content });
-    } catch (e) { console.error('OpenAI error:', e.message); res.json({ analysis: null }); }
+        const apiRes = await new Promise((resolve, reject) => {
+            const r = https.request({
+                hostname: 'api.openai.com',
+                path:     '/v1/chat/completions',
+                method:   'POST',
+                headers:  {
+                    'Content-Type':   'application/json',
+                    'Authorization':  `Bearer ${OPENAI_KEY}`,
+                    'Content-Length': Buffer.byteLength(body),
+                },
+            }, resolve);
+            r.on('error', reject);
+            r.write(body);
+            r.end();
+        });
+        let raw = '';
+        for await (const chunk of apiRes) raw += chunk;
+        const analysis = JSON.parse(raw).choices?.[0]?.message?.content?.trim() || null;
+        res.json({ analysis });
+    } catch {
+        res.json({ analysis: null });
+    }
 });
 
-// ─── Upcoming fixtures (today + tomorrow) ─────────────────────────────────────
-let upcomingCache = null, upcomingCacheTime = 0;
-const UPCOMING_TTL = 5 * 60 * 1000;
-
-app.get('/api/upcoming', async (req, res) => {
-    if (upcomingCache && (Date.now() - upcomingCacheTime < UPCOMING_TTL)) return res.json(upcomingCache);
-
-    const smKey    = process.env.SPORTMONKS_KEY;
-    const fdKey    = process.env.FOOTBALL_DATA_KEY;
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-
-    // ── 1: Sportmonks tomorrow ────────────────────────────────────────────────
-    if (smKey) {
-        try {
-            const fixtures = await smFixturesByDate(tomorrow, smKey, 'participants;league.country;state');
-            if (fixtures.length > 0) {
-                const matches = fixtures.flatMap(f => {
-                    if (f.placeholder) return [];
-                    const home = f.participants?.find(p => p.meta?.location === 'home');
-                    const away = f.participants?.find(p => p.meta?.location === 'away');
-                    if (!home || !away) return [];
-                    const time = f.starting_at?.split(' ')[1]?.substring(0, 5) || '';
-                    return [{
-                        id: String(f.id), static_id: String(f.id),
-                        date: f.starting_at?.split(' ')[0] || '', time,
-                        status: smStatus(f.state, time),
-                        leagueName: f.league?.name || '', country: f.league?.country?.name || '',
-                        home: { id: String(home.id), name: home.name, goals: null, logo: home.image_path || null },
-                        away: { id: String(away.id), name: away.name, goals: null, logo: away.image_path || null },
-                        ht: null, ft: null,
-                    }];
-                });
-                if (matches.length > 0) {
-                    upcomingCache = { matches }; upcomingCacheTime = Date.now();
-                    console.log(`Sportmonks upcoming: ${matches.length} matches`);
-                    return res.json(upcomingCache);
-                }
-            }
-        } catch (e) { console.error('Sportmonks upcoming failed:', e.message); }
+// ── GET /api/team-logo — TheSportsDB (free, no key needed) ───────────────────
+app.get('/api/team-logo', async (req, res) => {
+    const { name } = req.query;
+    if (!name) return res.json({ logo: null });
+    try {
+        const apiRes = await new Promise((resolve, reject) => {
+            const r = https.request({
+                hostname: 'www.thesportsdb.com',
+                path:     `/api/v1/json/3/searchteams.php?t=${encodeURIComponent(name)}`,
+                method:   'GET',
+                headers:  { 'User-Agent': 'Mozilla/5.0' },
+            }, resolve);
+            r.on('error', reject);
+            r.end();
+        });
+        let raw = '';
+        for await (const chunk of apiRes) raw += chunk;
+        const logo = JSON.parse(raw).teams?.[0]?.strBadge || null;
+        res.json({ logo });
+    } catch {
+        res.json({ logo: null });
     }
-
-    // ── 2: football-data.org fallback ─────────────────────────────────────────
-    if (fdKey) {
-        try {
-            const today = new Date().toISOString().split('T')[0];
-            const r = await axios.get('https://api.football-data.org/v4/matches', {
-                params: { dateFrom: today, dateTo: tomorrow },
-                headers: { 'X-Auth-Token': fdKey }, timeout: 10000,
-            });
-            const rem = parseInt(r.headers['x-requests-available-minute'] || '99', 10);
-            if (rem < 3) console.warn(`football-data.org rate limit low: ${rem}`);
-            const statusMap = { IN_PLAY: 'LIVE', PAUSED: 'HT', FINISHED: 'FT', POSTPONED: 'Postp.', SUSPENDED: 'Susp.', CANCELLED: 'Canc.' };
-            const matches = (r.data.matches || []).map(m => {
-                const date = m.utcDate ? m.utcDate.split('T')[0] : today;
-                const time = m.utcDate ? m.utcDate.split('T')[1].substring(0, 5) : '';
-                return {
-                    id: String(m.id), static_id: String(m.id), date, time,
-                    status: statusMap[m.status] || time || 'NS',
-                    leagueName: m.competition?.name || '', country: m.area?.name || '',
-                    home: { id: String(m.homeTeam?.id || ''), name: m.homeTeam?.shortName || m.homeTeam?.name || '', goals: m.score?.fullTime?.home != null ? String(m.score.fullTime.home) : null },
-                    away: { id: String(m.awayTeam?.id || ''), name: m.awayTeam?.shortName || m.awayTeam?.name || '', goals: m.score?.fullTime?.away != null ? String(m.score.fullTime.away) : null },
-                    ht: null, ft: null,
-                };
-            });
-            upcomingCache = { matches }; upcomingCacheTime = Date.now();
-            console.log(`football-data.org upcoming: ${matches.length} matches`);
-            return res.json(upcomingCache);
-        } catch (e) { console.error('football-data.org failed:', e.message); }
-    }
-
-    return res.json(upcomingCache || { matches: [] });
 });
 
-app.listen(port, () => { console.log(`MagicBettingTips backend running on port ${port}`); });
+// ── GET /api/admin/data — view full store (debugging) ────────────────────────
+app.get('/api/admin/data', (req, res) => res.json(store));
+
+// ── GET /health ───────────────────────────────────────────────────────────────
+app.get('/health', (req, res) => res.json({ ok: true, matches: Object.keys(store.matches).length }));
+
+app.listen(PORT, () => console.log(`Magic Analysis on port ${PORT}`));

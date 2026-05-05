@@ -496,6 +496,9 @@ const poissonPredict = (homeName, awayName, leagueName) => {
     score: `${bestHG}-${bestAG}`,
     advice: `${lbl} — xG: ${lamH.toFixed(2)} vs ${lamA.toFixed(2)}`,
     hp: `${hp}%`, dp: `${dp}%`, ap: `${ap}%`,
+    confidence: Math.round(Math.max(hp, dp, ap)) / 100,
+    sources: ['poisson'],
+    aiUsed: false,
   };
 };
 
@@ -1307,7 +1310,7 @@ function App() {
 
                 {tab==='Tips' && (
                     <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">Match Tips</h1><p className="page-sub">AI-powered predictions for every match</p></div>
+                        <div className="page-head"><h1 className="page-h1">Match Tips</h1><p className="page-sub">Expert daily predictions</p></div>
                         {matches.length === 0
                             ? <div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>⚽</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No matches loaded</div></div>
                             : (()=>{
