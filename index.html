@@ -311,6 +311,12 @@
         @keyframes splFade { to{opacity:0} }
         .splash-inner { animation:splPop .55s cubic-bezier(.34,1.56,.64,1) forwards; display:flex; flex-direction:column; align-items:center; gap:14px; }
         @keyframes splPop { from{opacity:0;transform:scale(.82)} to{opacity:1;transform:scale(1)} }
+
+        /* Pro Tip */
+        .pro-badge { display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:800; padding:2px 8px; border-radius:100px; background:linear-gradient(90deg,#FF9F0A,#e67e00); color:#fff; letter-spacing:.5px; text-transform:uppercase; flex-shrink:0; }
+        .pro-tip-box { background:#111; border:1.5px solid #FF9F0A; border-radius:var(--r); padding:16px; margin-bottom:14px; }
+        .pro-tip-lbl { font-size:9px; font-weight:800; color:#FF9F0A; text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+        .pro-tip-txt { font-size:16px; font-weight:700; color:#fff; line-height:1.45; }
     </style>
 </head>
 <body>
@@ -662,6 +668,7 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
             <div className="card-inner">
                 <div className="card-meta">
                     <span className="card-league">{(match.country||'').toUpperCase()}{match.country&&match.leagueName?' · ':''}{match.leagueName||''}</span>
+                    {match.manual_prediction && <span className="pro-badge">⭐ Pro Tip</span>}
                     <button className={`fav${isFav?' on':''}`} onClick={e=>{e.stopPropagation();if(id)onToggleFav(id);}}>
                         <IcoHeart on={isFav}/>
                     </button>
@@ -713,7 +720,13 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                                 </div>
                             </div>
                         )}
-                        {pred && !pred.loading && !pred.code && (
+                        {pred && !pred.loading && pred.manual && (
+                            <div className="pred-front">
+                                <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#FF9F0A,#e67e00)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,flexShrink:0,boxShadow:'0 2px 8px rgba(255,149,0,.5)'}}>⭐</div>
+                                <div className="pred-front-score" style={{color:'#FF9F0A',fontWeight:800,fontSize:9,letterSpacing:.3}}>PRO</div>
+                            </div>
+                        )}
+                        {pred && !pred.loading && !pred.code && !pred.manual && (
                             <div className="pred-front">
                                 <div style={{width:44,height:44,borderRadius:'50%',background:'var(--bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'var(--t3)'}}>?</div>
                             </div>
@@ -749,6 +762,14 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
         <div className="overlay" onClick={onClose}>
             <div className="sheet" onClick={e=>e.stopPropagation()}>
                 <div className="handle"/>
+
+                {/* Pro Tip box — shown at top if manual tip set */}
+                {match.manual_prediction && (
+                    <div className="pro-tip-box">
+                        <div className="pro-tip-lbl">⭐ Official Professional Analysis</div>
+                        <div className="pro-tip-txt">{match.manual_prediction}</div>
+                    </div>
+                )}
 
                 {/* League */}
                 <div className="detail-head">
@@ -1042,6 +1063,14 @@ function App() {
         if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
         fetchingRef.current.add(id);
         setPredCache(prev => ({...prev, [id]: { loading: true }}));
+
+        // Manual pro tip from Telegram bot — skip all AI/Poisson
+        if (matchData?.manual_prediction) {
+            setPredCache(prev => ({...prev, [id]: { loading: false, manual: matchData.manual_prediction }}));
+            fetchingRef.current.delete(id);
+            resolvedRef.current.add(id);
+            return;
+        }
 
         let cached = null;
         try {
@@ -1342,6 +1371,11 @@ function App() {
                                                     </div>
                                                     {!pred||pred.loading
                                                         ? <div style={{textAlign:'center',padding:'10px 0',color:'var(--t3)',fontSize:12}}>Loading…</div>
+                                                        : pred.manual
+                                                        ? <div className="pro-tip-box" style={{margin:0}}>
+                                                            <div className="pro-tip-lbl">⭐ Official Professional Analysis</div>
+                                                            <div className="pro-tip-txt">{pred.manual}</div>
+                                                          </div>
                                                         : <>
                                                             <div className="tip-probs">
                                                                 {[['1',pred.code==='1',pred.hp],['X',pred.code==='X',pred.dp],['2',pred.code==='2',pred.ap]].map(([lbl,active,pct])=>(

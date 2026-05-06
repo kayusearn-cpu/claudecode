@@ -150,17 +150,18 @@ function handleStateInput(chatId, text, state) {
     }
 
     if (state.step === 'upcoming_input') {
-        const [home, away, league, country, time, hp, dp, ap, score, ...advParts] = args;
+        const [home, away, league, country, time, hp, dp, ap, score, advice, protip] = args;
         if (!home || !away) { reply(chatId, '❌ Minimum required: Home | Away'); return; }
         const k = matchKey(home, away);
         store.matches[k] = {
-            id:         k,
-            home:       { name: home, score: null },
-            away:       { name: away, score: null },
-            leagueName: league  || 'Unknown League',
-            country:    country || '',
-            time:       time    || '',
-            status:     'NS',
+            id:                k,
+            home:              { name: home, score: null },
+            away:              { name: away, score: null },
+            leagueName:        league  || 'Unknown League',
+            country:           country || '',
+            time:              time    || '',
+            status:            'NS',
+            manual_prediction: protip  || null,
         };
         const h = parseInt(hp) || 0, d = parseInt(dp) || 0, a = parseInt(ap) || 0;
         if (h || d || a) {
@@ -169,8 +170,8 @@ function handleStateInput(chatId, text, state) {
                 h:          Math.round(h * 100 / total),
                 d:          Math.round(d * 100 / total),
                 a:          Math.round(a * 100 / total),
-                score:      score || null,
-                advice:     advParts.join('|').trim() || null,
+                score:      score  || null,
+                advice:     advice || null,
                 confidence: Math.round(Math.max(h, d, a) * 10 / total) / 10,
                 sources:    ['manual'],
                 aiUsed:     false,
@@ -182,7 +183,8 @@ function handleStateInput(chatId, text, state) {
             `✅ Added: <b>${home} vs ${away}</b>`,
             `${league || 'Unknown League'}${country ? ' · ' + country : ''}${time ? ' @ ' + time : ''}`,
             (h || d || a) ? `Prediction: ${Math.round(h*100/tot)}% / ${Math.round(d*100/tot)}% / ${Math.round(a*100/tot)}%${score ? ' · ' + score : ''}` : 'No prediction added.',
-        ].join('\n'));
+            protip ? `⭐ Pro Tip: ${protip}` : '',
+        ].filter(Boolean).join('\n'));
         showMainMenu(chatId);
         return;
     }
@@ -191,14 +193,15 @@ function handleStateInput(chatId, text, state) {
         const { key } = state.data;
         const existing = store.matches[key];
         if (!existing) { reply(chatId, '❌ Match no longer exists.'); clearState(chatId); showMainMenu(chatId); return; }
-        const [home, away, league, country, time, hp, dp, ap, score, ...advParts] = args;
+        const [home, away, league, country, time, hp, dp, ap, score, advice, protip] = args;
         store.matches[key] = {
             ...existing,
-            home:       { ...existing.home, name: home || existing.home.name },
-            away:       { ...existing.away, name: away || existing.away.name },
-            leagueName: league  || existing.leagueName,
-            country:    country || existing.country,
-            time:       time    || existing.time,
+            home:              { ...existing.home, name: home || existing.home.name },
+            away:              { ...existing.away, name: away || existing.away.name },
+            leagueName:        league  || existing.leagueName,
+            country:           country || existing.country,
+            time:              time    || existing.time,
+            manual_prediction: protip  !== undefined ? (protip || null) : existing.manual_prediction,
         };
         const h = parseInt(hp) || 0, d = parseInt(dp) || 0, a = parseInt(ap) || 0;
         if (h || d || a) {
@@ -207,8 +210,8 @@ function handleStateInput(chatId, text, state) {
                 h:          Math.round(h * 100 / total),
                 d:          Math.round(d * 100 / total),
                 a:          Math.round(a * 100 / total),
-                score:      score || null,
-                advice:     advParts.join('|').trim() || null,
+                score:      score  || null,
+                advice:     advice || null,
                 confidence: Math.round(Math.max(h, d, a) * 10 / total) / 10,
                 sources:    ['manual'],
                 aiUsed:     false,
@@ -266,12 +269,12 @@ function handleCallbackQuery(cq) {
             '🔵 <b>Add Upcoming Match + Prediction</b>',
             '',
             'Type in this format:',
-            '<code>Home | Away | League | Country | Time | H% | D% | A% | Score | Advice</code>',
+            '<code>Home | Away | League | Country | Time | H% | D% | A% | Score | Advice | Pro Tip</code>',
             '',
             'Example:',
-            '<code>Arsenal | Chelsea | Premier League | England | 20:00 | 60 | 25 | 15 | 2-1 | Arsenal to win</code>',
+            '<code>Arsenal | Chelsea | Premier League | England | 20:00 | 60 | 25 | 15 | 2-1 | Arsenal look strong | Home Win @ 1.80</code>',
             '',
-            'Only Home and Away are required. Rest is optional.',
+            'Only Home and Away are required. Pro Tip (last field) shows as a gold "Verified Pro Tip" on the website.',
         ].join('\n'), [[{ text: '❌ Cancel', callback_data: 'back_main' }]]);
         return;
     }
@@ -381,29 +384,45 @@ function handleMessage(msg) {
         }
 
         case '/tip': {
-            const [home, away, league, country, time, hp, dp, ap, score, ...advParts] = args;
+            const [home, away, league, country, time, hp, dp, ap, score, advice, protip] = args;
             if (!home || !away) { reply(chatId, '❌ Minimum: /tip Home | Away'); return; }
             const k = matchKey(home, away);
             store.matches[k] = {
-                id:         k,
-                home:       { name: home, score: null },
-                away:       { name: away, score: null },
-                leagueName: league  || 'Unknown League',
-                country:    country || '',
-                time:       time    || '',
-                status:     'NS',
+                id:                k,
+                home:              { name: home, score: null },
+                away:              { name: away, score: null },
+                leagueName:        league  || 'Unknown League',
+                country:           country || '',
+                time:              time    || '',
+                status:            'NS',
+                manual_prediction: protip  || null,
             };
             const h = parseInt(hp)||0, d = parseInt(dp)||0, a = parseInt(ap)||0;
             if (h || d || a) {
                 const total = h + d + a || 100;
                 store.preds[k] = {
                     h: Math.round(h*100/total), d: Math.round(d*100/total), a: Math.round(a*100/total),
-                    score: score || null, advice: advParts.join('|').trim() || null,
+                    score: score || null, advice: advice || null,
                     confidence: Math.round(Math.max(h,d,a)*10/total)/10, sources: ['manual'], aiUsed: false,
                 };
             }
             const tot = h+d+a||100;
-            reply(chatId, `✅ <b>${home} vs ${away}</b>\n${league||''}${country?' · '+country:''}${time?' @ '+time:''}\n${(h||d||a)?`Pred: ${Math.round(h*100/tot)}% / ${Math.round(d*100/tot)}% / ${Math.round(a*100/tot)}%`:'No prediction'}`);
+            reply(chatId, [
+                `✅ <b>${home} vs ${away}</b>`,
+                `${league||''}${country?' · '+country:''}${time?' @ '+time:''}`,
+                (h||d||a)?`Pred: ${Math.round(h*100/tot)}% / ${Math.round(d*100/tot)}% / ${Math.round(a*100/tot)}%`:'No prediction',
+                protip ? `⭐ Pro Tip: ${protip}` : '',
+            ].filter(Boolean).join('\n'));
+            break;
+        }
+
+        case '/protip': {
+            const [home, away, ...tipParts] = args;
+            if (!home || !away || !tipParts.length) { reply(chatId, '❌ Usage: /protip Home | Away | Pro tip text\nExample: /protip Arsenal | Chelsea | Home Win @ 1.80'); return; }
+            const k = matchKey(home, away);
+            if (!store.matches[k]) { reply(chatId, `❌ Not found: ${home} vs ${away}\nAdd the match first with /tip`); return; }
+            store.matches[k].manual_prediction = tipParts.join('|').trim();
+            reply(chatId, `⭐ Pro Tip set: <b>${home} vs ${away}</b>\n${store.matches[k].manual_prediction}`);
             break;
         }
 
@@ -501,6 +520,7 @@ app.get('/api/scores', (req, res) => {
             id: m.id, home: { name: m.home.name, score: m.home.score },
             away: { name: m.away.name, score: m.away.score },
             status: m.status, time: m.time, leagueName: m.leagueName, country: m.country,
+            manual_prediction: m.manual_prediction || null,
         });
     }
     res.json({ livescore: { league: Object.values(byLeague) } });
