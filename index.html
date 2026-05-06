@@ -1,1432 +1,227 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Analysis</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        * { box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-        :root {
-            --bg:#F5F5F7; --surface:#FFFFFF;
-            --t1:#1D1D1F; --t2:#6E6E73; --t3:#86868B;
-            --sep:rgba(0,0,0,0.08); --sep2:rgba(0,0,0,0.14);
-            --live:#FF3B30; --blue:#007AFF;
-            --r:16px; --r2:24px;
-            --card-shadow:0 1px 1px rgba(0,0,0,0.04),0 2px 8px rgba(0,0,0,0.05),0 0 0 0.5px rgba(0,0,0,0.05);
-            --modal-shadow:0 24px 64px rgba(0,0,0,0.22);
-        }
-        body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--t1); overflow-x:hidden; }
-        ::-webkit-scrollbar { display:none; } * { scrollbar-width:none; }
+// backend/server.js
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
+const { Telegraf, Markup } = require('telegraf');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, doc, setDoc, getDoc } = require('firebase/firestore');
 
-        /* Header */
-        .hdr { position:sticky; top:0; z-index:100; height:56px; background:rgba(255,255,255,0.88); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border-bottom:0.5px solid var(--sep); display:flex; align-items:center; padding:0 16px; }
-        .hdr-btn { width:34px; height:34px; border-radius:50%; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--t1); transition:background .15s; flex-shrink:0; }
-        .hdr-btn:hover { background:rgba(0,0,0,0.06); }
-        .hdr-center { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; }
-        .hdr-title { font-size:16px; font-weight:600; letter-spacing:-.3px; }
+const app = express();
+const port = process.env.PORT || 10000; 
+const appId = "magic-betting-tips"; 
 
-        /* Sport tabs */
-        .tabs-bar { background:var(--surface); border-bottom:0.5px solid var(--sep); padding:10px 14px; display:flex; gap:7px; overflow-x:auto; }
-        .tab { padding:6px 15px; border-radius:100px; font-size:14px; font-weight:500; letter-spacing:-.2px; border:none; cursor:pointer; white-space:nowrap; transition:all .2s; }
-        .tab-on { background:var(--t1); color:#fff; transform:scale(1.02); }
-        .tab-off { background:var(--bg); color:var(--t2); }
-        .tab-off:hover { background:#E8E8ED; }
+app.use(cors());
+app.use(express.json());
 
-        /* Refresh toast */
-        .toast {
-            position:fixed; top:68px; left:50%; transform:translateX(-50%);
-            background:var(--t1); color:#fff;
-            padding:10px 18px; border-radius:100px;
-            display:flex; align-items:center; gap:9px;
-            font-size:13px; font-weight:600; letter-spacing:-.1px;
-            z-index:150; pointer-events:none; white-space:nowrap;
-            box-shadow:0 4px 24px rgba(0,0,0,0.22);
-            animation:toastAnim 3s ease forwards;
-        }
-        @keyframes toastAnim {
-            0%   { opacity:0; transform:translateX(-50%) translateY(-16px); }
-            12%  { opacity:1; transform:translateX(-50%) translateY(0); }
-            78%  { opacity:1; transform:translateX(-50%) translateY(0); }
-            100% { opacity:0; transform:translateX(-50%) translateY(-10px); }
-        }
+// ─── Firebase Initialization ─────────────────────────────────────────────────
+const firebaseConfigStr = process.env.FIREBASE_CONFIG;
+let db = null;
 
-        /* Page */
-        .page { max-width:640px; margin:0 auto; padding:0 14px 110px; }
-        .page-in { animation:pgIn .3s ease forwards; }
-        @keyframes pgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .page-head { padding:26px 0 20px; }
-        .page-h1 { font-size:30px; font-weight:700; letter-spacing:-.6px; line-height:1; margin-bottom:4px; }
-        .page-sub { font-size:13px; color:var(--t3); }
-
-        /* Stats */
-        .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:28px; }
-        .stat { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:14px 10px; text-align:center; }
-        .stat-n { font-size:22px; font-weight:700; letter-spacing:-.5px; line-height:1; margin-bottom:3px; }
-        .stat-l { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
-
-        /* Group */
-        .grp { display:flex; align-items:center; gap:10px; margin:24px 0 10px; }
-        .grp-line { flex:1; height:.5px; background:var(--sep2); }
-        .grp-txt { font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
-
-        /* Card */
-        .card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); margin-bottom:9px; overflow:hidden; cursor:pointer; transition:transform .14s,box-shadow .14s; -webkit-tap-highlight-color:transparent; }
-        .card:active { transform:scale(.984); }
-        .card:hover { box-shadow:0 4px 22px rgba(0,0,0,0.1),0 0 0 0.5px rgba(0,0,0,0.05); }
-        .card-inner { padding:13px 15px 11px; }
-        .card-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
-        .card-league { font-size:11px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px; }
-        .fav { background:none; border:none; cursor:pointer; padding:2px; color:var(--sep2); transition:color .15s,transform .2s cubic-bezier(.34,1.56,.64,1); line-height:0; flex-shrink:0; }
-        .fav:hover { transform:scale(1.25); }
-        .fav.on { color:var(--live); }
-
-        /* Card body: optional logo + names + scores */
-        .card-body { display:flex; align-items:stretch; gap:10px; }
-        .card-logo-col { display:flex; flex-direction:column; gap:5px; justify-content:center; width:28px; flex-shrink:0; }
-        .team-logo-sm { width:24px; height:24px; object-fit:contain; border-radius:4px; }
-        .team-logo-ph { width:24px; height:24px; background:var(--bg); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--t3); font-weight:700; }
-        .card-teams { flex:1; display:flex; flex-direction:column; gap:5px; min-width:0; }
-        .team-nm { font-size:15px; font-weight:600; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .card-scores { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; min-width:22px; }
-        .score-n { font-size:15px; font-weight:700; letter-spacing:-.2px; }
-        .score-n.dim { color:var(--t3); font-weight:400; }
-
-        /* Card footer with status badge */
-        .card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:9px; border-top:.5px solid var(--sep); }
-        .s-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:100px; letter-spacing:.3px; text-transform:uppercase; }
-        .s-live { background:rgba(255,59,48,.12); color:var(--live); }
-        .s-fin  { background:rgba(0,0,0,.05); color:var(--t3); }
-        .s-upc  { background:rgba(0,122,255,.1); color:var(--blue); }
-        .s-canc { background:rgba(0,0,0,.05); color:var(--t3); }
-        .dot { width:5px; height:5px; border-radius:50%; background:var(--live); animation:blink 1.6s ease-in-out infinite; flex-shrink:0; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
-
-        .info-pill { font-size:11px; font-weight:600; color:var(--t2); background:var(--bg); border:none; border-radius:100px; padding:4px 10px; cursor:pointer; transition:background .15s,color .15s; display:flex; align-items:center; gap:4px; }
-        .info-pill:hover { background:var(--t1); color:#fff; }
-
-        /* Banners */
-        .err-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:3px solid var(--live); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-        .err-txt { flex:1; font-size:13px; font-weight:500; }
-        .retry-btn { font-size:11px; font-weight:700; background:var(--bg); border:none; border-radius:100px; padding:5px 12px; cursor:pointer; flex-shrink:0; }
-        .wake-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-        .alert-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:2px solid #FF9F0A; padding:11px 13px; display:flex; align-items:center; gap:9px; margin-bottom:12px; }
-        .x-btn { background:none; border:none; cursor:pointer; color:var(--t3); font-size:17px; line-height:1; }
-
-        /* Skeleton */
-        .skel-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:14px 15px; margin-bottom:9px; display:flex; flex-direction:column; gap:9px; }
-        .skel { background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:5px; }
-        @keyframes shim { from{background-position:200% 0} to{background-position:-200% 0} }
-
-        /* Bottom nav */
-        .nav { position:fixed; bottom:0; left:0; right:0; height:80px; background:rgba(255,255,255,0.9); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border-top:.5px solid var(--sep); display:flex; align-items:flex-start; justify-content:space-around; padding-top:11px; z-index:100; }
-        .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; min-width:56px; -webkit-tap-highlight-color:transparent; }
-        .nav-ico { width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
-        .nav-lbl { font-size:10px; font-weight:500; letter-spacing:.1px; }
-        .nav-item.on .nav-ico, .nav-item.on .nav-lbl { color:var(--t1); }
-        .nav-item.off .nav-ico, .nav-item.off .nav-lbl { color:#C7C7CC; }
-        .nav-item.on .nav-lbl { font-weight:600; }
-        /* Tips tab */
-        .tip-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); margin-bottom:10px; padding:14px 16px; cursor:pointer; }
-        .tip-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-        .tip-lg-name { font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; }
-        .tip-status { font-size:11px; font-weight:600; color:var(--t1); background:rgba(0,122,255,.1); padding:2px 8px; border-radius:100px; }
-        .tip-teams { display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:14px; }
-        .tip-team { font-size:14px; font-weight:700; color:var(--t1); flex:1; }
-        .tip-team.home { text-align:left; }
-        .tip-team.away { text-align:right; }
-        .tip-vs { font-size:11px; color:var(--t3); font-weight:500; white-space:nowrap; }
-        .tip-probs { display:flex; justify-content:space-around; margin-bottom:10px; }
-        .tip-col { display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; }
-        .tip-circle { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:800; }
-        .tip-circle.win  { background:#FF9500; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.4); }
-        .tip-circle.draw { background:#86868B; color:#fff; }
-        .tip-circle.off  { background:var(--bg); color:var(--t3); border:1.5px solid var(--sep); }
-        .tip-pct { font-size:13px; color:var(--t2); font-weight:500; }
-        .tip-col.active .tip-pct { font-weight:700; color:var(--t1); }
-        .tip-score-line { text-align:center; font-size:13px; font-weight:700; color:var(--t1); margin-bottom:5px; }
-        .tip-advice { font-size:12px; color:var(--t3); text-align:center; font-style:italic; line-height:1.4; }
-
-        /* Overlay / Sheet */
-        .overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.48); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; }
-        .sheet { background:var(--surface); border-radius:var(--r2) var(--r2) 0 0; width:100%; max-width:640px; max-height:92vh; overflow-y:auto; padding:10px 22px 44px; animation:sheetUp .38s cubic-bezier(.32,.72,0,1) forwards; }
-        @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-        .handle { width:34px; height:4px; background:var(--sep2); border-radius:2px; margin:0 auto 18px; }
-
-        /* Detail sheet */
-        .detail-head { text-align:center; margin-bottom:20px; }
-        .detail-league { font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
-        .detail-teams { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:10px; }
-        .detail-team { flex:1; text-align:center; }
-        .detail-logo { width:64px; height:64px; object-fit:contain; margin:0 auto 8px; display:block; }
-        .detail-logo-ph { width:64px; height:64px; background:var(--bg); border-radius:16px; margin:0 auto 8px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:var(--t2); }
-        .detail-logo-loading { width:64px; height:64px; background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:16px; margin:0 auto 8px; }
-        .detail-team-nm { font-size:13px; font-weight:600; letter-spacing:-.1px; }
-        .detail-vs { font-size:12px; color:var(--t3); font-weight:600; flex-shrink:0; }
-
-        .detail-score-box { background:var(--t1); border-radius:var(--r); padding:18px 20px; margin-bottom:14px; text-align:center; }
-        .detail-score-big { font-size:40px; font-weight:700; color:#fff; letter-spacing:-1px; line-height:1; margin-bottom:6px; }
-        .detail-score-sub { font-size:12px; color:rgba(255,255,255,.5); font-weight:500; }
-
-        .detail-status-row { display:flex; justify-content:center; margin-bottom:16px; }
-
-        .detail-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:16px; }
-        .detail-info-cell { background:var(--bg); border-radius:12px; padding:12px; text-align:center; }
-        .detail-info-val { font-size:15px; font-weight:700; letter-spacing:-.2px; margin-bottom:2px; }
-        .detail-info-lbl { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
-
-        /* Events */
-        .events-title { font-size:12px; font-weight:600; color:var(--t2); margin-bottom:10px; letter-spacing:-.1px; }
-        .event-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:.5px solid var(--sep); }
-        .event-row:last-child { border-bottom:none; }
-        .event-min { font-size:11px; font-weight:700; color:var(--t2); width:28px; flex-shrink:0; }
-        .event-ico { font-size:14px; flex-shrink:0; width:18px; text-align:center; }
-        .event-player { font-size:13px; font-weight:500; color:var(--t1); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .event-team { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; flex-shrink:0; }
-
-        /* AI Analysis */
-        .ai-analysis-box { background:var(--bg); border-radius:var(--r); padding:14px 16px; margin-bottom:14px; }
-        .ai-analysis-lbl { font-size:10px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px; display:flex; align-items:center; gap:5px; }
-        .ai-analysis-txt { font-size:14px; color:var(--t1); line-height:1.55; font-weight:400; }
-        .ai-analysis-loading { display:flex; align-items:center; gap:8px; padding:2px 0; }
-        .ai-analysis-loading-txt { font-size:12px; color:var(--t3); }
-
-        /* Prediction card block (Forebet-style, shown on every card) */
-        .pred-card-block { margin-top:9px; border-radius:11px; background:#1D1D1F; overflow:hidden; }
-        .pred-card-inner { display:flex; align-items:center; gap:12px; padding:11px 13px; }
-        .pred-card-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 2px 10px rgba(255,149,0,.45); }
-        .pred-card-mid { flex:1; min-width:0; }
-        .pred-card-label { font-size:13px; font-weight:700; color:#fff; letter-spacing:-.1px; }
-        .pred-card-score { font-size:11px; color:rgba(255,255,255,.55); font-weight:500; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .pred-card-pcts { display:flex; gap:6px; flex-shrink:0; }
-        .pred-card-pct { text-align:center; min-width:30px; }
-        .pred-card-pct-val { font-size:12px; font-weight:700; color:#fff; }
-        .pred-card-pct-code { font-size:9px; color:rgba(255,255,255,.4); font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
-        .pred-card-pct.hi .pred-card-pct-val { color:#FF9500; }
-        .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
-        .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
-
-        /* Pred column — Forebet style, pinned right with vertical separator */
-        .card-row { display:flex; align-items:center; gap:0; margin-bottom:8px; }
-        .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; padding-right:10px; }
-        .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; border-left:.5px solid var(--sep2); padding-left:11px; }
-        .card-scores-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; min-width:20px; }
-        .pred-front { display:flex; flex-direction:column; align-items:center; gap:2px; }
-        .pred-front-circle { width:40px; height:40px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:800; color:#fff; box-shadow:0 2px 8px rgba(255,149,0,.4); flex-shrink:0; }
-        .pred-front-circle.draw { background:#86868B; box-shadow:none; }
-        .pred-front-score { font-size:10px; font-weight:700; color:var(--t2); letter-spacing:.1px; }
-        .pred-front-probs { display:flex; gap:5px; margin-top:1px; }
-        .pred-front-prob { display:flex; flex-direction:column; align-items:center; }
-        .pred-front-pct { font-size:9px; font-weight:700; color:var(--t2); line-height:1.2; }
-        .pred-front-code { font-size:8px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; }
-        .pred-front-prob.hi .pred-front-pct { color:#FF9500; }
-        .pred-front-prob.hi .pred-front-code { color:rgba(255,149,0,.7); }
-        .pred-front-prob.hi-draw .pred-front-pct { color:#86868B; }
-        .pred-skel-circle { width:40px; height:40px; border-radius:50%; flex-shrink:0; }
-
-        /* Prediction outcome circle (Forebet-style) */
-        .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
-        .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
-        .pred-outcome-code { font-size:36px; font-weight:800; color:#fff; letter-spacing:-1px; line-height:1; }
-        .pred-outcome-label { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:4px; }
-        .pred-outcome-score { font-size:26px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
-        .pred-outcome-score-lbl { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-        .pred-prob-row { display:flex; gap:8px; margin-bottom:16px; }
-        .pred-prob-cell { flex:1; background:var(--bg); border-radius:12px; padding:10px 6px; text-align:center; }
-        .pred-prob-val { font-size:17px; font-weight:700; letter-spacing:-.3px; }
-        .pred-prob-lbl { font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-        /* Small card prediction badge */
-        .card-pred-badge { font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; background:#FF9500; color:#fff; letter-spacing:.2px; }
-
-        /* Prediction sheet (same as before) */
-        .pred-league-row { text-align:center; margin-bottom:20px; }
-        .pred-league-nm { font-size:12px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; }
-        .pred-badge { display:inline-block; font-size:10px; font-weight:600; color:var(--t3); background:var(--bg); padding:3px 9px; border-radius:100px; margin-top:5px; }
-        .pred-teams { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:12px; }
-        .pred-team { flex:1; text-align:center; }
-        .pred-logo { width:56px; height:56px; object-fit:contain; margin:0 auto 7px; display:block; }
-        .pred-team-nm { font-size:12px; font-weight:600; letter-spacing:-.1px; }
-        .pred-vs { font-size:12px; font-weight:600; color:var(--t3); flex-shrink:0; }
-        .pred-box { background:var(--t1); border-radius:var(--r); padding:18px; margin-bottom:20px; }
-        .pred-advice { font-size:19px; font-weight:700; color:#fff; letter-spacing:-.4px; text-align:center; margin-bottom:14px; line-height:1.3; }
-        .pred-bar { height:3px; background:rgba(255,255,255,.15); border-radius:2px; overflow:hidden; display:flex; margin-bottom:9px; }
-        .pb-h{background:#fff} .pb-d{background:rgba(255,255,255,.4)} .pb-a{background:rgba(255,255,255,.7)}
-        .pred-pct { display:flex; justify-content:space-between; font-size:10px; font-weight:600; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.3px; }
-        .cmp-row { margin-bottom:12px; }
-        .cmp-labels { display:flex; justify-content:space-between; margin-bottom:5px; }
-        .cmp-val { font-size:11px; font-weight:600; }
-        .cmp-name { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
-        .cmp-track { height:2px; background:var(--bg); border-radius:1px; overflow:hidden; }
-        .cmp-fill { height:100%; background:var(--t1); }
-
-        /* Loading overlay */
-        .pred-loading { position:fixed; inset:0; z-index:210; background:rgba(255,255,255,.65); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; }
-        .pred-loading-box { background:var(--surface); border-radius:var(--r2); box-shadow:var(--modal-shadow); padding:28px 36px; display:flex; flex-direction:column; align-items:center; gap:12px; }
-        .pred-loading-txt { font-size:12px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.3px; }
-        .spin { width:22px; height:22px; border:2px solid var(--sep2); border-top-color:var(--t1); border-radius:50%; animation:rot .7s linear infinite; }
-        .spin-sm { width:14px; height:14px; border:1.5px solid var(--sep2); border-top-color:var(--blue); border-radius:50%; animation:rot .7s linear infinite; }
-        @keyframes rot { to{transform:rotate(360deg)} }
-
-        /* Center modal */
-        .center-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.46); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
-        .center-card { background:var(--surface); border-radius:var(--r2); width:100%; max-width:340px; padding:32px 26px; box-shadow:var(--modal-shadow); animation:pop .28s cubic-bezier(.34,1.56,.64,1); }
-        @keyframes pop { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
-
-        /* Settings */
-        .settings-group { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); overflow:hidden; margin-bottom:18px; }
-        .settings-item { display:flex; align-items:center; justify-content:space-between; padding:15px 16px; text-decoration:none; color:var(--t1); font-size:15px; font-weight:500; letter-spacing:-.2px; border-bottom:.5px solid var(--sep); transition:background .1s; }
-        .settings-item:last-child { border-bottom:none; }
-        .settings-item:hover { background:var(--bg); }
-
-        /* Calendar */
-        .cal-days { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
-        .cal-day { display:flex; flex-direction:column; align-items:center; padding:9px 5px; border-radius:11px; cursor:pointer; transition:background .15s; }
-        .cal-day.on { background:var(--t1); }
-        .cal-day.on .cal-dd,.cal-day.on .cal-dn { color:#fff; }
-        .cal-day:not(.on):hover { background:var(--bg); }
-        .cal-dd { font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; margin-bottom:3px; }
-        .cal-dn { font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
-        .cal-day.on .cal-dd { color:rgba(255,255,255,.65); }
-
-        /* Social */
-        .social { padding:36px 0 16px; text-align:center; }
-        .social-lbl { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px; }
-        .social-row { display:flex; justify-content:center; gap:14px; }
-        .social-ico { width:42px; height:42px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--t1); text-decoration:none; transition:background .15s,transform .18s; }
-        .social-ico:hover { background:var(--t1); color:#fff; transform:translateY(-2px); }
-
-        /* Notif */
-        .notif-card { animation:notifDrop .55s cubic-bezier(.175,.885,.32,1.275) both; }
-        @keyframes notifDrop { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .opacity-0 { opacity:0; } .anim-fill { animation-fill-mode:forwards; }
-
-        /* Buttons */
-        .btn-primary { width:100%; background:var(--t1); color:#fff; border:none; border-radius:var(--r); padding:14px; font-weight:700; font-size:15px; cursor:pointer; letter-spacing:-.2px; }
-        .btn-secondary { width:100%; background:var(--bg); color:var(--t1); border:none; border-radius:var(--r); padding:14px; font-weight:600; font-size:15px; cursor:pointer; letter-spacing:-.2px; }
-
-        /* Splash */
-        .splash { position:fixed; inset:0; z-index:300; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; animation:splFade .5s ease forwards; animation-delay:2.6s; pointer-events:none; }
-        @keyframes splFade { to{opacity:0} }
-        .splash-inner { animation:splPop .55s cubic-bezier(.34,1.56,.64,1) forwards; display:flex; flex-direction:column; align-items:center; gap:14px; }
-        @keyframes splPop { from{opacity:0;transform:scale(.82)} to{opacity:1;transform:scale(1)} }
-    </style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useMemo, useCallback, useRef } = React;
-
-const BACKEND_URL = "https://sportprediction.onrender.com";
-
-/* ── Status helpers ── */
-/* ── Forebet-style outcome helper ── */
-const getPredOutcome = pct => {
-    const h = parseInt(pct?.home) || 0;
-    const d = parseInt(pct?.draw) || 0;
-    const a = parseInt(pct?.away) || 0;
-    if (h >= d && h >= a) return { code: '1', label: 'Home Win' };
-    if (a > h  && a >= d) return { code: '2', label: 'Away Win' };
-    return { code: 'X', label: 'Draw' };
-};
-
-
-/* ══════════════════════════════════════════════════════════════════════
-   WEIGHTED POISSON DISTRIBUTION PREDICTION ENGINE
-   Methodology: attack/defence ratings → expected goals → 7×7 matrix
-   ══════════════════════════════════════════════════════════════════════ */
-
-const RATINGS = {
-  /* Premier League */
-  'Arsenal':{a:2.05,d:0.72},'Manchester City':{a:2.20,d:0.68},'Liverpool':{a:2.15,d:0.78},
-  'Chelsea':{a:1.72,d:0.98},'Tottenham':{a:1.78,d:1.08},'Manchester United':{a:1.48,d:1.20},
-  'Newcastle United':{a:1.68,d:0.88},'Aston Villa':{a:1.82,d:0.92},'West Ham':{a:1.38,d:1.15},
-  'Brighton':{a:1.60,d:0.98},'Brentford':{a:1.52,d:1.02},'Fulham':{a:1.38,d:1.08},
-  'Wolves':{a:1.18,d:1.18},'Crystal Palace':{a:1.18,d:1.08},'Everton':{a:1.08,d:1.18},
-  'Nottingham Forest':{a:1.28,d:0.98},'Bournemouth':{a:1.40,d:1.12},
-  'Leicester City':{a:1.40,d:1.10},'Southampton':{a:1.00,d:1.35},'Ipswich Town':{a:1.05,d:1.28},
-  'Luton Town':{a:0.98,d:1.38},'Sheffield United':{a:0.88,d:1.48},'Burnley':{a:0.92,d:1.42},
-  /* Championship */
-  'Leeds United':{a:1.55,d:1.05},'Sunderland':{a:1.38,d:1.10},'Middlesbrough':{a:1.30,d:1.10},
-  'Coventry City':{a:1.25,d:1.15},'Sheffield Wednesday':{a:1.20,d:1.25},'Norwich City':{a:1.32,d:1.08},
-  'Watford':{a:1.35,d:1.10},'Swansea City':{a:1.20,d:1.15},'Millwall':{a:1.12,d:1.10},
-  'Hull City':{a:1.25,d:1.15},'Portsmouth':{a:1.30,d:1.12},'Preston North End':{a:1.10,d:1.15},
-  'Birmingham City':{a:1.05,d:1.30},'Cardiff City':{a:1.05,d:1.25},'QPR':{a:1.10,d:1.22},
-  'Stoke City':{a:1.10,d:1.20},'Bristol City':{a:1.10,d:1.18},'Derby County':{a:1.25,d:1.18},
-  'Blackburn Rovers':{a:1.20,d:1.18},'Oxford United':{a:1.15,d:1.22},'Plymouth Argyle':{a:1.08,d:1.28},
-  'Charlton Athletic':{a:1.12,d:1.20},'Luton':{a:0.98,d:1.38},
-  /* La Liga */
-  'Real Madrid':{a:2.30,d:0.70},'Barcelona':{a:2.22,d:0.78},'Atletico Madrid':{a:1.72,d:0.74},
-  'Sevilla':{a:1.40,d:1.08},'Real Sociedad':{a:1.52,d:0.98},'Villarreal':{a:1.50,d:1.02},
-  'Athletic Club':{a:1.40,d:0.98},'Real Betis':{a:1.32,d:1.08},'Valencia':{a:1.20,d:1.18},
-  'Girona':{a:1.62,d:0.98},'Celta Vigo':{a:1.28,d:1.18},'Osasuna':{a:1.08,d:1.08},
-  'Getafe':{a:1.02,d:1.12},'Rayo Vallecano':{a:1.08,d:1.18},'Mallorca':{a:1.08,d:1.08},
-  'Alaves':{a:0.98,d:1.28},'Espanyol':{a:1.05,d:1.25},'Cadiz':{a:0.88,d:1.38},
-  'Las Palmas':{a:1.08,d:1.28},'Granada':{a:0.88,d:1.38},
-  /* Bundesliga */
-  'Bayern Munich':{a:2.50,d:0.74},'Bayer Leverkusen':{a:2.12,d:0.78},
-  'Borussia Dortmund':{a:1.92,d:0.92},'RB Leipzig':{a:1.90,d:0.84},
-  'Eintracht Frankfurt':{a:1.52,d:1.02},'Stuttgart':{a:1.62,d:0.98},
-  'Wolfsburg':{a:1.38,d:1.08},'Freiburg':{a:1.28,d:0.98},'Hoffenheim':{a:1.38,d:1.08},
-  'Mainz':{a:1.18,d:1.12},'Werder Bremen':{a:1.38,d:1.18},'Augsburg':{a:1.08,d:1.18},
-  'Heidenheim':{a:1.18,d:1.18},'Borussia Mönchengladbach':{a:1.38,d:1.08},
-  /* Serie A */
-  'Inter Milan':{a:2.12,d:0.68},'AC Milan':{a:1.88,d:0.84},'Juventus':{a:1.78,d:0.78},
-  'Napoli':{a:1.80,d:0.88},'Atalanta':{a:2.02,d:0.88},'Roma':{a:1.58,d:0.98},
-  'Lazio':{a:1.52,d:1.02},'Fiorentina':{a:1.52,d:0.98},'Bologna':{a:1.52,d:0.92},
-  'Torino':{a:1.18,d:1.08},'Monza':{a:1.18,d:1.12},'Genoa':{a:1.08,d:1.18},
-  'Udinese':{a:1.08,d:1.18},'Cagliari':{a:0.98,d:1.22},'Lecce':{a:0.98,d:1.22},
-  'Empoli':{a:0.98,d:1.18},'Sassuolo':{a:1.28,d:1.18},'Hellas Verona':{a:1.08,d:1.28},
-  /* Ligue 1 */
-  'Paris Saint-Germain':{a:2.42,d:0.72},'Monaco':{a:1.92,d:0.88},'Lille':{a:1.62,d:0.88},
-  'Nice':{a:1.52,d:0.92},'Marseille':{a:1.60,d:0.98},'Lyon':{a:1.52,d:1.02},
-  'Lens':{a:1.52,d:0.92},'Rennes':{a:1.40,d:0.98},'Brest':{a:1.30,d:1.02},
-  'Nantes':{a:1.08,d:1.12},'Strasbourg':{a:1.18,d:1.18},'Reims':{a:1.08,d:1.08},
-  'Toulouse':{a:1.18,d:1.08},'Montpellier':{a:1.08,d:1.22},'Le Havre':{a:1.08,d:1.18},
-  'Lorient':{a:0.98,d:1.28},'Metz':{a:0.98,d:1.32},'Clermont':{a:0.92,d:1.32},
-  /* Other major */
-  'PSV':{a:2.30,d:0.72},'Ajax':{a:2.08,d:0.88},'Feyenoord':{a:2.10,d:0.82},
-  'AZ Alkmaar':{a:1.72,d:0.92},'Twente':{a:1.60,d:0.90},
-  'Celtic':{a:2.20,d:0.72},'Rangers':{a:1.88,d:0.82},
-  'Benfica':{a:2.05,d:0.78},'Porto':{a:2.00,d:0.80},'Sporting CP':{a:1.95,d:0.82},
-  'Galatasaray':{a:1.80,d:0.88},'Fenerbahce':{a:1.75,d:0.90},'Besiktas':{a:1.55,d:1.05},
-};
-
-const TEAM_ALIASES = {
-  'man city':'Manchester City','man utd':'Manchester United','man united':'Manchester United',
-  'spurs':'Tottenham','tottenham hotspur':'Tottenham','wolverhampton wanderers':'Wolves',
-  'wolverhampton':'Wolves','newcastle':'Newcastle United','nottm forest':'Nottingham Forest',
-  'west ham united':'West Ham','brighton & hove albion':'Brighton','brighton and hove albion':'Brighton',
-  'atletico de madrid':'Atletico Madrid','atlético madrid':'Atletico Madrid','athletic bilbao':'Athletic Club',
-  'athletic de bilbao':'Athletic Club','real betis balompie':'Real Betis',
-  'borussia dortmund':'Borussia Dortmund','dortmund':'Borussia Dortmund','bvb':'Borussia Dortmund',
-  'bayer 04':'Bayer Leverkusen','leverkusen':'Bayer Leverkusen',
-  "borussia m'gladbach":'Borussia Mönchengladbach','gladbach':'Borussia Mönchengladbach',
-  'inter':'Inter Milan','internazionale':'Inter Milan','ac milan':'AC Milan',
-  'juve':'Juventus','as roma':'Roma','psg':'Paris Saint-Germain',
-  'paris sg':'Paris Saint-Germain','paris saint germain':'Paris Saint-Germain',
-  'psv eindhoven':'PSV','az':'AZ Alkmaar','sporting':'Sporting CP','sporting lisbon':'Sporting CP',
-  'fc porto':'Porto',
-};
-
-const LEAGUE_AVGS = {
-  'Premier League':{h:1.53,a:1.15},'Championship':{h:1.50,a:1.10},'League One':{h:1.48,a:1.08},
-  'La Liga':{h:1.58,a:1.16},'Bundesliga':{h:1.73,a:1.32},'2. Bundesliga':{h:1.60,a:1.20},
-  'Serie A':{h:1.47,a:1.10},'Ligue 1':{h:1.46,a:1.10},'Eredivisie':{h:1.82,a:1.40},
-  'Primeira Liga':{h:1.55,a:1.12},'Scottish Premiership':{h:1.60,a:1.20},
-  'Super Lig':{h:1.60,a:1.18},'Champions League':{h:1.80,a:1.40},
-  'Europa League':{h:1.65,a:1.25},'default':{h:1.50,a:1.10},
-};
-
-const resolveTeam = name => {
-  if (!name) return null;
-  if (RATINGS[name]) return name;
-  const k = name.toLowerCase().trim();
-  if (TEAM_ALIASES[k]) return TEAM_ALIASES[k];
-  for (const rk of Object.keys(RATINGS)) {
-    if (rk.toLowerCase() === k) return rk;
-    if (k.length > 4 && (rk.toLowerCase().includes(k) || k.includes(rk.toLowerCase()))) return rk;
-  }
-  return null;
-};
-
-const resolveLeague = lg => {
-  if (!lg) return 'default';
-  for (const lk of Object.keys(LEAGUE_AVGS)) {
-    if (lk !== 'default' && lg.toLowerCase().includes(lk.toLowerCase())) return lk;
-  }
-  return 'default';
-};
-
-const poissonP = (lam, k) => {
-  if (lam <= 0) return k === 0 ? 1 : 0;
-  let logP = -lam + k * Math.log(lam);
-  for (let i = 1; i <= k; i++) logP -= Math.log(i);
-  return Math.exp(logP);
-};
-
-/* Main prediction engine — deterministic Poisson model */
-const poissonPredict = (homeName, awayName, leagueName) => {
-  const DEF = { a: 1.0, d: 1.0 };
-  const hk  = resolveTeam(homeName);
-  const ak  = resolveTeam(awayName);
-  const hR  = hk ? RATINGS[hk] : DEF;
-  const aR  = ak ? RATINGS[ak] : DEF;
-  const lk  = resolveLeague(leagueName);
-  const avg = LEAGUE_AVGS[lk] || LEAGUE_AVGS.default;
-
-  /* λ formula from spec: Home = hAtk × aDef × leagueHomeAvg × 1.10 */
-  const lamH = hR.a * aR.d * avg.h * 1.10;
-  const lamA = aR.a * hR.d * avg.a;
-
-  /* 7×7 probability matrix (0-0 to 6-6) */
-  let hw = 0, dw = 0, aw = 0, bestP = 0, bestHG = 1, bestAG = 0;
-  for (let hg = 0; hg <= 6; hg++) {
-    for (let ag = 0; ag <= 6; ag++) {
-      const p = poissonP(lamH, hg) * poissonP(lamA, ag);
-      if (hg > ag) hw += p; else if (hg === ag) dw += p; else aw += p;
-      if (p > bestP) { bestP = p; bestHG = hg; bestAG = ag; }
-    }
-  }
-
-  const tot  = hw + dw + aw;
-  const hp   = Math.round((hw / tot) * 100);
-  const dp   = Math.round((dw / tot) * 100);
-  const ap   = Math.max(0, 100 - hp - dp);
-  const code = hp >= ap && hp >= dp ? '1' : ap > hp && ap >= dp ? '2' : 'X';
-  const lbl  = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-
-  return {
-    loading: false, code, label: lbl,
-    score: `${bestHG}-${bestAG}`,
-    advice: `${lbl} — xG: ${lamH.toFixed(2)} vs ${lamA.toFixed(2)}`,
-    hp: `${hp}%`, dp: `${dp}%`, ap: `${ap}%`,
-  };
-};
-
-
-const FIN  = ['FT','AET','PEN','Pen.'];
-const CANC = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
-const UPC  = ['NS','TBD'];
-const TIME_RE     = /^\d{2}:\d{2}$/;
-const FT_SCORE_RE = /\[(\d+)-(\d+)\]/;
-
-const cat = s => {
-    if (!s) return 'unknown';
-    if (FIN.includes(s))  return 'finished';
-    if (CANC.includes(s)) return 'cancelled';
-    if (UPC.includes(s))  return 'upcoming';
-    if (TIME_RE.test(s))  return 'upcoming';
-    return 'live';
-};
-
-const statusLabel = s => {
-    if (!s) return '';
-    if (s === 'HT')  return 'Half Time';
-    if (s === 'FT')  return 'Full Time';
-    if (s === 'AET') return 'AET';
-    if (s === 'PEN' || s === 'Pen.') return 'Penalties';
-    if (s === 'ET')  return 'Extra Time';
-    if (s === 'BT')  return 'Break';
-    if (TIME_RE.test(s)) return s;
-    const n = parseInt(s);
-    if (!isNaN(n)) return `${n}'`;
-    return s;
-};
-
-const statusBadgeLabel = (s, c) => {
-    if (c === 'live')     return `LIVE  ${statusLabel(s)}`;
-    if (c === 'finished') return statusLabel(s) || 'Full Time';
-    if (c === 'upcoming') return `KO  ${statusLabel(s)}`;
-    if (c === 'cancelled') return statusLabel(s) || 'Cancelled';
-    return statusLabel(s);
-};
-
-const getGoals = m => {
-    const c = cat(m.status);
-    if (c === 'finished') {
-        const raw = m.ft?.score;
-        if (raw) { const x = FT_SCORE_RE.exec(raw); if (x) return { h:x[1], a:x[2] }; }
-    }
-    const h = m.home?.goals, a = m.away?.goals;
-    if (h == null || h === '?' || a == null || a === '?') return null;
-    return { h:String(h), a:String(a) };
-};
-
-const fid = m => m?.static_id || m?.id || m?.fixture?.id || null;
-
-const parseEvents = m => {
+if (firebaseConfigStr) {
     try {
-        const ev = m.events?.event;
-        if (!ev) return [];
-        const arr = Array.isArray(ev) ? ev : [ev];
-        return arr.filter(e => e && (e.type || e.minute)).map(e => ({
-            minute: e.minute || e.min || '',
-            type:   (e.type || '').toLowerCase(),
-            player: e.player || e.Player || '',
-            assist: e.assist || '',
-            team:   e.team || e.Team || '',
-        }));
-    } catch { return []; }
-};
-
-const eventIcon = t => {
-    if (t.includes('goal') || t === 'g') return '⚽';
-    if (t.includes('yellow')) return '🟨';
-    if (t.includes('red'))    return '🟥';
-    if (t.includes('sub'))    return '🔄';
-    if (t.includes('var'))    return '📺';
-    return '•';
-};
-
-/* ── SVG Icons ── */
-const IcoHome  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
-const IcoBell  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
-const IcoHeart = ({on}) => <svg width="17" height="17" viewBox="0 0 24 24" fill={on?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
-const IcoMenu  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
-const IcoCal   = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-const IcoRef   = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
-const IcoChev  = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
-const IcoZap   = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
-const IcoIG    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>;
-const IcoTG    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-const IcoX     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
-const IcoStar    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
-const IcoThreads = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.471 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.267-.883-2.24-.887h-.047c-.69 0-1.952.19-2.653 1.344l-1.728-1.053c.932-1.545 2.368-2.31 4.38-2.31h.078c3.018.022 4.81 1.836 5.071 5.055l.014.187c.972.56 1.76 1.323 2.296 2.54.763 1.754.747 4.474-1.53 6.712-1.737 1.71-3.857 2.524-7.066 2.545zm.168-9.79c-.223 0-.447.008-.671.025-1.501.092-2.657.695-2.595 1.875.038.698.447 1.684 2.168 1.684h.055c1.226-.035 2.164-.554 2.78-1.503.432-.663.677-1.504.747-2.55a11.823 11.823 0 0 0-2.484-.531z"/></svg>;
-const IcoMail    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>;
-
-const MagicLogo = ({size=26}) => {
-    const [err, setErr] = useState(false);
-    const r = Math.round(size * 0.25);
-    if (!err) {
-        return (
-            <img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size}
-                style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}}
-                alt="Magic Analysis"
-                onError={()=>setErr(true)}/>
-        );
+        const cleanedConfig = firebaseConfigStr.trim();
+        const firebaseConfig = JSON.parse(cleanedConfig);
+        const firebaseApp = initializeApp(firebaseConfig);
+        db = getFirestore(firebaseApp);
+        console.log("🔥 Firebase Firestore connected successfully.");
+    } catch (err) {
+        console.error("❌ Firebase Init Error:", err.message);
     }
-    return (
-        <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}}>
-            <rect width="40" height="40" fill="#1D1D1F"/>
-            <path d="M8 30 L8 11 L20 24 L32 11 L32 30" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-            <circle cx="31" cy="10" r="4.5" fill="#007AFF"/>
-        </svg>
-    );
-};
-
-/* ── Logo component with fallback ── */
-const TeamLogo = ({ url, name, size=64, small=false }) => {
-    const [err, setErr] = useState(false);
-    const initials = (name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    if (!url || err) {
-        if (small) return <div className="team-logo-ph">{initials}</div>;
-        return <div className="detail-logo-ph" style={{width:size,height:size}}>{initials}</div>;
-    }
-    if (small) return <img className="team-logo-sm" src={url} alt={name} onError={()=>setErr(true)}/>;
-    return <img className="detail-logo" src={url} style={{width:size,height:size}} alt={name} onError={()=>setErr(true)}/>;
-};
-
-/* ── Skeleton ── */
-const Skel = () => (
-    <div className="skel-card">
-        <div className="skel" style={{height:9,width:'45%'}}/>
-        <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:13,width:'52%'}}/>
-            <div className="skel" style={{height:13,width:18}}/>
-        </div>
-        <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:13,width:'42%'}}/>
-            <div className="skel" style={{height:13,width:18}}/>
-        </div>
-        <div className="skel" style={{height:.5,width:'100%'}}/>
-        <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:9,width:55}}/>
-            <div className="skel" style={{height:9,width:75}}/>
-        </div>
-    </div>
-);
-
-/* ── Match Card ── */
-const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isNotif=false, idx=0 }) => {
-    const c   = cat(match.status);
-    const g   = getGoals(match);
-    const id  = fid(match);
-    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
-    const hasPred = pred && !pred.loading && pred.code;
-
-    return (
-        <div
-            className={`card${isNotif?' notif-card opacity-0 anim-fill':''}`}
-            style={{animationDelay:isNotif?`${idx*3}s`:'0s'}}
-            onClick={()=>onOpen(match)}
-        >
-            <div className="card-inner">
-                <div className="card-meta">
-                    <span className="card-league">{(match.country||'').toUpperCase()}{match.country&&match.leagueName?' · ':''}{match.leagueName||''}</span>
-                    <button className={`fav${isFav?' on':''}`} onClick={e=>{e.stopPropagation();if(id)onToggleFav(id);}}>
-                        <IcoHeart on={isFav}/>
-                    </button>
-                </div>
-
-                {/* Main row: teams | score | prediction circle */}
-                <div className="card-row">
-                    <div className="card-left">
-                        <div className="card-logo-col">
-                            <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
-                            <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
-                        </div>
-                        <div className="card-teams">
-                            <span className="team-nm">{match.home?.name||'—'}</span>
-                            <span className="team-nm">{match.away?.name||'—'}</span>
-                        </div>
-                    </div>
-
-                    <div className="card-right-col">
-                        {/* Current score */}
-                        <div className="card-scores-col">
-                            {g
-                                ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
-                                : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
-                            }
-                        </div>
-
-                        {/* Prediction column — always rendered */}
-                        {(!pred || pred.loading) && (
-                            <div className="pred-front">
-                                <div className="pred-skel-circle skel"/>
-                                <div style={{width:44,height:10,marginTop:3,borderRadius:4}} className="skel"/>
-                            </div>
-                        )}
-                        {hasPred && (
-                            <div className="pred-front" onClick={e=>e.stopPropagation()}>
-                                <div className={`pred-front-circle${pred.code==='X'?' draw':''}`}>{pred.code}</div>
-                                {pred.score && <div className="pred-front-score">{pred.score}</div>}
-                                <div className="pred-front-probs">
-                                    {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>{
-                                        const hi = pred.code===code;
-                                        return (
-                                            <div key={code} className={`pred-front-prob${hi?(code==='X'?' hi-draw':' hi'):''}`}>
-                                                <span className="pred-front-pct">{pct||'—'}</span>
-                                                <span className="pred-front-code">{code}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-                        {pred && !pred.loading && !pred.code && (
-                            <div className="pred-front">
-                                <div style={{width:44,height:44,borderRadius:'50%',background:'var(--bg)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:'var(--t3)'}}>?</div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <div className="card-foot">
-                    <span className={`s-badge ${badgeClass}`}>
-                        {c==='live' && <span className="dot"/>}
-                        {statusBadgeLabel(match.status, c)}
-                    </span>
-                    {id && (
-                        <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
-                            <IcoZap/> Details
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-/* ── Detail Sheet ── */
-const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose }) => {
-    const c      = cat(match.status);
-    const g      = getGoals(match);
-    const events = parseEvents(match);
-    const htScore = match.ht?.score ? (() => { const x=FT_SCORE_RE.exec(match.ht.score); return x?`${x[1]} - ${x[2]}`:null; })() : null;
-    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
-
-    return (
-        <div className="overlay" onClick={onClose}>
-            <div className="sheet" onClick={e=>e.stopPropagation()}>
-                <div className="handle"/>
-
-                {/* League */}
-                <div className="detail-head">
-                    <div className="detail-league">{match.country} · {match.leagueName}</div>
-                </div>
-
-                {/* Teams */}
-                <div className="detail-teams">
-                    <div className="detail-team">
-                        {logos.homeLoading
-                            ? <div className="detail-logo-loading"/>
-                            : <TeamLogo url={logos.home} name={match.home?.name} size={64}/>
-                        }
-                        <div className="detail-team-nm">{match.home?.name}</div>
-                    </div>
-                    <div className="detail-vs">vs</div>
-                    <div className="detail-team">
-                        {logos.awayLoading
-                            ? <div className="detail-logo-loading"/>
-                            : <TeamLogo url={logos.away} name={match.away?.name} size={64}/>
-                        }
-                        <div className="detail-team-nm">{match.away?.name}</div>
-                    </div>
-                </div>
-
-                {/* Score box */}
-                <div className="detail-score-box">
-                    <div className="detail-score-big">
-                        {g ? `${g.h}  —  ${g.a}` : '—  vs  —'}
-                    </div>
-                    {htScore && <div className="detail-score-sub">Half time: {htScore}</div>}
-                    {!htScore && c==='upcoming' && <div className="detail-score-sub">Match not started yet</div>}
-                </div>
-
-                {/* Status badge */}
-                <div className="detail-status-row">
-                    <span className={`s-badge ${badgeClass}`} style={{fontSize:12,padding:'5px 14px'}}>
-                        {c==='live' && <span className="dot"/>}
-                        {statusBadgeLabel(match.status, c)}
-                    </span>
-                </div>
-
-                {/* Info grid */}
-                <div className="detail-info-grid">
-                    <div className="detail-info-cell">
-                        <div className="detail-info-val">{match.leagueName||'—'}</div>
-                        <div className="detail-info-lbl">Competition</div>
-                    </div>
-                    <div className="detail-info-cell">
-                        <div className="detail-info-val">{match.country||'—'}</div>
-                        <div className="detail-info-lbl">Country</div>
-                    </div>
-                    {match.time && (
-                        <div className="detail-info-cell">
-                            <div className="detail-info-val">{match.time}</div>
-                            <div className="detail-info-lbl">Kick-off (UTC)</div>
-                        </div>
-                    )}
-                    {match.date && (
-                        <div className="detail-info-cell">
-                            <div className="detail-info-val">{match.date}</div>
-                            <div className="detail-info-lbl">Date</div>
-                        </div>
-                    )}
-                </div>
-
-                {/* AI Analysis */}
-                <div className="ai-analysis-box">
-                    <div className="ai-analysis-lbl"><IcoStar/> AI Match Analysis</div>
-                    {analysisLoading
-                        ? <div className="ai-analysis-loading"><div className="spin-sm"/><span className="ai-analysis-loading-txt">Generating analysis…</span></div>
-                        : analysis
-                            ? <div className="ai-analysis-txt">{analysis}</div>
-                            : <div className="ai-analysis-txt" style={{color:'var(--t3)'}}>Analysis unavailable for this match.</div>
-                    }
-                </div>
-
-                {/* Events */}
-                {events.length > 0 && (
-                    <div style={{marginBottom:16}}>
-                        <div className="events-title">Match Events</div>
-                        {events.slice(0,12).map((e,i) => (
-                            <div key={i} className="event-row">
-                                <span className="event-min">{e.minute ? `${e.minute}'` : '—'}</span>
-                                <span className="event-ico">{eventIcon(e.type)}</span>
-                                <span className="event-player">{e.player||'—'}{e.assist?` (${e.assist})`:''}</span>
-                                <span className="event-team">{e.team}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                {/* Prediction block inline */}
-                {pred?.loading && (
-                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'16px',marginBottom:14,display:'flex',alignItems:'center',gap:10}}>
-                        <div className="spin-sm"/><span style={{fontSize:12,color:'var(--t3)'}}>Loading prediction…</span>
-                    </div>
-                )}
-                {pred && !pred.loading && pred.code && (
-                    <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'18px',marginBottom:14}}>
-                        <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:14}}>Poisson Prediction</div>
-                        {/* Outcome circle + label + predicted score */}
-                        <div style={{display:'flex',alignItems:'center',gap:16,marginBottom:16}}>
-                            <div style={{width:60,height:60,borderRadius:'50%',background:pred.code==='X'?'#86868B':'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:28,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:pred.code==='X'?'none':'0 4px 16px rgba(255,149,0,.5)'}}>
-                                {pred.code}
-                            </div>
-                            <div>
-                                <div style={{fontSize:17,fontWeight:700,color:'#fff',marginBottom:4}}>{pred.label}</div>
-                                {pred.score && <div style={{fontSize:22,fontWeight:700,color:pred.code==='X'?'#86868B':'#FF9500',letterSpacing:'-.5px'}}>{pred.score}</div>}
-                                <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.35)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:1}}>Predicted score</div>
-                            </div>
-                        </div>
-                        {/* Probability breakdown */}
-                        <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:8}}>Probability Breakdown</div>
-                        <div style={{display:'flex',gap:6}}>
-                            {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>{
-                                const active = pred.code===code;
-                                const isDraw = code==='X';
-                                const col    = active ? (isDraw?'#86868B':'#FF9500') : '#fff';
-                                return (
-                                    <div key={code} style={{flex:1,textAlign:'center',background:active?(isDraw?'rgba(134,134,139,.18)':'rgba(255,149,0,.18)'):'rgba(255,255,255,.06)',borderRadius:10,padding:'10px 4px',outline:active?`1.5px solid ${isDraw?'#86868B':'#FF9500'}`:'none'}}>
-                                        <div style={{fontSize:20,fontWeight:800,color:col,letterSpacing:'-.3px'}}>{pct||'—'}</div>
-                                        <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:3}}>{lbl}</div>
-                                        <div style={{fontSize:14,fontWeight:700,color:active?col:'rgba(255,255,255,.3)',marginTop:2}}>{code}</div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        {pred.advice && <div style={{fontSize:11,color:'rgba(255,255,255,.4)',marginTop:12,textAlign:'center',fontStyle:'italic'}}>{pred.advice}</div>}
-                    </div>
-                )}
-                {pred && !pred.loading && !pred.code && (
-                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available for this match.</div>
-                )}
-                <button className="btn-secondary" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
-};
-
-/* ── Prediction Sheet ── */
-const PredSheet = ({ data, onClose }) => {
-    const { predictions, teams, comparison, league } = data;
-    if (!predictions || !teams || !league) return (
-        <div className="overlay" onClick={onClose}>
-            <div className="sheet" onClick={e=>e.stopPropagation()}>
-                <div className="handle"/>
-                <p style={{textAlign:'center',color:'var(--t3)',fontSize:14,padding:'20px 0'}}>No prediction data for this match.</p>
-                <button className="btn-primary" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
-
-    const outcome    = getPredOutcome(predictions.percent);
-    const predScore  = (predictions.goals?.home != null && predictions.goals?.away != null)
-        ? `${predictions.goals.home} - ${predictions.goals.away}` : null;
-
-    return (
-        <div className="overlay" onClick={onClose}>
-            <div className="sheet" onClick={e=>e.stopPropagation()}>
-                <div className="handle"/>
-
-                {/* League */}
-                <div className="pred-league-row">
-                    <img src={league.logo} width={32} height={32} style={{objectFit:'contain',margin:'0 auto 5px',display:'block'}} onError={e=>e.target.style.display='none'} alt=""/>
-                    <div className="pred-league-nm">{league.name}</div>
-                </div>
-
-                {/* Teams */}
-                <div className="pred-teams">
-                    <div className="pred-team">
-                        <img src={teams.home?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                        <div className="pred-team-nm">{teams.home?.name}</div>
-                    </div>
-                    <div className="pred-vs">vs</div>
-                    <div className="pred-team">
-                        <img src={teams.away?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                        <div className="pred-team-nm">{teams.away?.name}</div>
-                    </div>
-                </div>
-
-                {/* ── Forebet-style outcome circle ── */}
-                <div className="pred-outcome-wrap">
-                    <div><div className="pred-outcome-circle"><span className="pred-outcome-code">{outcome.code}</span></div></div>
-                    <div className="pred-outcome-label">{outcome.label}</div>
-                    {predScore && <>
-                        <div className="pred-outcome-score">{predScore}</div>
-                        <div className="pred-outcome-score-lbl">Predicted Score</div>
-                    </>}
-                </div>
-
-                {/* ── Probability table (1 / X / 2) ── */}
-                <div className="pred-prob-row">
-                    {[['1','Home Win',predictions.percent?.home],['X','Draw',predictions.percent?.draw],['2','Away Win',predictions.percent?.away]].map(([code,lbl,pct])=>(
-                        <div key={code} className="pred-prob-cell" style={outcome.code===code?{background:'rgba(255,149,0,.12)',outline:'1.5px solid #FF9500'}:{}}>
-                            <div className="pred-prob-val" style={outcome.code===code?{color:'#FF9500'}:{}}>{pct||'—'}</div>
-                            <div className="pred-prob-lbl">{lbl}</div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Advice box */}
-                <div className="pred-box" style={{marginBottom:16}}>
-                    <div className="pred-advice">{predictions.advice}</div>
-                    <div className="pred-bar">
-                        <div className="pb-h" style={{width:predictions.percent?.home}}/>
-                        <div className="pb-d" style={{width:predictions.percent?.draw}}/>
-                        <div className="pb-a" style={{width:predictions.percent?.away}}/>
-                    </div>
-                    <div className="pred-pct">
-                        <span>1  {predictions.percent?.home}</span>
-                        <span>X  {predictions.percent?.draw}</span>
-                        <span>2  {predictions.percent?.away}</span>
-                    </div>
-                </div>
-
-                {/* Team comparison */}
-                {comparison && (
-                    <div style={{marginBottom:16}}>
-                        <div className="events-title">Team Comparison</div>
-                        {[{n:'Attack',h:comparison.att?.home,a:comparison.att?.away},{n:'Defense',h:comparison.def?.home,a:comparison.def?.away},{n:'Form',h:comparison.form?.home,a:comparison.form?.away}].filter(r=>r.h).map(r=>(
-                            <div key={r.n} className="cmp-row">
-                                <div className="cmp-labels">
-                                    <span className="cmp-val">{r.h}</span>
-                                    <span className="cmp-name">{r.n}</span>
-                                    <span className="cmp-val">{r.a}</span>
-                                </div>
-                                <div className="cmp-track"><div className="cmp-fill" style={{width:r.h}}/></div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <button className="btn-primary" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
-};
-
-/* ── Social ── */
-const Social = () => (
-    <div className="social">
-        <div className="social-lbl">Follow Us</div>
-        <div className="social-row">
-            <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-ico" title="Telegram"><IcoTG/></a>
-            <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-ico" title="X / Twitter"><IcoX/></a>
-            <a href="https://www.threads.com/@magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Threads"><IcoThreads/></a>
-            <a href="https://www.instagram.com/magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Instagram"><IcoIG/></a>
-        </div>
-    </div>
-);
-
-const Grp = ({label}) => (
-    <div className="grp"><div className="grp-line"/><span className="grp-txt">{label}</span><div className="grp-line"/></div>
-);
-
-/* ── App ── */
-function App() {
-    const [splash,      setSplash]      = useState(true);
-    const [calOpen,     setCalOpen]     = useState(false);
-    const [tab,         setTab]         = useState('Home');
-    const [sport,       setSport]       = useState('Football');
-    const [favs,        setFavs]        = useState([]);
-    const [matches,     setMatches]     = useState([]);
-    const [loading,     setLoading]     = useState(true);
-    const [waking,      setWaking]      = useState(false);
-    const [err,         setErr]         = useState(null);
-    const [csSport,     setCsSport]     = useState(null);
-    const [showToast,   setShowToast]   = useState(false);
-    // Team logo cache: name → url
-    const [logoCache,   setLogoCache]   = useState({});
-    // Detail sheet state
-    const [detailMatch, setDetailMatch] = useState(null);
-    const [detailLogos, setDetailLogos] = useState({ home:null, away:null, homeLoading:false, awayLoading:false });
-    const [analysis,    setAnalysis]    = useState(null);
-    const [analysisLoading, setAnalysisLoading] = useState(false);
-    // predCache: { [fixtureId]: { loading, code, label, score, advice, hp, dp, ap } }
-    const [predCache,   setPredCache]   = useState({});
-    const fetchingRef = useRef(new Set());
-    const resolvedRef = useRef(new Set());
-
-    /* ── Fetch one prediction — tries backend (OpenAI), falls back to local model ── */
-    const fetchOnePred = useCallback(async (id, matchData) => {
-        if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
-        fetchingRef.current.add(id);
-        setPredCache(prev => ({...prev, [id]: { loading: true }}));
-
-        let cached = null;
-        try {
-            const params = new URLSearchParams({ fixture: id });
-            if (matchData) {
-                const g = getGoals(matchData);
-                if (matchData.home?.name) params.set('home', matchData.home.name);
-                if (matchData.away?.name) params.set('away', matchData.away.name);
-                if (matchData.leagueName) params.set('league', matchData.leagueName);
-                if (matchData.country)    params.set('country', matchData.country);
-                if (matchData.status)     params.set('status', statusLabel(matchData.status) || matchData.status);
-                if (g) params.set('score', `${g.h}-${g.a}`);
-            }
-            const res  = await fetch(`${BACKEND_URL}/api/get-predictions?${params}`, { signal: AbortSignal.timeout(12000) });
-            const data = await res.json();
-            const p    = data.response?.[0];
-            if (p?.predictions?.percent) {
-                const outcome  = getPredOutcome(p.predictions.percent);
-                const hasScore = p.predictions.goals?.home != null && p.predictions.goals?.away != null;
-                cached = {
-                    loading: false,
-                    code:    outcome.code,
-                    label:   outcome.label,
-                    score:   hasScore ? `${p.predictions.goals.home}-${p.predictions.goals.away}` : null,
-                    advice:  p.predictions.advice || null,
-                    hp:      p.predictions.percent?.home || '—',
-                    dp:      p.predictions.percent?.draw || '—',
-                    ap:      p.predictions.percent?.away || '—',
-                };
-            }
-        } catch { /* fall through to local model */ }
-
-        // Poisson engine — deterministic, team-aware, zero server dependency
-        setPredCache(prev => ({...prev, [id]: cached || poissonPredict(matchData?.home?.name, matchData?.away?.name, matchData?.leagueName)}));
-        fetchingRef.current.delete(id);
-        resolvedRef.current.add(id);
-    }, []);
-
-    /* ── Auto-fetch predictions — passes each full match object ── */
-    const autoFetchPredictions = useCallback(async ms => {
-        for (const m of ms) {
-            const id = fid(m);
-            if (!id || resolvedRef.current.has(id) || fetchingRef.current.has(id)) continue;
-            await fetchOnePred(id, m);
-            await new Promise(r => setTimeout(r, 400));
-        }
-    }, [fetchOnePred]);
-
-    /* ── Fetch scores ── */
-    const load = useCallback(async (isManual=false) => {
-        setLoading(true); setErr(null);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        const wt = setTimeout(() => setWaking(true), 4000);
-        try {
-            const ctrl = new AbortController();
-            const tt   = setTimeout(()=>ctrl.abort(), 35000);
-            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
-            clearTimeout(tt); clearTimeout(wt); setWaking(false);
-            if (!res.ok) throw new Error(`${res.status}`);
-            const data = await res.json();
-            if (data.livescore?.league) {
-                const flat=[], leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
-                leagues.forEach(lg=>{
-                    if(!lg.match)return;
-                    const items=Array.isArray(lg.match)?lg.match:[lg.match];
-                    items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));
-                });
-                // Pre-populate logo cache from Sportmonks image_path (skips TheSportsDB lookup)
-                const smLogos = {};
-                flat.forEach(m=>{ if(m.home?.logo) smLogos[m.home.name]=m.home.logo; if(m.away?.logo) smLogos[m.away.name]=m.away.logo; });
-                if(Object.keys(smLogos).length>0) setLogoCache(prev=>({...prev,...smLogos}));
-                setMatches(flat);
-                fetchLogosForMatches(flat.slice(0,30));
-                autoFetchPredictions(flat);
-                fetchUpcomingMatches(flat);
-            } else throw new Error("Bad format");
-        } catch(e) {
-            clearTimeout(wt); setWaking(false);
-            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
-        } finally { setLoading(false); }
-    }, [autoFetchPredictions]);
-
-    /* ── Background logo pre-fetch for cards ── */
-    const fetchLogosForMatches = useCallback(async (ms) => {
-        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
-        for (const name of names) {
-            if (logoCache[name] !== undefined) continue;
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                setLogoCache(prev => ({...prev, [name]: data.logo || null}));
-            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
-            await new Promise(r=>setTimeout(r,120));
-        }
-    }, [logoCache]);
-
-    /* ── Fetch upcoming fixtures from football-data.org via backend ── */
-    const fetchUpcomingMatches = useCallback(async (existingFlat) => {
-        const existingPairs = new Set(
-            existingFlat.map(m => `${(m.home?.name||'').toLowerCase()}|${(m.away?.name||'').toLowerCase()}`)
-        );
-        try {
-            const res  = await fetch(`${BACKEND_URL}/api/upcoming`, { signal: AbortSignal.timeout(12000) });
-            const data = await res.json();
-            const newMatches = (data.matches || []).filter(m => {
-                if (!m.home?.name || !m.away?.name) return false;
-                const pair = `${m.home.name.toLowerCase()}|${m.away.name.toLowerCase()}`;
-                if (existingPairs.has(pair)) return false;
-                existingPairs.add(pair);
-                return true;
-            });
-            if (newMatches.length > 0) {
-                const smLogos = {};
-                newMatches.forEach(m=>{ if(m.home?.logo) smLogos[m.home.name]=m.home.logo; if(m.away?.logo) smLogos[m.away.name]=m.away.logo; });
-                if(Object.keys(smLogos).length>0) setLogoCache(prev=>({...prev,...smLogos}));
-                setMatches(prev => [...prev, ...newMatches]);
-                fetchLogosForMatches(newMatches.slice(0, 20));
-                autoFetchPredictions(newMatches);
-            }
-        } catch (e) { console.warn('Upcoming fetch failed:', e.message); }
-    }, [autoFetchPredictions]);
-
-    useEffect(() => {
-        const t=setTimeout(()=>setSplash(false),3000);
-        load();
-        const iv=setInterval(()=>load(false), 60000);
-        return ()=>{ clearTimeout(t); clearInterval(iv); };
-    }, [load]);
-
-    /* ── Open match detail ── */
-    const openDetail = useCallback(async m => {
-        setDetailMatch(m);
-        setAnalysis(null);
-        setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
-
-        const getLogo = async name => {
-            if (logoCache[name] !== undefined) return logoCache[name];
-            try {
-                const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
-                const data = await res.json();
-                return data.logo||null;
-            } catch { return null; }
-        };
-
-        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
-        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
-        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
-
-        setAnalysisLoading(true);
-        try {
-            const g = getGoals(m);
-            const p = new URLSearchParams({
-                home:   m.home?.name||'',
-                away:   m.away?.name||'',
-                league: m.leagueName||'',
-                status: statusLabel(m.status)||m.status||'',
-                score:  g?`${g.h}-${g.a}`:'Not started',
-                ht:     m.ht?.score||''
-            });
-            const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
-            const data = await res.json();
-            setAnalysis(data.analysis||null);
-        } catch { setAnalysis(null); }
-        finally { setAnalysisLoading(false); }
-    }, [logoCache]);
-
-    const toggleFav = useCallback(id=>{
-        if(!id)return;
-        setFavs(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id]);
-    },[]);
-
-    const live  = useMemo(()=>matches.filter(m=>cat(m.status)==='live').slice(0,20),    [matches]);
-    const past  = useMemo(()=>matches.filter(m=>cat(m.status)==='finished').slice(0,20),[matches]);
-    const upc   = useMemo(()=>matches.filter(m=>cat(m.status)==='upcoming').slice(0,20),[matches]);
-    const saved = useMemo(()=>matches.filter(m=>favs.includes(fid(m))),                 [matches,favs]);
-    const alerts= useMemo(()=>matches.filter(m=>{const n=parseInt(m.status);return !isNaN(n)&&n>=75&&n<120;}).slice(0,15),[matches]);
-
-    const card = (m,extra={}) => (
-        <MatchCard key={fid(m)||`${m.home?.name}${m.away?.name}${m.status}`}
-            match={m} logos={logoCache}
-            pred={predCache[fid(m)]||null}
-            onOpen={openDetail} onToggleFav={toggleFav}
-            isFav={favs.includes(fid(m))} {...extra}/>
-    );
-
-    const today  = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const sports = [['Football','⚽'],['Basketball','🏀'],['Tennis','🎾'],['Hockey','🏒'],['Baseball','⚾']];
-    const calDays= () => {
-        const t=new Date(),s=t.getDate()-t.getDay()+1;
-        return Array.from({length:5},(_,i)=>{
-            const d=new Date(t.getFullYear(),t.getMonth(),s+i);
-            return {nm:d.toLocaleDateString('en-US',{weekday:'short'}),dn:d.getDate(),full:d.toDateString(),on:d.toDateString()===t.toDateString()};
-        });
-    };
-
-    return (
-        <>
-            {/* Splash */}
-            {splash && (
-                <div className="splash">
-                    <div className="splash-inner">
-                        <div style={{width:76,height:76,background:'#fff',borderRadius:18,boxShadow:'0 8px 32px rgba(0,0,0,0.12)',display:'flex',alignItems:'center',justifyContent:'center',border:'.5px solid rgba(0,0,0,0.06)'}}>
-                            <MagicLogo size={58}/>
-                        </div>
-                        <div style={{textAlign:'center'}}>
-                            <div style={{fontSize:22,fontWeight:700,letterSpacing:'-.5px'}}>Magic Analysis</div>
-                            <div style={{fontSize:13,color:'var(--t3)',marginTop:2}}>Live Football Intelligence</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Refresh toast */}
-            {showToast && (
-                <div className="toast">
-                    <div className="spin"/>
-                    Fetching live info, please wait…
-                </div>
-            )}
-
-            {/* Header */}
-            <header className="hdr">
-                <button className="hdr-btn" onClick={()=>setCalOpen(true)}><IcoCal/></button>
-                <div className="hdr-center"><MagicLogo size={22}/><span className="hdr-title">Magic Analysis</span></div>
-                <button className="hdr-btn" onClick={()=>load(true)}><IcoRef/></button>
-            </header>
-
-            {/* Tabs */}
-            <div className="tabs-bar">
-                {sports.map(([nm,ic])=>(
-                    <button key={nm} className={`tab ${sport===nm?'tab-on':'tab-off'}`}
-                        onClick={()=>nm==='Football'?setSport(nm):setCsSport(nm)}>
-                        {ic} {nm}
-                    </button>
-                ))}
-            </div>
-
-            {/* Main */}
-            <main className="page">
-                {tab==='Home' && (
-                    <div className="page-in">
-                        <div className="page-head">
-                            <h1 className="page-h1">Predictions</h1>
-                            <p className="page-sub">{today}</p>
-                        </div>
-                        <div className="stats">
-                            {[['Live',live.length],['Past',past.length],['Upcoming',upc.length],['Alerts',alerts.length]].map(([l,v])=>(
-                                <div key={l} className="stat"><div className="stat-n">{v}</div><div className="stat-l">{l}</div></div>
-                            ))}
-                        </div>
-                        {waking && <div className="wake-bar"><div className="spin" style={{flexShrink:0}}/><span style={{fontSize:13,fontWeight:500,color:'var(--t2)'}}>Waking up server — up to 30 s on first load…</span></div>}
-                        {err&&!loading && <div className="err-bar"><span className="err-txt">{err}</span><button className="retry-btn" onClick={()=>load(true)}>Retry</button></div>}
-
-                        <Grp label="🔴 Live Now"/>
-                        {loading?[1,2,3].map(i=><Skel key={i}/>):live.length>0?live.map(m=>card(m)):<div style={{background:'var(--surface)',borderRadius:'var(--r)',boxShadow:'var(--card-shadow)',padding:'32px 20px',textAlign:'center',marginBottom:9}}><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No live matches right now</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Live matches appear here automatically.</div></div>}
-
-                        {!loading&&past.length>0&&<><Grp label="✅ Finished"/>{past.map(m=>card(m))}</>}
-                        {!loading&&upc.length>0&&<><Grp label="🔵 Upcoming"/>{upc.map(m=>card(m))}</>}
-                        <Social/>
-                    </div>
-                )}
-
-                {tab==='Tips' && (
-                    <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">Match Tips</h1><p className="page-sub">AI-powered predictions for every match</p></div>
-                        {matches.length === 0
-                            ? <div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>⚽</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No matches loaded</div></div>
-                            : (()=>{
-                                const groups = {};
-                                [...matches]
-                                    .sort((a,b)=>{
-                                        const aFt=a.status==='FT'||a.status==='AET', bFt=b.status==='FT'||b.status==='AET';
-                                        return aFt===bFt?0:aFt?1:-1;
-                                    })
-                                    .forEach(m=>{ const lg=m.leagueName||'Other'; if(!groups[lg])groups[lg]=[]; groups[lg].push(m); });
-                                return Object.entries(groups).map(([lg,ms])=>(
-                                    <div key={lg} style={{marginBottom:16}}>
-                                        <div className="league-hdr">{lg}</div>
-                                        {ms.map(m=>{
-                                            const id=fid(m), pred=predCache[id];
-                                            const g=getGoals(m);
-                                            const isFt=m.status==='FT'||m.status==='AET';
-                                            const statusTxt=isFt?`FT${g?' '+g.h+'-'+g.a:''}`:m.status;
-                                            return (
-                                                <div key={id} className="tip-card" onClick={()=>openDetail(m)}>
-                                                    <div className="tip-hdr">
-                                                        <span className="tip-lg-name">{m.country||lg}</span>
-                                                        <span className="tip-status">{statusTxt}</span>
-                                                    </div>
-                                                    <div className="tip-teams">
-                                                        <span className="tip-team home">{m.home?.name}</span>
-                                                        <span className="tip-vs">vs</span>
-                                                        <span className="tip-team away">{m.away?.name}</span>
-                                                    </div>
-                                                    {!pred||pred.loading
-                                                        ? <div style={{textAlign:'center',padding:'10px 0',color:'var(--t3)',fontSize:12}}>Loading…</div>
-                                                        : <>
-                                                            <div className="tip-probs">
-                                                                {[['1',pred.code==='1',pred.hp],['X',pred.code==='X',pred.dp],['2',pred.code==='2',pred.ap]].map(([lbl,active,pct])=>(
-                                                                    <div key={lbl} className={`tip-col${active?' active':''}`}>
-                                                                        <div className={`tip-circle${active?(lbl==='X'?' draw':' win'):' off'}`}>{lbl}</div>
-                                                                        <div className="tip-pct">{pct}</div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                            {pred.score&&<div className="tip-score-line">Predicted score: {pred.score}</div>}
-                                                            {pred.advice&&<div className="tip-advice">{pred.advice}</div>}
-                                                        </>
-                                                    }
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                ));
-                              })()
-                        }
-                        <Social/>
-                    </div>
-                )}
-
-                {tab==='Favs' && (
-                    <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">Saved</h1><p className="page-sub">Your saved matches</p></div>
-                        {saved.length>0?saved.map(m=>card(m)):<div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>♡</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>Nothing saved yet</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Tap the heart on any match to save it here.</div></div>}
-                        <Social/>
-                    </div>
-                )}
-
-                {tab==='More' && (
-                    <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">More</h1></div>
-                        <div className="settings-group">
-                            {[['About Us','https://docs.google.com/document/d/1OaaYhaQi3FZzog6YLIoojh3CnX3aN0lrizXyQ5N9Dkw/edit?usp=sharing'],['Terms of Use','https://docs.google.com/document/d/1wO92_LRf7q1vS90SdmHgArGITPkimnMa7g_U_VHFZo4/edit?usp=sharing'],['Privacy Policy','https://docs.google.com/document/d/1qrcuBqJ3RoSTTdjtyHJXidpVNODILbHW5cLx4wlAe6Y/edit?usp=sharing']].map(([l,u])=>(
-                                <a key={l} href={u} target="_blank" rel="noopener noreferrer" className="settings-item">{l}<IcoChev/></a>
-                            ))}
-                            <a href="mailto:Magicbetingtips@gmail.com" className="settings-item">
-                                <span style={{display:'flex',alignItems:'center',gap:10}}><IcoMail/> Contact Us</span>
-                                <span style={{fontSize:12,color:'var(--t3)'}}>Magicbetingtips@gmail.com</span>
-                            </a>
-                        </div>
-                        <div style={{textAlign:'center',paddingTop:8}}><div style={{fontSize:12,color:'var(--t3)'}}>Magic Analysis · v2.0</div></div>
-                        <Social/>
-                    </div>
-                )}
-            </main>
-
-            {/* Calendar */}
-            {calOpen && (
-                <div className="center-overlay" onClick={()=>setCalOpen(false)}>
-                    <div className="center-card" onClick={e=>e.stopPropagation()}>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}>
-                            <div><div style={{fontSize:19,fontWeight:700,letterSpacing:'-.4px',marginBottom:2}}>This Week</div><div style={{fontSize:12,color:'var(--t3)'}}>Select a date</div></div>
-                            <button onClick={()=>setCalOpen(false)} style={{background:'var(--bg)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',fontSize:16,color:'var(--t2)',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
-                        </div>
-                        <div className="cal-days">
-                            {calDays().map(d=>(
-                                <div key={d.full} className={`cal-day${d.on?' on':''}`}>
-                                    <span className="cal-dd">{d.nm}</span><span className="cal-dn">{d.dn}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <button className="btn-primary" style={{marginTop:22}} onClick={()=>setCalOpen(false)}>Confirm</button>
-                    </div>
-                </div>
-            )}
-
-            {/* Coming soon */}
-            {csSport && (
-                <div className="center-overlay" onClick={()=>setCsSport(null)}>
-                    <div className="center-card" style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
-                        <div style={{fontSize:38,marginBottom:14}}>🔜</div>
-                        <div style={{fontSize:21,fontWeight:700,letterSpacing:'-.4px',marginBottom:8}}>Coming Soon</div>
-                        <div style={{fontSize:14,color:'var(--t2)',lineHeight:1.55,marginBottom:26}}>Live <strong>{csSport}</strong> predictions are on the way.</div>
-                        <button className="btn-primary" onClick={()=>setCsSport(null)}>Got it</button>
-                    </div>
-                </div>
-            )}
-
-            {/* Match detail sheet */}
-            {detailMatch && (
-                <DetailSheet
-                    match={detailMatch}
-                    logos={detailLogos}
-                    analysis={analysis}
-                    analysisLoading={analysisLoading}
-                    pred={predCache[fid(detailMatch)]||null}
-                    onClose={()=>{setDetailMatch(null);setAnalysis(null);}}
-                />
-            )}
-
-            {/* Bottom nav */}
-            <nav className="nav">
-                {[{id:'Home',lbl:'Home',ico:<IcoHome/>},{id:'Tips',lbl:'Tips',ico:<IcoStar/>},{id:'Favs',lbl:'Saved',ico:<IcoHeart on={false}/>},{id:'More',lbl:'More',ico:<IcoMenu/>}].map(({id,lbl,ico})=>(
-                    <div key={id} className={`nav-item ${tab===id?'on':'off'}`} onClick={()=>setTab(id)}>
-                        <div className="nav-ico">{ico}</div><span className="nav-lbl">{lbl}</span>
-                    </div>
-                ))}
-            </nav>
-        </>
-    );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
-</script>
+// ─── Fetching Helpers ────────────────────────────────────────────────────────
+async function fetchFromStatPal(endpoint, params = {}) {
+    const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
+    try {
+        const r = await axios.get(`https://statpal.io/api/v1/soccer/${endpoint}`, {
+            params: { ...params, access_key: statpalKey },
+            timeout: 15000 
+        });
+        return r.data;
+    } catch (error) {
+        console.error(`❌ StatPal Error on [${endpoint}]:`, error.response?.data || error.message);
+        throw new Error(`StatPal API failed: ${error.message}`);
+    }
+}
 
-<!-- Monetag: Push Notifications -->
-<script src="https://5gvci.com/act/files/tag.min.js?z=10953340" data-cfasync="false" async></script>
-<!-- Monetag: Popunder -->
-<script>(function(s){s.dataset.zone='10953331',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
-</body>
-</html>
+// ─── Telegram Bot Logic ──────────────────────────────────────────────────────
+const botToken = process.env.TELEGRAM_BOT_TOKEN;
+if (botToken) {
+    const bot = new Telegraf(botToken);
+    const userSession = {};
+
+    const PREDICTION_OPTIONS = [
+        ['1 (Home Win)', 'X (Draw)', '2 (Away Win)'],
+        ['1X (Home or Draw)', '12 (Home or Away)', 'X2 (Draw or Away)'],
+        ['Over 1.5', 'Over 2.5', 'Over 3.5'],
+        ['Under 1.5', 'Under 2.5', 'Under 3.5'],
+        ['BTTS - Yes', 'BTTS - No'],
+        ['Home Over 1.5', 'Away Over 1.5'],
+        ['❌ Cancel']
+    ];
+
+    const adminMenu = Markup.keyboard([
+        ['➕ Add New Prediction', '🔄 Sync Live Data'],
+        ['📅 Update Old Matches', '🕒 Update Upcoming'],
+        ['📝 Edit/Delete Posts']
+    ]).resize();
+
+    bot.start((ctx) => {
+        ctx.reply('⚽ *MagicBettingTips Manual Admin*\nUse this bot to quickly input your professional predictions.', {
+            parse_mode: 'Markdown',
+            ...adminMenu
+        });
+    });
+
+    bot.hears('➕ Add New Prediction', async (ctx) => {
+        ctx.reply('⏳ Loading matches for selection...');
+        try {
+            const data = await fetchFromStatPal('livescores');
+            const matches = [];
+            
+            const leagues = data.livescore?.league;
+            if (Array.isArray(leagues)) {
+                leagues.forEach(l => {
+                    if (l.match && Array.isArray(l.match)) {
+                        l.match.forEach(m => {
+                            matches.push({ id: m.id, home: m.home.name, away: m.away.name });
+                        });
+                    } else if (l.match && typeof l.match === 'object') {
+                        const m = l.match;
+                        matches.push({ id: m.id, home: m.home.name, away: m.away.name });
+                    }
+                });
+            }
+
+            if (matches.length === 0) return ctx.reply('❌ No matches found for today.');
+
+            const buttons = matches.slice(0, 10).map(m => [
+                Markup.button.callback(`${m.home} vs ${m.away}`, `select_${m.id}`)
+            ]);
+
+            ctx.reply('👉 Select a match to provide a tip for:', Markup.inlineKeyboard(buttons));
+        } catch (e) { 
+            ctx.reply('❌ Error fetching matches: ' + e.message); 
+        }
+    });
+
+    bot.action(/select_(.+)/, (ctx) => {
+        const matchId = ctx.match[1];
+        userSession[ctx.from.id] = { matchId, step: 'WAITING_FOR_TIP_BUTTON' };
+        ctx.answerCbQuery();
+        
+        ctx.reply('🎯 *Match Selected!* \nSelect your prediction from the options below:', {
+            parse_mode: 'Markdown',
+            ...Markup.keyboard(PREDICTION_OPTIONS).resize().oneTime()
+        });
+    });
+
+    bot.on('text', async (ctx) => {
+        const userId = ctx.from.id;
+        const session = userSession[userId];
+        
+        if (session && session.step === 'WAITING_FOR_TIP_BUTTON') {
+            const tip = ctx.message.text;
+
+            if (tip === '❌ Cancel') {
+                delete userSession[userId];
+                return ctx.reply('Operation cancelled.', adminMenu);
+            }
+
+            const matchId = session.matchId;
+            ctx.reply(`⏳ Saving tip: "${tip}"...`);
+
+            try {
+                if (db) {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'manual_predictions', 'current');
+                    const existingSnap = await getDoc(docRef);
+                    let currentTips = existingSnap.exists() ? existingSnap.data().tips || {} : {};
+                    
+                    currentTips[matchId] = {
+                        tip: tip,
+                        timestamp: new Date().toISOString(),
+                        author: ctx.from.first_name || 'Admin'
+                    };
+
+                    await setDoc(docRef, { tips: currentTips }, { merge: true });
+                    delete userSession[userId];
+                    ctx.reply(`✅ SUCCESS! "${tip}" is now live on the website.`, adminMenu);
+                } else {
+                    ctx.reply('❌ Firebase not connected.', adminMenu);
+                }
+            } catch (e) { 
+                ctx.reply('❌ Error saving tip: ' + e.message, adminMenu); 
+            }
+        }
+    });
+
+    bot.hears('🔄 Sync Live Data', async (ctx) => {
+        ctx.reply('⏳ Syncing data...');
+        try {
+            const data = await fetchFromStatPal('livescores');
+            if (db) {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'livescores', 'current');
+                await setDoc(docRef, { 
+                    ...data, 
+                    syncTime: new Date().toISOString() 
+                });
+                ctx.reply('✅ Match data synced.');
+            }
+        } catch (e) { ctx.reply('❌ Error: ' + e.message); }
+    });
+
+    bot.launch().catch(err => console.error("Bot launch failed:", err));
+}
+
+// ─── Unified API Endpoint for Frontend ──────────────────────────────────────
+app.get('/api/scores', async (req, res) => {
+    try {
+        let scoresData = null;
+        let manualTips = {};
+
+        if (db) {
+            // 1. Try to get data from Firestore first
+            const scoreSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'livescores', 'current'));
+            if (scoreSnap.exists()) {
+                scoresData = scoreSnap.data();
+            }
+
+            // 2. Get manual tips
+            const tipSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'manual_predictions', 'current'));
+            if (tipSnap.exists()) {
+                manualTips = tipSnap.data().tips || {};
+            }
+        }
+
+        // 3. If no data in Firestore, fetch fresh from API
+        if (!scoresData) {
+            scoresData = await fetchFromStatPal('livescores');
+        }
+
+        // 4. Ensure we have the structure the frontend expects
+        if (!scoresData.livescore) {
+            scoresData = { livescore: scoresData.livescore || { league: [] } };
+        }
+
+        // 5. Inject manual tips into the matches
+        const leagues = Array.isArray(scoresData.livescore?.league) ? scoresData.livescore.league : [scoresData.livescore.league].filter(Boolean);
+        
+        leagues.forEach(l => {
+            const matches = Array.isArray(l.match) ? l.match : [l.match].filter(Boolean);
+            matches.forEach(m => {
+                if (manualTips[m.id]) {
+                    // This creates the manual_prediction field the frontend uses
+                    m.manual_prediction = manualTips[m.id].tip;
+                }
+            });
+        });
+
+        res.json(scoresData);
+    } catch (e) { 
+        console.error("API /api/scores error:", e.message);
+        res.status(500).json({ error: e.message }); 
+    }
+});
+
+app.get('/', (req, res) => res.send('Backend Online'));
+app.listen(port, () => console.log(`Server on ${port}`));
