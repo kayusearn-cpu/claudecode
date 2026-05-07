@@ -13,7 +13,7 @@
             --bg:#F5F5F7; --surface:#FFFFFF;
             --t1:#1D1D1F; --t2:#6E6E73; --t3:#86868B;
             --sep:rgba(0,0,0,0.08); --sep2:rgba(0,0,0,0.14);
-            --live:#FF3B30; --blue:#007AFF;
+            --live:#FF3B30; --blue:#007AFF; --gold:#FF9500;
             --r:16px; --r2:24px;
             --card-shadow:0 1px 1px rgba(0,0,0,0.04),0 2px 8px rgba(0,0,0,0.05),0 0 0 0.5px rgba(0,0,0,0.05);
             --modal-shadow:0 24px 64px rgba(0,0,0,0.22);
@@ -21,21 +21,18 @@
         body { font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif; background:var(--bg); color:var(--t1); overflow-x:hidden; }
         ::-webkit-scrollbar { display:none; } * { scrollbar-width:none; }
 
-        /* Header */
         .hdr { position:sticky; top:0; z-index:100; height:56px; background:rgba(255,255,255,0.88); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border-bottom:0.5px solid var(--sep); display:flex; align-items:center; padding:0 16px; }
         .hdr-btn { width:34px; height:34px; border-radius:50%; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--t1); transition:background .15s; flex-shrink:0; }
         .hdr-btn:hover { background:rgba(0,0,0,0.06); }
         .hdr-center { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; }
         .hdr-title { font-size:16px; font-weight:600; letter-spacing:-.3px; }
 
-        /* Sport tabs */
         .tabs-bar { background:var(--surface); border-bottom:0.5px solid var(--sep); padding:10px 14px; display:flex; gap:7px; overflow-x:auto; }
         .tab { padding:6px 15px; border-radius:100px; font-size:14px; font-weight:500; letter-spacing:-.2px; border:none; cursor:pointer; white-space:nowrap; transition:all .2s; }
         .tab-on { background:var(--t1); color:#fff; transform:scale(1.02); }
         .tab-off { background:var(--bg); color:var(--t2); }
         .tab-off:hover { background:#E8E8ED; }
 
-        /* Refresh toast */
         .toast {
             position:fixed; top:68px; left:50%; transform:translateX(-50%);
             background:var(--t1); color:#fff;
@@ -53,7 +50,6 @@
             100% { opacity:0; transform:translateX(-50%) translateY(-10px); }
         }
 
-        /* Page */
         .page { max-width:640px; margin:0 auto; padding:0 14px 110px; }
         .page-in { animation:pgIn .3s ease forwards; }
         @keyframes pgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -61,21 +57,19 @@
         .page-h1 { font-size:30px; font-weight:700; letter-spacing:-.6px; line-height:1; margin-bottom:4px; }
         .page-sub { font-size:13px; color:var(--t3); }
 
-        /* Stats */
         .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:28px; }
         .stat { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:14px 10px; text-align:center; }
         .stat-n { font-size:22px; font-weight:700; letter-spacing:-.5px; line-height:1; margin-bottom:3px; }
         .stat-l { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
 
-        /* Group */
         .grp { display:flex; align-items:center; gap:10px; margin:24px 0 10px; }
         .grp-line { flex:1; height:.5px; background:var(--sep2); }
         .grp-txt { font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; white-space:nowrap; }
 
-        /* Card */
         .card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); margin-bottom:9px; overflow:hidden; cursor:pointer; transition:transform .14s,box-shadow .14s; -webkit-tap-highlight-color:transparent; }
         .card:active { transform:scale(.984); }
         .card:hover { box-shadow:0 4px 22px rgba(0,0,0,0.1),0 0 0 0.5px rgba(0,0,0,0.05); }
+        .card-premium { border-left:3px solid var(--gold); }
         .card-inner { padding:13px 15px 11px; }
         .card-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; gap:6px; }
         .card-meta-left { display:flex; align-items:center; gap:6px; flex:1; min-width:0; overflow:hidden; }
@@ -84,18 +78,18 @@
         .fav:hover { transform:scale(1.25); }
         .fav.on { color:var(--live); }
 
-        /* Card body: optional logo + names + scores */
-        .card-body { display:flex; align-items:stretch; gap:10px; }
         .card-logo-col { display:flex; flex-direction:column; gap:5px; justify-content:center; width:28px; flex-shrink:0; }
         .team-logo-sm { width:24px; height:24px; object-fit:contain; border-radius:4px; }
         .team-logo-ph { width:24px; height:24px; background:var(--bg); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--t3); font-weight:700; }
         .card-teams { flex:1; display:flex; flex-direction:column; gap:5px; min-width:0; }
         .team-nm { font-size:15px; font-weight:600; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .card-scores { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; min-width:22px; }
         .score-n { font-size:15px; font-weight:700; letter-spacing:-.2px; }
         .score-n.dim { color:var(--t3); font-weight:400; }
 
-        /* Card footer with status badge */
+        .card-manual-pred { background:#1D1D1F; border-radius:10px; padding:10px 12px; margin-top:9px; border:1px solid rgba(255,149,0,0.4); }
+        .card-manual-pred-lbl { font-size:10px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; display:flex; align-items:center; gap:4px; }
+        .card-manual-pred-txt { font-size:13px; font-weight:700; color:#fff; line-height:1.45; }
+
         .card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:9px; border-top:.5px solid var(--sep); }
         .s-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:100px; letter-spacing:.3px; text-transform:uppercase; }
         .s-live { background:rgba(255,59,48,.12); color:var(--live); }
@@ -108,20 +102,15 @@
         .info-pill { font-size:11px; font-weight:600; color:var(--t2); background:var(--bg); border:none; border-radius:100px; padding:4px 10px; cursor:pointer; transition:background .15s,color .15s; display:flex; align-items:center; gap:4px; }
         .info-pill:hover { background:var(--t1); color:#fff; }
 
-        /* Banners */
         .err-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:3px solid var(--live); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
         .err-txt { flex:1; font-size:13px; font-weight:500; }
         .retry-btn { font-size:11px; font-weight:700; background:var(--bg); border:none; border-radius:100px; padding:5px 12px; cursor:pointer; flex-shrink:0; }
         .wake-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-        .alert-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:2px solid #FF9F0A; padding:11px 13px; display:flex; align-items:center; gap:9px; margin-bottom:12px; }
-        .x-btn { background:none; border:none; cursor:pointer; color:var(--t3); font-size:17px; line-height:1; }
 
-        /* Skeleton */
         .skel-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:14px 15px; margin-bottom:9px; display:flex; flex-direction:column; gap:9px; }
         .skel { background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:5px; }
         @keyframes shim { from{background-position:200% 0} to{background-position:-200% 0} }
 
-        /* Bottom nav */
         .nav { position:fixed; bottom:0; left:0; right:0; height:80px; background:rgba(255,255,255,0.9); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%); border-top:.5px solid var(--sep); display:flex; align-items:flex-start; justify-content:space-around; padding-top:11px; z-index:100; }
         .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; min-width:56px; -webkit-tap-highlight-color:transparent; }
         .nav-ico { width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
@@ -130,13 +119,11 @@
         .nav-item.off .nav-ico, .nav-item.off .nav-lbl { color:#C7C7CC; }
         .nav-item.on .nav-lbl { font-weight:600; }
 
-        /* Overlay / Sheet */
         .overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.48); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:flex-end; justify-content:center; }
         .sheet { background:var(--surface); border-radius:var(--r2) var(--r2) 0 0; width:100%; max-width:640px; max-height:92vh; overflow-y:auto; padding:10px 22px 44px; animation:sheetUp .38s cubic-bezier(.32,.72,0,1) forwards; }
         @keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
         .handle { width:34px; height:4px; background:var(--sep2); border-radius:2px; margin:0 auto 18px; }
 
-        /* Detail sheet */
         .detail-head { text-align:center; margin-bottom:20px; }
         .detail-league { font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
         .detail-teams { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:10px; }
@@ -146,19 +133,15 @@
         .detail-logo-loading { width:64px; height:64px; background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:16px; margin:0 auto 8px; }
         .detail-team-nm { font-size:13px; font-weight:600; letter-spacing:-.1px; }
         .detail-vs { font-size:12px; color:var(--t3); font-weight:600; flex-shrink:0; }
-
         .detail-score-box { background:var(--t1); border-radius:var(--r); padding:18px 20px; margin-bottom:14px; text-align:center; }
         .detail-score-big { font-size:40px; font-weight:700; color:#fff; letter-spacing:-1px; line-height:1; margin-bottom:6px; }
         .detail-score-sub { font-size:12px; color:rgba(255,255,255,.5); font-weight:500; }
-
         .detail-status-row { display:flex; justify-content:center; margin-bottom:16px; }
-
         .detail-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:16px; }
         .detail-info-cell { background:var(--bg); border-radius:12px; padding:12px; text-align:center; }
         .detail-info-val { font-size:15px; font-weight:700; letter-spacing:-.2px; margin-bottom:2px; }
         .detail-info-lbl { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
 
-        /* Events */
         .events-title { font-size:12px; font-weight:600; color:var(--t2); margin-bottom:10px; letter-spacing:-.1px; }
         .event-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:.5px solid var(--sep); }
         .event-row:last-child { border-bottom:none; }
@@ -167,105 +150,46 @@
         .event-player { font-size:13px; font-weight:500; color:var(--t1); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         .event-team { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; flex-shrink:0; }
 
-        /* AI Analysis */
         .ai-analysis-box { background:var(--bg); border-radius:var(--r); padding:14px 16px; margin-bottom:14px; }
         .ai-analysis-lbl { font-size:10px; font-weight:700; color:var(--blue); text-transform:uppercase; letter-spacing:.4px; margin-bottom:7px; display:flex; align-items:center; gap:5px; }
         .ai-analysis-txt { font-size:14px; color:var(--t1); line-height:1.55; font-weight:400; }
         .ai-analysis-loading { display:flex; align-items:center; gap:8px; padding:2px 0; }
         .ai-analysis-loading-txt { font-size:12px; color:var(--t3); }
 
-        /* Prediction card block (Forebet-style, shown on every card) */
-        .pred-card-block { margin-top:9px; border-radius:11px; background:#1D1D1F; overflow:hidden; }
-        .pred-card-inner { display:flex; align-items:center; gap:12px; padding:11px 13px; }
-        .pred-card-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 2px 10px rgba(255,149,0,.45); }
-        .pred-card-mid { flex:1; min-width:0; }
-        .pred-card-label { font-size:13px; font-weight:700; color:#fff; letter-spacing:-.1px; }
-        .pred-card-score { font-size:11px; color:rgba(255,255,255,.55); font-weight:500; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .pred-card-pcts { display:flex; gap:6px; flex-shrink:0; }
-        .pred-card-pct { text-align:center; min-width:30px; }
-        .pred-card-pct-val { font-size:12px; font-weight:700; color:#fff; }
-        .pred-card-pct-code { font-size:9px; color:rgba(255,255,255,.4); font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
-        .pred-card-pct.hi .pred-card-pct-val { color:#FF9500; }
-        .pred-card-pct.hi .pred-card-pct-code { color:rgba(255,149,0,.7); }
-        .pred-card-skel { height:64px; background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:11px; margin-top:9px; }
+        .manual-pred-box { background:#1D1D1F; border:2px solid var(--gold); border-radius:var(--r); padding:16px; margin-bottom:16px; }
+        .manual-pred-label { font-size:10px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
+        .manual-pred-txt { font-size:15px; font-weight:600; color:#fff; line-height:1.55; }
 
-        /* Front prediction column — Forebet-style, always visible on the card */
+        .pro-tip-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:800; padding:3px 9px; border-radius:100px; background:var(--gold); color:#fff; letter-spacing:.4px; text-transform:uppercase; flex-shrink:0; }
+
         .card-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
         .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; }
         .card-right-col { display:flex; align-items:center; gap:10px; flex-shrink:0; }
         .card-scores-col { display:flex; flex-direction:column; align-items:flex-end; gap:5px; min-width:20px; }
         .pred-front { display:flex; flex-direction:column; align-items:center; gap:3px; }
-        .pred-front-circle { width:44px; height:44px; border-radius:50%; background:#FF9500; display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.45); flex-shrink:0; }
+        .pred-front-circle { width:44px; height:44px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; font-size:21px; font-weight:800; color:#fff; box-shadow:0 2px 10px rgba(255,149,0,.45); flex-shrink:0; }
         .pred-front-score { font-size:9px; font-weight:700; color:var(--t2); letter-spacing:.2px; }
         .pred-front-probs { display:flex; gap:6px; }
         .pred-front-prob { display:flex; flex-direction:column; align-items:center; }
         .pred-front-pct { font-size:10px; font-weight:700; color:var(--t2); line-height:1.2; }
         .pred-front-code { font-size:8px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.2px; }
-        .pred-front-prob.hi .pred-front-pct { color:#FF9500; }
+        .pred-front-prob.hi .pred-front-pct { color:var(--gold); }
         .pred-front-prob.hi .pred-front-code { color:rgba(255,149,0,.7); }
         .pred-skel-circle { width:44px; height:44px; border-radius:50%; flex-shrink:0; }
 
-        /* Prediction outcome circle (Forebet-style) */
-        .pred-outcome-wrap { text-align:center; margin-bottom:20px; }
-        .pred-outcome-circle { width:80px; height:80px; border-radius:50%; background:#FF9500; display:inline-flex; align-items:center; justify-content:center; margin-bottom:8px; box-shadow:0 4px 20px rgba(255,149,0,.35); }
-        .pred-outcome-code { font-size:36px; font-weight:800; color:#fff; letter-spacing:-1px; line-height:1; }
-        .pred-outcome-label { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:4px; }
-        .pred-outcome-score { font-size:26px; font-weight:700; color:var(--t1); letter-spacing:-.5px; }
-        .pred-outcome-score-lbl { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-        .pred-prob-row { display:flex; gap:8px; margin-bottom:16px; }
-        .pred-prob-cell { flex:1; background:var(--bg); border-radius:12px; padding:10px 6px; text-align:center; }
-        .pred-prob-val { font-size:17px; font-weight:700; letter-spacing:-.3px; }
-        .pred-prob-lbl { font-size:9px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.4px; margin-top:2px; }
-        /* Small card prediction badge */
-        .card-pred-badge { font-size:11px; font-weight:800; padding:2px 8px; border-radius:100px; background:#FF9500; color:#fff; letter-spacing:.2px; }
-
-        /* Pro Tip / Manual Prediction */
-        .pro-tip-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:800; padding:3px 9px; border-radius:100px; background:#FF9500; color:#fff; letter-spacing:.4px; text-transform:uppercase; flex-shrink:0; }
-        .manual-pred-box { background:#1D1D1F; border:2px solid #FF9500; border-radius:var(--r); padding:16px; margin-bottom:16px; }
-        .manual-pred-label { font-size:10px; font-weight:700; color:#FF9500; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px; display:flex; align-items:center; gap:5px; }
-        .manual-pred-txt { font-size:15px; font-weight:600; color:#fff; line-height:1.55; }
-
-        /* Prediction sheet (same as before) */
-        .pred-league-row { text-align:center; margin-bottom:20px; }
-        .pred-league-nm { font-size:12px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.5px; }
-        .pred-badge { display:inline-block; font-size:10px; font-weight:600; color:var(--t3); background:var(--bg); padding:3px 9px; border-radius:100px; margin-top:5px; }
-        .pred-teams { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:12px; }
-        .pred-team { flex:1; text-align:center; }
-        .pred-logo { width:56px; height:56px; object-fit:contain; margin:0 auto 7px; display:block; }
-        .pred-team-nm { font-size:12px; font-weight:600; letter-spacing:-.1px; }
-        .pred-vs { font-size:12px; font-weight:600; color:var(--t3); flex-shrink:0; }
-        .pred-box { background:var(--t1); border-radius:var(--r); padding:18px; margin-bottom:20px; }
-        .pred-advice { font-size:19px; font-weight:700; color:#fff; letter-spacing:-.4px; text-align:center; margin-bottom:14px; line-height:1.3; }
-        .pred-bar { height:3px; background:rgba(255,255,255,.15); border-radius:2px; overflow:hidden; display:flex; margin-bottom:9px; }
-        .pb-h{background:#fff} .pb-d{background:rgba(255,255,255,.4)} .pb-a{background:rgba(255,255,255,.7)}
-        .pred-pct { display:flex; justify-content:space-between; font-size:10px; font-weight:600; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.3px; }
-        .cmp-row { margin-bottom:12px; }
-        .cmp-labels { display:flex; justify-content:space-between; margin-bottom:5px; }
-        .cmp-val { font-size:11px; font-weight:600; }
-        .cmp-name { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.3px; }
-        .cmp-track { height:2px; background:var(--bg); border-radius:1px; overflow:hidden; }
-        .cmp-fill { height:100%; background:var(--t1); }
-
-        /* Loading overlay */
-        .pred-loading { position:fixed; inset:0; z-index:210; background:rgba(255,255,255,.65); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; }
-        .pred-loading-box { background:var(--surface); border-radius:var(--r2); box-shadow:var(--modal-shadow); padding:28px 36px; display:flex; flex-direction:column; align-items:center; gap:12px; }
-        .pred-loading-txt { font-size:12px; font-weight:600; color:var(--t2); text-transform:uppercase; letter-spacing:.3px; }
         .spin { width:22px; height:22px; border:2px solid var(--sep2); border-top-color:var(--t1); border-radius:50%; animation:rot .7s linear infinite; }
         .spin-sm { width:14px; height:14px; border:1.5px solid var(--sep2); border-top-color:var(--blue); border-radius:50%; animation:rot .7s linear infinite; }
         @keyframes rot { to{transform:rotate(360deg)} }
 
-        /* Center modal */
         .center-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.46); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:20px; }
         .center-card { background:var(--surface); border-radius:var(--r2); width:100%; max-width:340px; padding:32px 26px; box-shadow:var(--modal-shadow); animation:pop .28s cubic-bezier(.34,1.56,.64,1); }
         @keyframes pop { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
 
-        /* Settings */
         .settings-group { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); overflow:hidden; margin-bottom:18px; }
         .settings-item { display:flex; align-items:center; justify-content:space-between; padding:15px 16px; text-decoration:none; color:var(--t1); font-size:15px; font-weight:500; letter-spacing:-.2px; border-bottom:.5px solid var(--sep); transition:background .1s; }
         .settings-item:last-child { border-bottom:none; }
         .settings-item:hover { background:var(--bg); }
 
-        /* Calendar */
         .cal-days { display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
         .cal-day { display:flex; flex-direction:column; align-items:center; padding:9px 5px; border-radius:11px; cursor:pointer; transition:background .15s; }
         .cal-day.on { background:var(--t1); }
@@ -275,27 +199,27 @@
         .cal-dn { font-size:16px; font-weight:700; color:var(--t1); letter-spacing:-.3px; }
         .cal-day.on .cal-dd { color:rgba(255,255,255,.65); }
 
-        /* Social */
         .social { padding:36px 0 16px; text-align:center; }
         .social-lbl { font-size:10px; font-weight:500; color:var(--t3); text-transform:uppercase; letter-spacing:.5px; margin-bottom:18px; }
         .social-row { display:flex; justify-content:center; gap:14px; }
         .social-ico { width:42px; height:42px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; color:var(--t1); text-decoration:none; transition:background .15s,transform .18s; }
         .social-ico:hover { background:var(--t1); color:#fff; transform:translateY(-2px); }
 
-        /* Notif */
         .notif-card { animation:notifDrop .55s cubic-bezier(.175,.885,.32,1.275) both; }
         @keyframes notifDrop { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
         .opacity-0 { opacity:0; } .anim-fill { animation-fill-mode:forwards; }
 
-        /* Buttons */
         .btn-primary { width:100%; background:var(--t1); color:#fff; border:none; border-radius:var(--r); padding:14px; font-weight:700; font-size:15px; cursor:pointer; letter-spacing:-.2px; }
         .btn-secondary { width:100%; background:var(--bg); color:var(--t1); border:none; border-radius:var(--r); padding:14px; font-weight:600; font-size:15px; cursor:pointer; letter-spacing:-.2px; }
 
-        /* Splash */
         .splash { position:fixed; inset:0; z-index:300; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; animation:splFade .5s ease forwards; animation-delay:2.6s; pointer-events:none; }
         @keyframes splFade { to{opacity:0} }
         .splash-inner { animation:splPop .55s cubic-bezier(.34,1.56,.64,1) forwards; display:flex; flex-direction:column; align-items:center; gap:14px; }
         @keyframes splPop { from{opacity:0;transform:scale(.82)} to{opacity:1;transform:scale(1)} }
+
+        .empty-state { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:28px 20px; text-align:center; margin-bottom:9px; }
+        .empty-state-title { font-size:14px; font-weight:600; color:var(--t2); }
+        .empty-state-sub { font-size:12px; color:var(--t3); margin-top:3px; }
     </style>
 </head>
 <body>
@@ -305,42 +229,17 @@ const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
 const BACKEND_URL = "https://sportprediction.onrender.com";
 
-/* ── Status helpers ── */
-const getPredOutcome = pct => {
-    const h = parseInt(pct?.home) || 0;
-    const d = parseInt(pct?.draw) || 0;
-    const a = parseInt(pct?.away) || 0;
-    if (h >= d && h >= a) return { code: '1', label: 'Home Win' };
-    if (a > h  && a >= d) return { code: '2', label: 'Away Win' };
-    return { code: 'X', label: 'Draw' };
-};
-
-/* ── Local prediction fallback — runs in-browser, no server needed ── */
-const localPredict = (id) => {
-    const seed = String(id).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 7);
-    const r = n => { const x = Math.sin(seed * n + n * 13.7) * 99991; return x - Math.floor(x); };
-    const hp = Math.round(40 + r(1) * 16);
-    const dp = Math.round(22 + r(2) * 8);
-    const ap = 100 - hp - dp;
-    const hg = Math.min(4, Math.round(r(3) * 3.2));
-    const ag = Math.min(3, Math.round(r(4) * 2.4));
-    const code  = hp >= ap && hp >= dp ? '1' : ap > hp && ap >= dp ? '2' : 'X';
-    const label = code === '1' ? 'Home Win' : code === '2' ? 'Away Win' : 'Draw';
-    return { loading:false, code, label, score:`${hg}-${ag}`, advice:`${label} Predicted`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
-};
-
-const FIN  = ['FT','AET','PEN','Pen.'];
-const CANC = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
-const UPC  = ['NS','TBD'];
-const TIME_RE     = /^\d{2}:\d{2}$/;
+const FIN_SET  = new Set(['FT','AET','PEN','Pen.']);
+const UPC_SET  = new Set(['NS','TBD']);
+const CANC_SET = new Set(['Postp.','Canc.','Susp.','WO','AWD','ABD']);
+const TIME_RE  = /^\d{2}:\d{2}$/;
 const FT_SCORE_RE = /\[(\d+)-(\d+)\]/;
 
 const cat = s => {
     if (!s) return 'unknown';
-    if (FIN.includes(s))  return 'finished';
-    if (CANC.includes(s)) return 'cancelled';
-    if (UPC.includes(s))  return 'upcoming';
-    if (TIME_RE.test(s))  return 'upcoming';
+    if (FIN_SET.has(s))  return 'finished';
+    if (CANC_SET.has(s)) return 'cancelled';
+    if (UPC_SET.has(s) || TIME_RE.test(s)) return 'upcoming';
     return 'live';
 };
 
@@ -359,9 +258,9 @@ const statusLabel = s => {
 };
 
 const statusBadgeLabel = (s, c) => {
-    if (c === 'live')     return `LIVE  ${statusLabel(s)}`;
-    if (c === 'finished') return statusLabel(s) || 'Full Time';
-    if (c === 'upcoming') return `KO  ${statusLabel(s)}`;
+    if (c === 'live')      return `LIVE  ${statusLabel(s)}`;
+    if (c === 'finished')  return statusLabel(s) || 'Full Time';
+    if (c === 'upcoming')  return `KO  ${statusLabel(s)}`;
     if (c === 'cancelled') return statusLabel(s) || 'Cancelled';
     return statusLabel(s);
 };
@@ -371,50 +270,73 @@ const getGoals = m => {
     if (c === 'finished') {
         const raw = m.ft?.score;
         if (raw) { const x = FT_SCORE_RE.exec(raw); if (x) return { h:x[1], a:x[2] }; }
+        if (m.score) { const x = FT_SCORE_RE.exec(m.score); if (x) return { h:x[1], a:x[2] }; }
     }
-    const h = m.home?.goals, a = m.away?.goals;
+    const h = m.home?.goals ?? m.home_score;
+    const a = m.away?.goals ?? m.away_score;
     if (h == null || h === '?' || a == null || a === '?') return null;
     return { h:String(h), a:String(a) };
 };
 
 const fid = m => m?.static_id || m?.id || m?.fixture?.id || null;
 
+const getPredOutcome = pct => {
+    const h = parseInt(pct?.home) || 0;
+    const d = parseInt(pct?.draw) || 0;
+    const a = parseInt(pct?.away) || 0;
+    if (h >= d && h >= a) return { code:'1', label:'Home Win' };
+    if (a > h  && a >= d) return { code:'2', label:'Away Win' };
+    return { code:'X', label:'Draw' };
+};
+
+const localPredict = id => {
+    const seed = String(id).split('').reduce((a,c,i) => a + c.charCodeAt(0)*(i+1), 7);
+    const r = n => { const x = Math.sin(seed*n + n*13.7)*99991; return x - Math.floor(x); };
+    const hp = Math.round(40 + r(1)*16);
+    const dp = Math.round(22 + r(2)*8);
+    const ap = 100 - hp - dp;
+    const hg = Math.min(4, Math.round(r(3)*3.2));
+    const ag = Math.min(3, Math.round(r(4)*2.4));
+    const code  = hp>=ap&&hp>=dp?'1':ap>hp&&ap>=dp?'2':'X';
+    const label = code==='1'?'Home Win':code==='2'?'Away Win':'Draw';
+    return { loading:false, code, label, score:`${hg}-${ag}`, advice:`${label} Predicted`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
+};
+
 const parseEvents = m => {
     try {
         const ev = m.events?.event;
         if (!ev) return [];
         const arr = Array.isArray(ev) ? ev : [ev];
-        return arr.filter(e => e && (e.type || e.minute)).map(e => ({
-            minute: e.minute || e.min || '',
-            type:   (e.type || '').toLowerCase(),
-            player: e.player || e.Player || '',
-            assist: e.assist || '',
-            team:   e.team || e.Team || '',
+        return arr.filter(e => e && (e.type||e.minute)).map(e => ({
+            minute: e.minute||e.min||'',
+            type:   (e.type||'').toLowerCase(),
+            player: e.player||e.Player||'',
+            assist: e.assist||'',
+            team:   e.team||e.Team||'',
         }));
     } catch { return []; }
 };
 
 const eventIcon = t => {
-    if (t.includes('goal') || t === 'g') return '⚽';
-    if (t.includes('yellow')) return '🟨';
-    if (t.includes('red'))    return '🟥';
-    if (t.includes('sub'))    return '🔄';
-    if (t.includes('var'))    return '📺';
+    if (t.includes('goal')||t==='g') return '⚽';
+    if (t.includes('yellow'))        return '🟨';
+    if (t.includes('red'))           return '🟥';
+    if (t.includes('sub'))           return '🔄';
+    if (t.includes('var'))           return '📺';
     return '•';
 };
 
-/* ── SVG Icons ── */
-const IcoHome  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
-const IcoBell  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
-const IcoHeart = ({on}) => <svg width="17" height="17" viewBox="0 0 24 24" fill={on?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
-const IcoMenu  = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
-const IcoCal   = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
-const IcoRef   = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
-const IcoChev  = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
-const IcoZap   = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
-const IcoIG    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>;
-const IcoTG    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
-const IcoX     = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
+const IcoHome    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
+const IcoBell    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+const IcoHeart   = ({on}) => <svg width="17" height="17" viewBox="0 0 24 24" fill={on?"currentColor":"none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+const IcoMenu    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+const IcoCal     = () => <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const IcoRef     = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
+const IcoChev    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
+const IcoZap     = () => <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+const IcoIG      = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>;
+const IcoTG      = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+const IcoX       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
 const IcoStar    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
 const IcoThreads = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.471 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.267-.883-2.24-.887h-.047c-.69 0-1.952.19-2.653 1.344l-1.728-1.053c.932-1.545 2.368-2.31 4.38-2.31h.078c3.018.022 4.81 1.836 5.071 5.055l.014.187c.972.56 1.76 1.323 2.296 2.54.763 1.754.747 4.474-1.53 6.712-1.737 1.71-3.857 2.524-7.066 2.545zm.168-9.79c-.223 0-.447.008-.671.025-1.501.092-2.657.695-2.595 1.875.038.698.447 1.684 2.168 1.684h.055c1.226-.035 2.164-.554 2.78-1.503.432-.663.677-1.504.747-2.55a11.823 11.823 0 0 0-2.484-.531z"/></svg>;
 const IcoMail    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>;
@@ -422,14 +344,11 @@ const IcoMail    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="n
 const MagicLogo = ({size=26}) => {
     const [err, setErr] = useState(false);
     const r = Math.round(size * 0.25);
-    if (!err) {
-        return (
-            <img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size}
-                style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}}
-                alt="Magic Analysis"
-                onError={()=>setErr(true)}/>
-        );
-    }
+    if (!err) return (
+        <img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size}
+            style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}}
+            alt="Magic Analysis" onError={()=>setErr(true)}/>
+    );
     return (
         <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}}>
             <rect width="40" height="40" fill="#1D1D1F"/>
@@ -439,7 +358,6 @@ const MagicLogo = ({size=26}) => {
     );
 };
 
-/* ── Logo component with fallback ── */
 const TeamLogo = ({ url, name, size=64, small=false }) => {
     const [err, setErr] = useState(false);
     const initials = (name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -451,7 +369,6 @@ const TeamLogo = ({ url, name, size=64, small=false }) => {
     return <img className="detail-logo" src={url} style={{width:size,height:size}} alt={name} onError={()=>setErr(true)}/>;
 };
 
-/* ── Skeleton ── */
 const Skel = () => (
     <div className="skel-card">
         <div className="skel" style={{height:9,width:'45%'}}/>
@@ -471,25 +388,39 @@ const Skel = () => (
     </div>
 );
 
-/* ── Match Card ── */
+const EmptyState = ({ title, sub }) => (
+    <div className="empty-state">
+        <div className="empty-state-title">{title}</div>
+        {sub && <div className="empty-state-sub">{sub}</div>}
+    </div>
+);
+
+const Grp = ({label}) => (
+    <div className="grp"><div className="grp-line"/><span className="grp-txt">{label}</span><div className="grp-line"/></div>
+);
+
 const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isNotif=false, idx=0 }) => {
-    const c   = cat(match.status);
-    const g   = getGoals(match);
-    const id  = fid(match);
-    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
-    const hasPred   = pred && !pred.loading && pred.code;
+    const c         = cat(match.status);
+    const g         = getGoals(match);
+    const id        = fid(match);
     const hasManual = !!match.manual_prediction;
+    const hasPred   = pred && !pred.loading && pred.code;
+    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
 
     return (
         <div
-            className={`card${isNotif?' notif-card opacity-0 anim-fill':''}`}
+            className={`card${hasManual?' card-premium':''}${isNotif?' notif-card opacity-0 anim-fill':''}`}
             style={{animationDelay:isNotif?`${idx*3}s`:'0s'}}
             onClick={()=>onOpen(match)}
         >
             <div className="card-inner">
                 <div className="card-meta">
                     <div className="card-meta-left">
-                        <span className="card-league">{(match.country||'').toUpperCase()}{match.country&&match.leagueName?' · ':''}{match.leagueName||''}</span>
+                        <span className="card-league">
+                            {(match.country||'').toUpperCase()}
+                            {match.country&&match.leagueName?' · ':''}
+                            {match.leagueName||''}
+                        </span>
                         {hasManual && <span className="pro-tip-badge"><IcoStar/> PRO TIP</span>}
                     </div>
                     <button className={`fav${isFav?' on':''}`} onClick={e=>{e.stopPropagation();if(id)onToggleFav(id);}}>
@@ -497,7 +428,6 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                     </button>
                 </div>
 
-                {/* Main row: teams | score | prediction circle */}
                 <div className="card-row">
                     <div className="card-left">
                         <div className="card-logo-col">
@@ -511,7 +441,6 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                     </div>
 
                     <div className="card-right-col">
-                        {/* Current score */}
                         <div className="card-scores-col">
                             {g
                                 ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
@@ -519,13 +448,9 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                             }
                         </div>
 
-                        {/* Prediction column — manual pro tip takes priority */}
                         {hasManual ? (
                             <div className="pred-front">
                                 <div className="pred-front-circle" style={{fontSize:20}}>⭐</div>
-                                <div className="pred-front-score" style={{maxWidth:48,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',textAlign:'center'}}>
-                                    {match.manual_prediction.substring(0,7)}
-                                </div>
                             </div>
                         ) : (
                             <>
@@ -559,6 +484,13 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
                     </div>
                 </div>
 
+                {hasManual && (
+                    <div className="card-manual-pred">
+                        <div className="card-manual-pred-lbl"><IcoStar/> EXPERT TIP</div>
+                        <div className="card-manual-pred-txt">{match.manual_prediction}</div>
+                    </div>
+                )}
+
                 <div className="card-foot">
                     <span className={`s-badge ${badgeClass}`}>
                         {c==='live' && <span className="dot"/>}
@@ -575,21 +507,21 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null, isN
     );
 };
 
-/* ── Detail Sheet ── */
 const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose }) => {
-    const c      = cat(match.status);
-    const g      = getGoals(match);
-    const events = parseEvents(match);
-    const htScore = match.ht?.score ? (() => { const x=FT_SCORE_RE.exec(match.ht.score); return x?`${x[1]} - ${x[2]}`:null; })() : null;
-    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
+    const c         = cat(match.status);
+    const g         = getGoals(match);
+    const events    = parseEvents(match);
     const hasManual = !!match.manual_prediction;
+    const htScore   = match.ht?.score
+        ? (() => { const x=FT_SCORE_RE.exec(match.ht.score); return x?`${x[1]} - ${x[2]}`:null; })()
+        : null;
+    const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
 
     return (
         <div className="overlay" onClick={onClose}>
             <div className="sheet" onClick={e=>e.stopPropagation()}>
                 <div className="handle"/>
 
-                {/* Official Pro Tip — shown prominently at top when present */}
                 {hasManual && (
                     <div className="manual-pred-box">
                         <div className="manual-pred-label"><IcoStar/> Official Professional Analysis</div>
@@ -597,12 +529,10 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 )}
 
-                {/* League */}
                 <div className="detail-head">
                     <div className="detail-league">{match.country} · {match.leagueName}</div>
                 </div>
 
-                {/* Teams */}
                 <div className="detail-teams">
                     <div className="detail-team">
                         {logos.homeLoading
@@ -621,16 +551,12 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 </div>
 
-                {/* Score box */}
                 <div className="detail-score-box">
-                    <div className="detail-score-big">
-                        {g ? `${g.h}  —  ${g.a}` : '—  vs  —'}
-                    </div>
+                    <div className="detail-score-big">{g ? `${g.h}  —  ${g.a}` : '—  vs  —'}</div>
                     {htScore && <div className="detail-score-sub">Half time: {htScore}</div>}
                     {!htScore && c==='upcoming' && <div className="detail-score-sub">Match not started yet</div>}
                 </div>
 
-                {/* Status badge */}
                 <div className="detail-status-row">
                     <span className={`s-badge ${badgeClass}`} style={{fontSize:12,padding:'5px 14px'}}>
                         {c==='live' && <span className="dot"/>}
@@ -638,7 +564,6 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </span>
                 </div>
 
-                {/* Info grid */}
                 <div className="detail-info-grid">
                     <div className="detail-info-cell">
                         <div className="detail-info-val">{match.leagueName||'—'}</div>
@@ -662,7 +587,6 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     )}
                 </div>
 
-                {/* AI Analysis — skipped when manual pro tip is present */}
                 {!hasManual && (
                     <div className="ai-analysis-box">
                         <div className="ai-analysis-lbl"><IcoStar/> AI Match Analysis</div>
@@ -675,13 +599,12 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 )}
 
-                {/* Events */}
                 {events.length > 0 && (
                     <div style={{marginBottom:16}}>
                         <div className="events-title">Match Events</div>
                         {events.slice(0,12).map((e,i) => (
                             <div key={i} className="event-row">
-                                <span className="event-min">{e.minute ? `${e.minute}'` : '—'}</span>
+                                <span className="event-min">{e.minute?`${e.minute}'`:'—'}</span>
                                 <span className="event-ico">{eventIcon(e.type)}</span>
                                 <span className="event-player">{e.player||'—'}{e.assist?` (${e.assist})`:''}</span>
                                 <span className="event-team">{e.team}</span>
@@ -690,7 +613,6 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 )}
 
-                {/* Prediction block — hidden when manual pro tip exists */}
                 {!hasManual && (
                     <>
                         {pred?.loading && (
@@ -702,7 +624,7 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                             <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'16px',marginBottom:14}}>
                                 <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.45)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:10}}>Match Prediction</div>
                                 <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:12}}>
-                                    <div style={{width:56,height:56,borderRadius:'50%',background:'#FF9500',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:'0 3px 12px rgba(255,149,0,.45)'}}>{pred.code}</div>
+                                    <div style={{width:56,height:56,borderRadius:'50%',background:'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:800,color:'#fff',flexShrink:0,boxShadow:'0 3px 12px rgba(255,149,0,.45)'}}>{pred.code}</div>
                                     <div>
                                         <div style={{fontSize:16,fontWeight:700,color:'#fff',marginBottom:3}}>{pred.label}</div>
                                         {pred.score && <div style={{fontSize:13,color:'rgba(255,255,255,.6)'}}>Predicted score: {pred.score}</div>}
@@ -711,8 +633,8 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                                 </div>
                                 <div style={{display:'flex',gap:8}}>
                                     {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>(
-                                        <div key={code} style={{flex:1,textAlign:'center',background:pred.code===code?'rgba(255,149,0,.2)':'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 4px',outline:pred.code===code?'1.5px solid #FF9500':'none'}}>
-                                            <div style={{fontSize:16,fontWeight:800,color:pred.code===code?'#FF9500':'#fff'}}>{pct||'—'}</div>
+                                        <div key={code} style={{flex:1,textAlign:'center',background:pred.code===code?'rgba(255,149,0,.2)':'rgba(255,255,255,.06)',borderRadius:10,padding:'8px 4px',outline:pred.code===code?'1.5px solid var(--gold)':'none'}}>
+                                            <div style={{fontSize:16,fontWeight:800,color:pred.code===code?'var(--gold)':'#fff'}}>{pct||'—'}</div>
                                             <div style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.3px',marginTop:1}}>{lbl}</div>
                                         </div>
                                     ))}
@@ -720,7 +642,7 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                             </div>
                         )}
                         {pred && !pred.loading && !pred.code && (
-                            <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available for this match.</div>
+                            <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available.</div>
                         )}
                     </>
                 )}
@@ -731,100 +653,6 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
     );
 };
 
-/* ── Prediction Sheet ── */
-const PredSheet = ({ data, onClose }) => {
-    const { predictions, teams, comparison, league } = data;
-    if (!predictions || !teams || !league) return (
-        <div className="overlay" onClick={onClose}>
-            <div className="sheet" onClick={e=>e.stopPropagation()}>
-                <div className="handle"/>
-                <p style={{textAlign:'center',color:'var(--t3)',fontSize:14,padding:'20px 0'}}>No prediction data for this match.</p>
-                <button className="btn-primary" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
-
-    const outcome    = getPredOutcome(predictions.percent);
-    const predScore  = (predictions.goals?.home != null && predictions.goals?.away != null)
-        ? `${predictions.goals.home} - ${predictions.goals.away}` : null;
-
-    return (
-        <div className="overlay" onClick={onClose}>
-            <div className="sheet" onClick={e=>e.stopPropagation()}>
-                <div className="handle"/>
-
-                <div className="pred-league-row">
-                    <img src={league.logo} width={32} height={32} style={{objectFit:'contain',margin:'0 auto 5px',display:'block'}} onError={e=>e.target.style.display='none'} alt=""/>
-                    <div className="pred-league-nm">{league.name}</div>
-                </div>
-
-                <div className="pred-teams">
-                    <div className="pred-team">
-                        <img src={teams.home?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                        <div className="pred-team-nm">{teams.home?.name}</div>
-                    </div>
-                    <div className="pred-vs">vs</div>
-                    <div className="pred-team">
-                        <img src={teams.away?.logo} className="pred-logo" onError={e=>e.target.style.display='none'} alt=""/>
-                        <div className="pred-team-nm">{teams.away?.name}</div>
-                    </div>
-                </div>
-
-                <div className="pred-outcome-wrap">
-                    <div><div className="pred-outcome-circle"><span className="pred-outcome-code">{outcome.code}</span></div></div>
-                    <div className="pred-outcome-label">{outcome.label}</div>
-                    {predScore && <>
-                        <div className="pred-outcome-score">{predScore}</div>
-                        <div className="pred-outcome-score-lbl">Predicted Score</div>
-                    </>}
-                </div>
-
-                <div className="pred-prob-row">
-                    {[['1','Home Win',predictions.percent?.home],['X','Draw',predictions.percent?.draw],['2','Away Win',predictions.percent?.away]].map(([code,lbl,pct])=>(
-                        <div key={code} className="pred-prob-cell" style={outcome.code===code?{background:'rgba(255,149,0,.12)',outline:'1.5px solid #FF9500'}:{}}>
-                            <div className="pred-prob-val" style={outcome.code===code?{color:'#FF9500'}:{}}>{pct||'—'}</div>
-                            <div className="pred-prob-lbl">{lbl}</div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="pred-box" style={{marginBottom:16}}>
-                    <div className="pred-advice">{predictions.advice}</div>
-                    <div className="pred-bar">
-                        <div className="pb-h" style={{width:predictions.percent?.home}}/>
-                        <div className="pb-d" style={{width:predictions.percent?.draw}}/>
-                        <div className="pb-a" style={{width:predictions.percent?.away}}/>
-                    </div>
-                    <div className="pred-pct">
-                        <span>1  {predictions.percent?.home}</span>
-                        <span>X  {predictions.percent?.draw}</span>
-                        <span>2  {predictions.percent?.away}</span>
-                    </div>
-                </div>
-
-                {comparison && (
-                    <div style={{marginBottom:16}}>
-                        <div className="events-title">Team Comparison</div>
-                        {[{n:'Attack',h:comparison.att?.home,a:comparison.att?.away},{n:'Defense',h:comparison.def?.home,a:comparison.def?.away},{n:'Form',h:comparison.form?.home,a:comparison.form?.away}].filter(r=>r.h).map(r=>(
-                            <div key={r.n} className="cmp-row">
-                                <div className="cmp-labels">
-                                    <span className="cmp-val">{r.h}</span>
-                                    <span className="cmp-name">{r.n}</span>
-                                    <span className="cmp-val">{r.a}</span>
-                                </div>
-                                <div className="cmp-track"><div className="cmp-fill" style={{width:r.h}}/></div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <button className="btn-primary" onClick={onClose}>Close</button>
-            </div>
-        </div>
-    );
-};
-
-/* ── Social ── */
 const Social = () => (
     <div className="social">
         <div className="social-lbl">Follow Us</div>
@@ -837,51 +665,44 @@ const Social = () => (
     </div>
 );
 
-const Grp = ({label}) => (
-    <div className="grp"><div className="grp-line"/><span className="grp-txt">{label}</span><div className="grp-line"/></div>
-);
-
-/* ── App ── */
 function App() {
-    const [splash,      setSplash]      = useState(true);
-    const [calOpen,     setCalOpen]     = useState(false);
-    const [tab,         setTab]         = useState('Home');
-    const [sport,       setSport]       = useState('Football');
-    const [favs,        setFavs]        = useState([]);
-    const [matches,     setMatches]     = useState([]);
-    const [loading,     setLoading]     = useState(true);
-    const [waking,      setWaking]      = useState(false);
-    const [err,         setErr]         = useState(null);
-    const [csSport,     setCsSport]     = useState(null);
-    const [showToast,   setShowToast]   = useState(false);
-    const [logoCache,   setLogoCache]   = useState({});
-    const [detailMatch, setDetailMatch] = useState(null);
-    const [detailLogos, setDetailLogos] = useState({ home:null, away:null, homeLoading:false, awayLoading:false });
-    const [analysis,    setAnalysis]    = useState(null);
+    const [splash,          setSplash]          = useState(true);
+    const [calOpen,         setCalOpen]         = useState(false);
+    const [tab,             setTab]             = useState('Home');
+    const [sport,           setSport]           = useState('Football');
+    const [csSport,         setCsSport]         = useState(null);
+    const [favs,            setFavs]            = useState([]);
+    const [matches,         setMatches]         = useState([]);
+    const [loading,         setLoading]         = useState(true);
+    const [waking,          setWaking]          = useState(false);
+    const [err,             setErr]             = useState(null);
+    const [showToast,       setShowToast]       = useState(false);
+    const [logoCache,       setLogoCache]       = useState({});
+    const [detailMatch,     setDetailMatch]     = useState(null);
+    const [detailLogos,     setDetailLogos]     = useState({home:null,away:null,homeLoading:false,awayLoading:false});
+    const [analysis,        setAnalysis]        = useState(null);
     const [analysisLoading, setAnalysisLoading] = useState(false);
-    const [predCache,   setPredCache]   = useState({});
+    const [predCache,       setPredCache]       = useState({});
     const fetchingRef = useRef(new Set());
     const resolvedRef = useRef(new Set());
 
-    /* ── Fetch one prediction ── */
     const fetchOnePred = useCallback(async (id, matchData) => {
         if (!id || fetchingRef.current.has(id) || resolvedRef.current.has(id)) return;
         fetchingRef.current.add(id);
-        setPredCache(prev => ({...prev, [id]: { loading: true }}));
-
+        setPredCache(prev => ({...prev, [id]: {loading:true}}));
         let cached = null;
         try {
-            const params = new URLSearchParams({ fixture: id });
+            const params = new URLSearchParams({fixture:id});
             if (matchData) {
                 const g = getGoals(matchData);
-                if (matchData.home?.name) params.set('home', matchData.home.name);
-                if (matchData.away?.name) params.set('away', matchData.away.name);
+                if (matchData.home?.name) params.set('home',   matchData.home.name);
+                if (matchData.away?.name) params.set('away',   matchData.away.name);
                 if (matchData.leagueName) params.set('league', matchData.leagueName);
-                if (matchData.country)    params.set('country', matchData.country);
-                if (matchData.status)     params.set('status', statusLabel(matchData.status) || matchData.status);
+                if (matchData.country)    params.set('country',matchData.country);
+                if (matchData.status)     params.set('status', statusLabel(matchData.status)||matchData.status);
                 if (g) params.set('score', `${g.h}-${g.a}`);
             }
-            const res  = await fetch(`${BACKEND_URL}/api/get-predictions?${params}`, { signal: AbortSignal.timeout(12000) });
+            const res  = await fetch(`${BACKEND_URL}/api/get-predictions?${params}`, {signal:AbortSignal.timeout(12000)});
             const data = await res.json();
             const p    = data.response?.[0];
             if (p?.predictions?.percent) {
@@ -899,13 +720,11 @@ function App() {
                 };
             }
         } catch { /* fall through to local model */ }
-
         setPredCache(prev => ({...prev, [id]: cached || localPredict(id)}));
         fetchingRef.current.delete(id);
         resolvedRef.current.add(id);
     }, []);
 
-    /* ── Auto-fetch predictions — skips matches with a manual pro tip ── */
     const autoFetchPredictions = useCallback(async ms => {
         for (const m of ms) {
             if (m.manual_prediction) continue;
@@ -916,135 +735,119 @@ function App() {
         }
     }, [fetchOnePred]);
 
-    /* ── Fetch scores ── */
-    const load = useCallback(async (isManual=false) => {
+    const load = useCallback(async () => {
         setLoading(true); setErr(null);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
         const wt = setTimeout(() => setWaking(true), 4000);
         try {
             const ctrl = new AbortController();
-            const tt   = setTimeout(()=>ctrl.abort(), 35000);
-            const res  = await fetch(`${BACKEND_URL}/api/scores`,{signal:ctrl.signal});
+            const tt   = setTimeout(() => ctrl.abort(), 35000);
+            const res  = await fetch(`${BACKEND_URL}/api/scores`, {signal:ctrl.signal});
             clearTimeout(tt); clearTimeout(wt); setWaking(false);
             if (!res.ok) throw new Error(`${res.status}`);
             const data = await res.json();
-            if (data.livescore?.league) {
-                const flat = [];
-                const leagues = Array.isArray(data.livescore.league)
-                    ? data.livescore.league
-                    : [data.livescore.league];
-                leagues.forEach(lg => {
-                    if (!lg || !lg.match) return;
-                    const items = Array.isArray(lg.match) ? lg.match : [lg.match];
-                    items.forEach(m => {
-                        if (!m) return;
-                        flat.push({ ...m, leagueName: lg.name, country: lg.country });
-                    });
-                });
-                setMatches(flat);
-                fetchLogosForMatches(flat.slice(0,30));
-                autoFetchPredictions(flat);
-            } else throw new Error("Bad format");
+            const flat = Array.isArray(data.matches) ? data.matches : [];
+            setMatches(flat);
+            fetchLogosForMatches(flat.slice(0, 30));
+            autoFetchPredictions(flat);
         } catch(e) {
             clearTimeout(wt); setWaking(false);
-            setErr(e.name==='AbortError'?"Server taking too long — retry in a moment.":"Could not load data. Check your connection.");
+            setErr(e.name==='AbortError'
+                ? "Server taking too long — retry in a moment."
+                : "Could not load data. Check your connection.");
         } finally { setLoading(false); }
     }, [autoFetchPredictions]);
 
-    /* ── Background logo pre-fetch for cards ── */
-    const fetchLogosForMatches = useCallback(async (ms) => {
-        const names = [...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
+    const fetchLogosForMatches = useCallback(async ms => {
+        const names = [...new Set(ms.flatMap(m => [m.home?.name, m.away?.name].filter(Boolean)))];
         for (const name of names) {
             if (logoCache[name] !== undefined) continue;
             try {
                 const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
                 setLogoCache(prev => ({...prev, [name]: data.logo || null}));
-            } catch { setLogoCache(prev => ({...prev, [name]:null})); }
-            await new Promise(r=>setTimeout(r,120));
+            } catch { setLogoCache(prev => ({...prev, [name]: null})); }
+            await new Promise(r => setTimeout(r, 120));
         }
     }, [logoCache]);
 
     useEffect(() => {
-        const t=setTimeout(()=>setSplash(false),3000);
+        const t  = setTimeout(() => setSplash(false), 3000);
         load();
-        const iv=setInterval(()=>load(false), 60000);
-        return ()=>{ clearTimeout(t); clearInterval(iv); };
+        // ── Auto-refresh every 24 hours only ──
+        const iv = setInterval(() => load(), 86400000);
+        return () => { clearTimeout(t); clearInterval(iv); };
     }, [load]);
 
-    /* ── Open match detail ── */
     const openDetail = useCallback(async m => {
         setDetailMatch(m);
         setAnalysis(null);
         setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
-
         const getLogo = async name => {
             if (logoCache[name] !== undefined) return logoCache[name];
             try {
                 const res  = await fetch(`${BACKEND_URL}/api/team-logo?name=${encodeURIComponent(name)}`);
                 const data = await res.json();
-                return data.logo||null;
+                return data.logo || null;
             } catch { return null; }
         };
-
-        const [hl,al] = await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
-        setLogoCache(prev=>({...prev,[m.home?.name]:hl,[m.away?.name]:al}));
-        setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
-
-        /* Skip AI analysis fetch when a manual pro tip exists */
+        const [hl, al] = await Promise.all([getLogo(m.home?.name), getLogo(m.away?.name)]);
+        setLogoCache(prev => ({...prev, [m.home?.name]:hl, [m.away?.name]:al}));
+        setDetailLogos({home:hl, away:al, homeLoading:false, awayLoading:false});
         if (m.manual_prediction) return;
-
         setAnalysisLoading(true);
         try {
             const g = getGoals(m);
             const p = new URLSearchParams({
-                home:   m.home?.name||'',
-                away:   m.away?.name||'',
-                league: m.leagueName||'',
-                status: statusLabel(m.status)||m.status||'',
-                score:  g?`${g.h}-${g.a}`:'Not started',
-                ht:     m.ht?.score||''
+                home:   m.home?.name || '',
+                away:   m.away?.name || '',
+                league: m.leagueName || '',
+                status: statusLabel(m.status) || m.status || '',
+                score:  g ? `${g.h}-${g.a}` : 'Not started',
+                ht:     m.ht?.score || ''
             });
             const res  = await fetch(`${BACKEND_URL}/api/match-analysis?${p}`);
             const data = await res.json();
-            setAnalysis(data.analysis||null);
+            setAnalysis(data.analysis || null);
         } catch { setAnalysis(null); }
         finally { setAnalysisLoading(false); }
     }, [logoCache]);
 
-    const toggleFav = useCallback(id=>{
-        if(!id)return;
-        setFavs(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id]);
-    },[]);
+    const toggleFav = useCallback(id => {
+        if (!id) return;
+        setFavs(p => p.includes(id) ? p.filter(f => f !== id) : [...p, id]);
+    }, []);
 
-    const live  = useMemo(()=>matches.filter(m=>cat(m.status)==='live').slice(0,20),    [matches]);
-    const past  = useMemo(()=>matches.filter(m=>cat(m.status)==='finished').slice(0,20),[matches]);
-    const upc   = useMemo(()=>matches.filter(m=>cat(m.status)==='upcoming').slice(0,20),[matches]);
-    const saved = useMemo(()=>matches.filter(m=>favs.includes(fid(m))),                 [matches,favs]);
-    const alerts= useMemo(()=>matches.filter(m=>{const n=parseInt(m.status);return !isNaN(n)&&n>=75&&n<120;}).slice(0,15),[matches]);
+    const liveMatches     = useMemo(() => matches.filter(m => cat(m.status) === 'live').slice(0, 10),     [matches]);
+    const upcomingMatches = useMemo(() => matches.filter(m => cat(m.status) === 'upcoming').slice(0, 10), [matches]);
+    const pastMatches     = useMemo(() => matches.filter(m => cat(m.status) === 'finished').slice(0, 10), [matches]);
+    const savedMatches    = useMemo(() => matches.filter(m => favs.includes(fid(m))),                     [matches, favs]);
+    const alertMatches    = useMemo(() => matches.filter(m => { const n=parseInt(m.status); return !isNaN(n)&&n>=75&&n<120; }).slice(0, 15), [matches]);
 
-    const card = (m,extra={}) => (
-        <MatchCard key={fid(m)||`${m.home?.name}${m.away?.name}${m.status}`}
+    const card = (m, extra={}) => (
+        <MatchCard
+            key={fid(m) || `${m.home?.name}${m.away?.name}${m.status}`}
             match={m} logos={logoCache}
-            pred={predCache[fid(m)]||null}
+            pred={predCache[fid(m)] || null}
             onOpen={openDetail} onToggleFav={toggleFav}
-            isFav={favs.includes(fid(m))} {...extra}/>
+            isFav={favs.includes(fid(m))} {...extra}
+        />
     );
 
-    const today  = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    const today  = new Date().toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric'});
     const sports = [['Football','⚽'],['Basketball','🏀'],['Tennis','🎾'],['Hockey','🏒'],['Baseball','⚾']];
-    const calDays= () => {
-        const t=new Date(),s=t.getDate()-t.getDay()+1;
-        return Array.from({length:5},(_,i)=>{
-            const d=new Date(t.getFullYear(),t.getMonth(),s+i);
-            return {nm:d.toLocaleDateString('en-US',{weekday:'short'}),dn:d.getDate(),full:d.toDateString(),on:d.toDateString()===t.toDateString()};
+
+    const calDays = () => {
+        const t = new Date(), s = t.getDate() - t.getDay() + 1;
+        return Array.from({length:5}, (_,i) => {
+            const d = new Date(t.getFullYear(), t.getMonth(), s+i);
+            return {nm:d.toLocaleDateString('en-US',{weekday:'short'}), dn:d.getDate(), full:d.toDateString(), on:d.toDateString()===t.toDateString()};
         });
     };
 
     return (
         <>
-            {/* Splash */}
             {splash && (
                 <div className="splash">
                     <div className="splash-inner">
@@ -1059,24 +862,18 @@ function App() {
                 </div>
             )}
 
-            {/* Refresh toast */}
             {showToast && (
-                <div className="toast">
-                    <div className="spin"/>
-                    Fetching live info, please wait…
-                </div>
+                <div className="toast"><div className="spin"/>Fetching latest data…</div>
             )}
 
-            {/* Header */}
             <header className="hdr">
                 <button className="hdr-btn" onClick={()=>setCalOpen(true)}><IcoCal/></button>
                 <div className="hdr-center"><MagicLogo size={22}/><span className="hdr-title">Magic Analysis</span></div>
-                <button className="hdr-btn" onClick={()=>load(true)}><IcoRef/></button>
+                <button className="hdr-btn" onClick={()=>load()}><IcoRef/></button>
             </header>
 
-            {/* Tabs */}
             <div className="tabs-bar">
-                {sports.map(([nm,ic])=>(
+                {sports.map(([nm,ic]) => (
                     <button key={nm} className={`tab ${sport===nm?'tab-on':'tab-off'}`}
                         onClick={()=>nm==='Football'?setSport(nm):setCsSport(nm)}>
                         {ic} {nm}
@@ -1084,7 +881,6 @@ function App() {
                 ))}
             </div>
 
-            {/* Main */}
             <main className="page">
                 {tab==='Home' && (
                     <div className="page-in">
@@ -1092,35 +888,87 @@ function App() {
                             <h1 className="page-h1">Predictions</h1>
                             <p className="page-sub">{today}</p>
                         </div>
+
                         <div className="stats">
-                            {[['Live',live.length],['Past',past.length],['Upcoming',upc.length],['Alerts',alerts.length]].map(([l,v])=>(
-                                <div key={l} className="stat"><div className="stat-n">{v}</div><div className="stat-l">{l}</div></div>
+                            {[['Live',liveMatches.length],['Upcoming',upcomingMatches.length],['Past',pastMatches.length],['Alerts',alertMatches.length]].map(([l,v]) => (
+                                <div key={l} className="stat">
+                                    <div className="stat-n">{v}</div>
+                                    <div className="stat-l">{l}</div>
+                                </div>
                             ))}
                         </div>
-                        {waking && <div className="wake-bar"><div className="spin" style={{flexShrink:0}}/><span style={{fontSize:13,fontWeight:500,color:'var(--t2)'}}>Waking up server — up to 30 s on first load…</span></div>}
-                        {err&&!loading && <div className="err-bar"><span className="err-txt">{err}</span><button className="retry-btn" onClick={()=>load(true)}>Retry</button></div>}
 
-                        <Grp label="🔴 Live Now"/>
-                        {loading?[1,2,3].map(i=><Skel key={i}/>):live.length>0?live.map(m=>card(m)):<div style={{background:'var(--surface)',borderRadius:'var(--r)',boxShadow:'var(--card-shadow)',padding:'32px 20px',textAlign:'center',marginBottom:9}}><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No live matches right now</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Live matches appear here automatically.</div></div>}
+                        {waking && (
+                            <div className="wake-bar">
+                                <div className="spin" style={{flexShrink:0}}/>
+                                <span style={{fontSize:13,fontWeight:500,color:'var(--t2)'}}>Waking up server — up to 30 s on first load…</span>
+                            </div>
+                        )}
+                        {err && !loading && (
+                            <div className="err-bar">
+                                <span className="err-txt">{err}</span>
+                                <button className="retry-btn" onClick={()=>load()}>Retry</button>
+                            </div>
+                        )}
 
-                        {!loading&&past.length>0&&<><Grp label="✅ Finished"/>{past.map(m=>card(m))}</>}
-                        {!loading&&upc.length>0&&<><Grp label="🔵 Upcoming"/>{upc.map(m=>card(m))}</>}
+                        <Grp label="🔴 Live Picks"/>
+                        {loading
+                            ? [1,2,3].map(i=><Skel key={i}/>)
+                            : liveMatches.length > 0
+                                ? liveMatches.map(m => card(m))
+                                : <EmptyState title="No live matches right now" sub="Live matches appear here automatically."/>
+                        }
+
+                        {!loading && <>
+                            <Grp label="🔵 Upcoming Picks"/>
+                            {upcomingMatches.length > 0
+                                ? upcomingMatches.map(m => card(m))
+                                : <EmptyState title="No upcoming matches scheduled"/>
+                            }
+                        </>}
+
+                        {!loading && <>
+                            <Grp label="✅ Recent Results"/>
+                            {pastMatches.length > 0
+                                ? pastMatches.map(m => card(m))
+                                : <EmptyState title="No recent results yet"/>
+                            }
+                        </>}
+
                         <Social/>
                     </div>
                 )}
 
                 {tab==='Alerts' && (
                     <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">Alerts</h1><p className="page-sub">Matches past the 75 minute mark</p></div>
-                        {alerts.length>0?alerts.map((m,i)=>card(m,{isNotif:true,idx:i})):<div style={{background:'var(--surface)',borderRadius:'var(--r)',boxShadow:'var(--card-shadow)',padding:'32px 20px',textAlign:'center'}}><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>No alerts right now</div></div>}
+                        <div className="page-head">
+                            <h1 className="page-h1">Alerts</h1>
+                            <p className="page-sub">Matches past the 75 minute mark</p>
+                        </div>
+                        {alertMatches.length > 0
+                            ? alertMatches.map((m,i) => card(m,{isNotif:true,idx:i}))
+                            : <EmptyState title="No alerts right now" sub="Matches in the 75th minute or later appear here."/>
+                        }
                         <Social/>
                     </div>
                 )}
 
                 {tab==='Favs' && (
                     <div className="page-in">
-                        <div className="page-head"><h1 className="page-h1">Saved</h1><p className="page-sub">Your saved matches</p></div>
-                        {saved.length>0?saved.map(m=>card(m)):<div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>♡</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>Nothing saved yet</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Tap the heart on any match to save it here.</div></div>}
+                        <div className="page-head">
+                            <h1 className="page-h1">Saved</h1>
+                            <p className="page-sub">Your saved matches</p>
+                        </div>
+                        {savedMatches.length > 0
+                            ? savedMatches.map(m => card(m))
+                            : (
+                                <div style={{paddingTop:56,textAlign:'center'}}>
+                                    <div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>♡</div>
+                                    <div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>Nothing saved yet</div>
+                                    <div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Tap the heart on any match to save it here.</div>
+                                </div>
+                            )
+                        }
                         <Social/>
                     </div>
                 )}
@@ -1129,7 +977,11 @@ function App() {
                     <div className="page-in">
                         <div className="page-head"><h1 className="page-h1">More</h1></div>
                         <div className="settings-group">
-                            {[['About Us','https://docs.google.com/document/d/1OaaYhaQi3FZzog6YLIoojh3CnX3aN0lrizXyQ5N9Dkw/edit?usp=sharing'],['Terms of Use','https://docs.google.com/document/d/1wO92_LRf7q1vS90SdmHgArGITPkimnMa7g_U_VHFZo4/edit?usp=sharing'],['Privacy Policy','https://docs.google.com/document/d/1qrcuBqJ3RoSTTdjtyHJXidpVNODILbHW5cLx4wlAe6Y/edit?usp=sharing']].map(([l,u])=>(
+                            {[
+                                ['About Us','https://docs.google.com/document/d/1OaaYhaQi3FZzog6YLIoojh3CnX3aN0lrizXyQ5N9Dkw/edit?usp=sharing'],
+                                ['Terms of Use','https://docs.google.com/document/d/1wO92_LRf7q1vS90SdmHgArGITPkimnMa7g_U_VHFZo4/edit?usp=sharing'],
+                                ['Privacy Policy','https://docs.google.com/document/d/1qrcuBqJ3RoSTTdjtyHJXidpVNODILbHW5cLx4wlAe6Y/edit?usp=sharing'],
+                            ].map(([l,u]) => (
                                 <a key={l} href={u} target="_blank" rel="noopener noreferrer" className="settings-item">{l}<IcoChev/></a>
                             ))}
                             <a href="mailto:Magicbetingtips@gmail.com" className="settings-item">
@@ -1137,24 +989,29 @@ function App() {
                                 <span style={{fontSize:12,color:'var(--t3)'}}>Magicbetingtips@gmail.com</span>
                             </a>
                         </div>
-                        <div style={{textAlign:'center',paddingTop:8}}><div style={{fontSize:12,color:'var(--t3)'}}>Magic Analysis · v2.0</div></div>
+                        <div style={{textAlign:'center',paddingTop:8}}>
+                            <div style={{fontSize:12,color:'var(--t3)'}}>Magic Analysis · v2.1</div>
+                        </div>
                         <Social/>
                     </div>
                 )}
             </main>
 
-            {/* Calendar */}
             {calOpen && (
                 <div className="center-overlay" onClick={()=>setCalOpen(false)}>
                     <div className="center-card" onClick={e=>e.stopPropagation()}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}>
-                            <div><div style={{fontSize:19,fontWeight:700,letterSpacing:'-.4px',marginBottom:2}}>This Week</div><div style={{fontSize:12,color:'var(--t3)'}}>Select a date</div></div>
+                            <div>
+                                <div style={{fontSize:19,fontWeight:700,letterSpacing:'-.4px',marginBottom:2}}>This Week</div>
+                                <div style={{fontSize:12,color:'var(--t3)'}}>Select a date</div>
+                            </div>
                             <button onClick={()=>setCalOpen(false)} style={{background:'var(--bg)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',fontSize:16,color:'var(--t2)',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
                         </div>
                         <div className="cal-days">
-                            {calDays().map(d=>(
+                            {calDays().map(d => (
                                 <div key={d.full} className={`cal-day${d.on?' on':''}`}>
-                                    <span className="cal-dd">{d.nm}</span><span className="cal-dn">{d.dn}</span>
+                                    <span className="cal-dd">{d.nm}</span>
+                                    <span className="cal-dn">{d.dn}</span>
                                 </div>
                             ))}
                         </div>
@@ -1163,7 +1020,6 @@ function App() {
                 </div>
             )}
 
-            {/* Coming soon */}
             {csSport && (
                 <div className="center-overlay" onClick={()=>setCsSport(null)}>
                     <div className="center-card" style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
@@ -1175,23 +1031,22 @@ function App() {
                 </div>
             )}
 
-            {/* Match detail sheet */}
             {detailMatch && (
                 <DetailSheet
                     match={detailMatch}
                     logos={detailLogos}
                     analysis={analysis}
                     analysisLoading={analysisLoading}
-                    pred={predCache[fid(detailMatch)]||null}
+                    pred={predCache[fid(detailMatch)] || null}
                     onClose={()=>{setDetailMatch(null);setAnalysis(null);}}
                 />
             )}
 
-            {/* Bottom nav */}
             <nav className="nav">
-                {[{id:'Home',lbl:'Home',ico:<IcoHome/>},{id:'Alerts',lbl:'Alerts',ico:<IcoBell/>},{id:'Favs',lbl:'Saved',ico:<IcoHeart on={false}/>},{id:'More',lbl:'More',ico:<IcoMenu/>}].map(({id,lbl,ico})=>(
+                {[{id:'Home',lbl:'Home',ico:<IcoHome/>},{id:'Alerts',lbl:'Alerts',ico:<IcoBell/>},{id:'Favs',lbl:'Saved',ico:<IcoHeart on={false}/>},{id:'More',lbl:'More',ico:<IcoMenu/>}].map(({id,lbl,ico}) => (
                     <div key={id} className={`nav-item ${tab===id?'on':'off'}`} onClick={()=>setTab(id)}>
-                        <div className="nav-ico">{ico}</div><span className="nav-lbl">{lbl}</span>
+                        <div className="nav-ico">{ico}</div>
+                        <span className="nav-lbl">{lbl}</span>
                     </div>
                 ))}
             </nav>
