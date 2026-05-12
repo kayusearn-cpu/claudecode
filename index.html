@@ -81,7 +81,8 @@
         .card-manual-pred-lbl { font-size:10px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; display:flex; align-items:center; gap:4px; }
         .card-manual-pred-txt { font-size:13px; font-weight:700; color:#fff; line-height:1.45; }
 
-        .card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:9px; border-top:.5px solid var(--sep); }
+        .card-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:9px; border-top:.5px solid var(--sep); gap:6px; }
+        .card-datetime { font-size:10px; font-weight:500; color:var(--t3); letter-spacing:-.1px; white-space:nowrap; flex-shrink:0; }
         .s-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:3px 9px; border-radius:100px; letter-spacing:.3px; text-transform:uppercase; }
         .s-live { background:rgba(255,59,48,.12); color:var(--live); }
         .s-fin  { background:rgba(0,0,0,.05); color:var(--t3); }
@@ -89,7 +90,7 @@
         .s-canc { background:rgba(0,0,0,.05); color:var(--t3); }
         .dot { width:5px; height:5px; border-radius:50%; background:var(--live); animation:blink 1.6s ease-in-out infinite; flex-shrink:0; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
-        .info-pill { font-size:11px; font-weight:600; color:var(--t2); background:var(--bg); border:none; border-radius:100px; padding:4px 10px; cursor:pointer; transition:background .15s,color .15s; display:flex; align-items:center; gap:4px; }
+        .info-pill { font-size:11px; font-weight:600; color:var(--t2); background:var(--bg); border:none; border-radius:100px; padding:4px 10px; cursor:pointer; transition:background .15s,color .15s; display:flex; align-items:center; gap:4px; flex-shrink:0; }
         .info-pill:hover { background:var(--t1); color:#fff; }
 
         .err-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:3px solid var(--live); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
@@ -419,6 +420,13 @@ const eventIcon = t => {
     return '•';
 };
 
+const fmtDate = dateStr => {
+    if (!dateStr) return '';
+    const p = dateStr.split('-');
+    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+    return dateStr;
+};
+
 /* ── Icons ── */
 const IcoHome    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
 const IcoBell    = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
@@ -502,7 +510,6 @@ const Grp = ({label}) => (
     </div>
 );
 
-/* ── Social: all 4 handles (Alerts / Favs / More tabs) ── */
 const Social = () => (
     <div className="social">
         <div className="social-lbl">Follow Us</div>
@@ -515,7 +522,6 @@ const Social = () => (
     </div>
 );
 
-/* ── SocialHome: Telegram + X only, 68px buttons (Home tab) ── */
 const SocialHome = () => (
     <div className="social-home">
         <div className="social-home-lbl">Join Our Community</div>
@@ -540,6 +546,10 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
     const hasManual  = !!match.manual_prediction;
     const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
     const hasPred    = !hasManual && pred && !pred.loading && pred.code;
+
+    const dateStr = match.date ? fmtDate(match.date) : '';
+    const timeStr = match.time || '';
+    const datetime = dateStr && timeStr ? `${dateStr} · ${timeStr}` : dateStr || timeStr;
 
     return (
         <div
@@ -633,6 +643,9 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
                         {c==='live' && <span className="dot"/>}
                         {statusBadgeLabel(match.status, c)}
                     </span>
+                    {datetime && (
+                        <span className="card-datetime">{datetime}</span>
+                    )}
                     {id && (
                         <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
                             <IcoZap/> Details
@@ -710,7 +723,7 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     )}
                     {match.date && (
                         <div className="detail-info-cell">
-                            <div className="detail-info-val">{match.date}</div>
+                            <div className="detail-info-val">{fmtDate(match.date)}</div>
                             <div className="detail-info-lbl">Date</div>
                         </div>
                     )}
@@ -1007,7 +1020,6 @@ function App() {
                 <button className="hdr-btn" onClick={()=>load(true)}><IcoRef/></button>
             </header>
 
-            {/* Single display ad banner */}
             <div className="top-ad-banner">
                 {/* INSERT DISPLAY AD CODE HERE */}
             </div>
@@ -1062,4 +1074,108 @@ function App() {
                     </div>
                 )}
 
-                {tab==='
+                {tab==='Alerts' && (
+                    <div className="page-in">
+                        <div className="page-head">
+                            <h1 className="page-h1">Late Alerts</h1>
+                            <p className="page-sub">Matches in the 75th minute or later</p>
+                        </div>
+                        {alertMatches.length>0
+                            ? alertMatches.map(m=>card(m))
+                            : <div className="empty-state"><div className="empty-state-title">No late-stage matches right now</div><div className="empty-state-sub">Check back when matches are in progress.</div></div>
+                        }
+                        <Social/>
+                    </div>
+                )}
+
+                {tab==='Favs' && (
+                    <div className="page-in">
+                        <div className="page-head"><h1 className="page-h1">Saved</h1><p className="page-sub">Your saved matches</p></div>
+                        {savedMatches.length>0
+                            ? savedMatches.map(m=>card(m))
+                            : <div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>♡</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>Nothing saved yet</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Tap the heart on any match to save it here.</div></div>
+                        }
+                        <Social/>
+                    </div>
+                )}
+
+                {tab==='More' && (
+                    <div className="page-in">
+                        <div className="page-head"><h1 className="page-h1">More</h1></div>
+                        <div className="settings-group">
+                            {[['About Us','https://docs.google.com/document/d/1OaaYhaQi3FZzog6YLIoojh3CnX3aN0lrizXyQ5N9Dkw/edit?usp=sharing'],['Terms of Use','https://docs.google.com/document/d/1wO92_LRf7q1vS90SdmHgArGITPkimnMa7g_U_VHFZo4/edit?usp=sharing'],['Privacy Policy','https://docs.google.com/document/d/1qrcuBqJ3RoSTTdjtyHJXidpVNODILbHW5cLx4wlAe6Y/edit?usp=sharing']].map(([l,u])=>(
+                                <a key={l} href={u} target="_blank" rel="noopener noreferrer" className="settings-item">{l}<IcoChev/></a>
+                            ))}
+                            <a href="mailto:Magicbetingtips@gmail.com" className="settings-item">
+                                <span style={{display:'flex',alignItems:'center',gap:10}}><IcoMail/> Contact Us</span>
+                                <span style={{fontSize:12,color:'var(--t3)'}}>Magicbetingtips@gmail.com</span>
+                            </a>
+                        </div>
+                        <div style={{textAlign:'center',paddingTop:8}}><div style={{fontSize:12,color:'var(--t3)'}}>Magic Analysis · v3.0</div></div>
+                        <Social/>
+                    </div>
+                )}
+            </main>
+
+            {calOpen && (
+                <div className="center-overlay" onClick={()=>setCalOpen(false)}>
+                    <div className="center-card" onClick={e=>e.stopPropagation()}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}>
+                            <div><div style={{fontSize:19,fontWeight:700,letterSpacing:'-.4px',marginBottom:2}}>This Week</div><div style={{fontSize:12,color:'var(--t3)'}}>Select a date</div></div>
+                            <button onClick={()=>setCalOpen(false)} style={{background:'var(--bg)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',fontSize:16,color:'var(--t2)',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button>
+                        </div>
+                        <div className="cal-days">
+                            {calDays().map(d=>(
+                                <div key={d.full} className={'cal-day'+(d.on?' on':'')}>
+                                    <span className="cal-dd">{d.nm}</span><span className="cal-dn">{d.dn}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <button className="btn-primary" style={{marginTop:22}} onClick={()=>setCalOpen(false)}>Confirm</button>
+                    </div>
+                </div>
+            )}
+
+            {csSport && (
+                <div className="center-overlay" onClick={()=>setCsSport(null)}>
+                    <div className="center-card" style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}>
+                        <div style={{fontSize:38,marginBottom:14}}>🔜</div>
+                        <div style={{fontSize:21,fontWeight:700,letterSpacing:'-.4px',marginBottom:8}}>Coming Soon</div>
+                        <div style={{fontSize:14,color:'var(--t2)',lineHeight:1.55,marginBottom:26}}>Live <strong>{csSport}</strong> predictions are on the way.</div>
+                        <button className="btn-primary" onClick={()=>setCsSport(null)}>Got it</button>
+                    </div>
+                </div>
+            )}
+
+            {detailMatch && (
+                <DetailSheet
+                    match={detailMatch}
+                    logos={detailLogos}
+                    analysis={analysis}
+                    analysisLoading={analysisLoading}
+                    pred={predCache[fid(detailMatch)]||null}
+                    onClose={()=>{setDetailMatch(null);setAnalysis(null);}}
+                />
+            )}
+
+            <nav className="nav">
+                {[
+                    {id:'Home',   lbl:'Home',   ico:<IcoHome/>},
+                    {id:'Alerts', lbl:'Alerts',  ico:<IcoBell/>},
+                    {id:'Favs',   lbl:'Saved',  ico:<IcoHeart on={false}/>},
+                    {id:'More',   lbl:'More',   ico:<IcoMenu/>}
+                ].map(({id,lbl,ico})=>(
+                    <div key={id} className={'nav-item '+(tab===id?'on':'off')} onClick={()=>setTab(id)}>
+                        <div className="nav-ico">{ico}</div>
+                        <span className="nav-lbl">{lbl}</span>
+                    </div>
+                ))}
+            </nav>
+        </>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
