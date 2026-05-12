@@ -67,13 +67,11 @@
         .fav:hover { transform:scale(1.25); }
         .fav.on { color:var(--live); }
 
-        .card-body { display:flex; align-items:stretch; gap:10px; }
         .card-logo-col { display:flex; flex-direction:column; gap:5px; justify-content:center; width:28px; flex-shrink:0; }
         .team-logo-sm { width:24px; height:24px; object-fit:contain; border-radius:4px; }
         .team-logo-ph { width:24px; height:24px; background:var(--bg); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--t3); font-weight:700; }
         .card-teams { flex:1; display:flex; flex-direction:column; gap:5px; min-width:0; }
         .team-nm { font-size:15px; font-weight:600; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-        .card-scores { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; min-width:22px; }
         .score-n { font-size:15px; font-weight:700; letter-spacing:-.2px; }
         .score-n.dim { color:var(--t3); font-weight:400; }
 
@@ -97,8 +95,6 @@
         .err-txt { flex:1; font-size:13px; font-weight:500; }
         .retry-btn { font-size:11px; font-weight:700; background:var(--bg); border:none; border-radius:100px; padding:5px 12px; cursor:pointer; flex-shrink:0; }
         .wake-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:13px 14px; display:flex; align-items:center; gap:10px; margin-bottom:14px; }
-        .alert-bar { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); border-left:2px solid #FF9F0A; padding:11px 13px; display:flex; align-items:center; gap:9px; margin-bottom:12px; }
-        .x-btn { background:none; border:none; cursor:pointer; color:var(--t3); font-size:17px; line-height:1; }
 
         .skel-card { background:var(--surface); border-radius:var(--r); box-shadow:var(--card-shadow); padding:14px 15px; margin-bottom:9px; display:flex; flex-direction:column; gap:9px; }
         .skel { background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%); background-size:200% 100%; animation:shim 1.4s infinite; border-radius:5px; }
@@ -155,7 +151,6 @@
         .ai-analysis-txt p:last-child { margin-bottom:0; }
         .ai-analysis-loading { display:flex; align-items:center; gap:10px; padding:6px 0; }
         .ai-analysis-loading-txt { font-size:12px; color:var(--t3); letter-spacing:-.1px; }
-        .ai-analysis-advice { margin-top:10px; padding:9px 12px; background:rgba(0,122,255,.07); border-radius:10px; border-left:3px solid var(--blue); font-size:12px; font-weight:600; color:var(--blue); line-height:1.45; }
 
         .card-row { display:flex; align-items:center; gap:0; margin-bottom:8px; }
         .card-left { display:flex; align-items:stretch; gap:10px; flex:1; min-width:0; padding-right:10px; }
@@ -174,7 +169,6 @@
         .pred-front-prob.hi-draw .pred-front-pct { color:#86868B; }
         .pred-skel-circle { width:40px; height:40px; border-radius:50%; flex-shrink:0; }
 
-        .pred-loading { position:fixed; inset:0; z-index:210; background:rgba(255,255,255,.65); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; }
         .spin { width:22px; height:22px; border:2px solid var(--sep2); border-top-color:var(--t1); border-radius:50%; animation:rot .7s linear infinite; }
         .spin-sm { width:14px; height:14px; border:1.5px solid var(--sep2); border-top-color:var(--blue); border-radius:50%; animation:rot .7s linear infinite; }
         @keyframes rot { to{transform:rotate(360deg)} }
@@ -222,10 +216,6 @@
         @keyframes splFade { to{opacity:0} }
         .splash-inner { animation:splPop .55s cubic-bezier(.34,1.56,.64,1) forwards; display:flex; flex-direction:column; align-items:center; gap:14px; }
         @keyframes splPop { from{opacity:0;transform:scale(.82)} to{opacity:1;transform:scale(1)} }
-
-        .notif-card { animation:notifDrop .55s cubic-bezier(.175,.885,.32,1.275) both; }
-        @keyframes notifDrop { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }
-        .opacity-0 { opacity:0; } .anim-fill { animation-fill-mode:forwards; }
     </style>
 </head>
 <body>
@@ -346,11 +336,11 @@ const poissonPredict = (homeName, awayName, leagueName) => {
   return { loading:false, code, label:lbl, score:`${bestHG}-${bestAG}`, advice:`${lbl} — xG: ${lamH.toFixed(2)} vs ${lamA.toFixed(2)}`, hp:`${hp}%`, dp:`${dp}%`, ap:`${ap}%` };
 };
 
-const FIN      = ['FT','AET','PEN','Pen.'];
-const CANC     = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
-const UPC      = ['NS','TBD'];
-const TIME_RE  = /^\d{2}:\d{2}$/;
-const FT_RE    = /\[(\d+)-(\d+)\]/;
+const FIN     = ['FT','AET','PEN','Pen.'];
+const CANC    = ['Postp.','Canc.','Susp.','WO','AWD','ABD'];
+const UPC     = ['NS','TBD'];
+const TIME_RE = /^\d{2}:\d{2}$/;
+const FT_RE   = /\[(\d+)-(\d+)\]/;
 
 const cat = s => {
     if (!s) return 'unknown';
@@ -376,9 +366,9 @@ const statusLabel = s => {
 };
 
 const statusBadgeLabel = (s, c) => {
-    if (c==='live')     return 'LIVE  '+statusLabel(s);
-    if (c==='finished') return statusLabel(s)||'Full Time';
-    if (c==='upcoming') return 'KO  '+statusLabel(s);
+    if (c==='live')      return 'LIVE  '+statusLabel(s);
+    if (c==='finished')  return statusLabel(s)||'Full Time';
+    if (c==='upcoming')  return 'KO  '+statusLabel(s);
     if (c==='cancelled') return statusLabel(s)||'Cancelled';
     return statusLabel(s);
 };
@@ -420,11 +410,10 @@ const eventIcon = t => {
     return '•';
 };
 
-const fmtDate = dateStr => {
-    if (!dateStr) return '';
-    const p = dateStr.split('-');
-    if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
-    return dateStr;
+const fmtDate = d => {
+    if (!d) return '';
+    const p = d.split('-');
+    return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
 };
 
 /* ── Icons ── */
@@ -442,27 +431,13 @@ const IcoTG      = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="n
 const IcoX       = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
 const IcoThreads = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.471 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.267-.883-2.24-.887h-.047c-.69 0-1.952.19-2.653 1.344l-1.728-1.053c.932-1.545 2.368-2.31 4.38-2.31h.078c3.018.022 4.81 1.836 5.071 5.055l.014.187c.972.56 1.76 1.323 2.296 2.54.763 1.754.747 4.474-1.53 6.712-1.737 1.71-3.857 2.524-7.066 2.545zm.168-9.79c-.223 0-.447.008-.671.025-1.501.092-2.657.695-2.595 1.875.038.698.447 1.684 2.168 1.684h.055c1.226-.035 2.164-.554 2.78-1.503.432-.663.677-1.504.747-2.55a11.823 11.823 0 0 0-2.484-.531z"/></svg>;
 const IcoMail    = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>;
-
-const IcoTGLg = () => (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="22" y1="2" x2="11" y2="13"/>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-    </svg>
-);
-const IcoXLg = () => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-);
+const IcoTGLg    = () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+const IcoXLg     = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
 
 const MagicLogo = ({size=26}) => {
     const [err, setErr] = useState(false);
     const r = Math.round(size*0.25);
-    if (!err) return (
-        <img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size}
-            style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}}
-            alt="Magic Analysis" onError={()=>setErr(true)}/>
-    );
+    if (!err) return <img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size} style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}} alt="Magic Analysis" onError={()=>setErr(true)}/>;
     return (
         <svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}}>
             <rect width="40" height="40" fill="#1D1D1F"/>
@@ -487,37 +462,30 @@ const Skel = () => (
     <div className="skel-card">
         <div className="skel" style={{height:9,width:'45%'}}/>
         <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:13,width:'52%'}}/>
-            <div className="skel" style={{height:13,width:18}}/>
+            <div className="skel" style={{height:13,width:'52%'}}/><div className="skel" style={{height:13,width:18}}/>
         </div>
         <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:13,width:'42%'}}/>
-            <div className="skel" style={{height:13,width:18}}/>
+            <div className="skel" style={{height:13,width:'42%'}}/><div className="skel" style={{height:13,width:18}}/>
         </div>
         <div className="skel" style={{height:.5,width:'100%'}}/>
         <div style={{display:'flex',justifyContent:'space-between'}}>
-            <div className="skel" style={{height:9,width:55}}/>
-            <div className="skel" style={{height:9,width:75}}/>
+            <div className="skel" style={{height:9,width:55}}/><div className="skel" style={{height:9,width:75}}/>
         </div>
     </div>
 );
 
 const Grp = ({label}) => (
-    <div className="grp">
-        <div className="grp-line"/>
-        <span className="grp-txt">{label}</span>
-        <div className="grp-line"/>
-    </div>
+    <div className="grp"><div className="grp-line"/><span className="grp-txt">{label}</span><div className="grp-line"/></div>
 );
 
 const Social = () => (
     <div className="social">
         <div className="social-lbl">Follow Us</div>
         <div className="social-row">
-            <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-ico" title="Telegram"><IcoTG/></a>
-            <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-ico" title="X / Twitter"><IcoX/></a>
-            <a href="https://www.threads.com/@magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Threads"><IcoThreads/></a>
-            <a href="https://www.instagram.com/magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Instagram"><IcoIG/></a>
+            <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-ico"><IcoTG/></a>
+            <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-ico"><IcoX/></a>
+            <a href="https://www.threads.com/@magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico"><IcoThreads/></a>
+            <a href="https://www.instagram.com/magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico"><IcoIG/></a>
         </div>
     </div>
 );
@@ -526,11 +494,11 @@ const SocialHome = () => (
     <div className="social-home">
         <div className="social-home-lbl">Join Our Community</div>
         <div className="social-home-row">
-            <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-home-item" title="Telegram">
+            <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-home-item">
                 <div className="social-home-ico"><IcoTGLg/></div>
                 <span className="social-home-nm">Telegram</span>
             </a>
-            <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-home-item" title="X / Twitter">
+            <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-home-item">
                 <div className="social-home-ico"><IcoXLg/></div>
                 <span className="social-home-nm">X / Twitter</span>
             </a>
@@ -538,35 +506,26 @@ const SocialHome = () => (
     </div>
 );
 
-/* ── Match Card ── */
 const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) => {
-    const c          = cat(match.status);
-    const g          = getGoals(match);
-    const id         = fid(match);
-    const hasManual  = !!match.manual_prediction;
+    const c         = cat(match.status);
+    const g         = getGoals(match);
+    const id        = fid(match);
+    const hasManual = !!match.manual_prediction;
     const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
-    const hasPred    = !hasManual && pred && !pred.loading && pred.code;
-
-    const dateStr = match.date ? fmtDate(match.date) : '';
-    const timeStr = match.time || '';
-    const datetime = dateStr && timeStr ? `${dateStr} · ${timeStr}` : dateStr || timeStr;
+    const hasPred   = !hasManual && pred && !pred.loading && pred.code;
+    const dateStr   = match.date ? fmtDate(match.date) : '';
+    const timeStr   = match.time || '';
+    const datetime  = dateStr && timeStr ? `${dateStr} · ${timeStr}` : dateStr || timeStr;
 
     return (
-        <div
-            className={'card'+(hasManual?' card-premium':'')}
-            onClick={()=>onOpen(match)}
-        >
+        <div className={'card'+(hasManual?' card-premium':'')} onClick={()=>onOpen(match)}>
             <div className="card-inner">
                 <div className="card-meta">
                     <div className="card-meta-left">
                         <span className="card-league">
                             {(match.country||'').toUpperCase()}{match.country&&match.leagueName?' · ':''}{match.leagueName||''}
                         </span>
-                        {hasManual && (
-                            <span className="pro-tip-badge">
-                                <IcoStar/> PRO TIP
-                            </span>
-                        )}
+                        {hasManual && <span className="pro-tip-badge"><IcoStar/> PRO TIP</span>}
                     </div>
                     <button className={'fav'+(isFav?' on':'')} onClick={e=>{e.stopPropagation();if(id)onToggleFav(id);}}>
                         <IcoHeart on={isFav}/>
@@ -584,20 +543,14 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
                             <span className="team-nm">{(match.away&&match.away.name)||'—'}</span>
                         </div>
                     </div>
-
                     <div className="card-right-col">
                         <div className="card-scores-col">
-                            {g
-                                ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
-                                : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>
-                            }
+                            {g ? <><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>
+                               : <><span className="score-n dim">—</span><span className="score-n dim">—</span></>}
                         </div>
-
                         {hasManual && (
                             <div className="pred-front">
-                                <div className="pred-front-circle" style={{background:'var(--gold)',boxShadow:'0 2px 8px rgba(255,149,0,.4)'}}>
-                                    <IcoStar/>
-                                </div>
+                                <div className="pred-front-circle" style={{background:'var(--gold)',boxShadow:'0 2px 8px rgba(255,149,0,.4)'}}><IcoStar/></div>
                             </div>
                         )}
                         {!hasManual && (!pred||pred.loading) && (
@@ -612,7 +565,7 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
                                 {pred.score && <div className="pred-front-score">{pred.score}</div>}
                                 <div className="pred-front-probs">
                                     {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>{
-                                        const hi = pred.code===code;
+                                        const hi=pred.code===code;
                                         return (
                                             <div key={code} className={'pred-front-prob'+(hi?(code==='X'?' hi-draw':' hi'):'')}>
                                                 <span className="pred-front-pct">{pct||'—'}</span>
@@ -643,9 +596,7 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
                         {c==='live' && <span className="dot"/>}
                         {statusBadgeLabel(match.status, c)}
                     </span>
-                    {datetime && (
-                        <span className="card-datetime">{datetime}</span>
-                    )}
+                    {datetime && <span className="card-datetime">{datetime}</span>}
                     {id && (
                         <button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}>
                             <IcoZap/> Details
@@ -657,78 +608,49 @@ const MatchCard = ({ match, onOpen, onToggleFav, isFav, logos={}, pred=null }) =
     );
 };
 
-/* ── Detail Sheet ── */
 const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose }) => {
     const c         = cat(match.status);
     const g         = getGoals(match);
     const events    = parseEvents(match);
     const hasManual = !!match.manual_prediction;
-    const htScore   = match.ht&&match.ht.score ? (() => { const x=FT_RE.exec(match.ht.score); return x?x[1]+' - '+x[2]:null; })() : null;
+    const htScore   = match.ht&&match.ht.score ? (()=>{ const x=FT_RE.exec(match.ht.score); return x?x[1]+' - '+x[2]:null; })() : null;
     const badgeClass = c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
 
     return (
         <div className="overlay" onClick={onClose}>
             <div className="sheet" onClick={e=>e.stopPropagation()}>
                 <div className="handle"/>
-
                 <div className="detail-head">
                     <div className="detail-league">{match.country} · {match.leagueName}</div>
                 </div>
-
                 <div className="detail-teams">
                     <div className="detail-team">
-                        {logos.homeLoading
-                            ? <div className="detail-logo-loading"/>
-                            : <TeamLogo url={logos.home} name={match.home&&match.home.name} size={64}/>
-                        }
+                        {logos.homeLoading ? <div className="detail-logo-loading"/> : <TeamLogo url={logos.home} name={match.home&&match.home.name} size={64}/>}
                         <div className="detail-team-nm">{match.home&&match.home.name}</div>
                     </div>
                     <div className="detail-vs">vs</div>
                     <div className="detail-team">
-                        {logos.awayLoading
-                            ? <div className="detail-logo-loading"/>
-                            : <TeamLogo url={logos.away} name={match.away&&match.away.name} size={64}/>
-                        }
+                        {logos.awayLoading ? <div className="detail-logo-loading"/> : <TeamLogo url={logos.away} name={match.away&&match.away.name} size={64}/>}
                         <div className="detail-team-nm">{match.away&&match.away.name}</div>
                     </div>
                 </div>
-
                 <div className="detail-score-box">
                     <div className="detail-score-big">{g ? g.h+'  —  '+g.a : '—  vs  —'}</div>
                     {htScore && <div className="detail-score-sub">Half time: {htScore}</div>}
                     {!htScore && c==='upcoming' && <div className="detail-score-sub">Match not started yet</div>}
                 </div>
-
                 <div className="detail-status-row">
                     <span className={'s-badge '+badgeClass} style={{fontSize:12,padding:'5px 14px'}}>
                         {c==='live' && <span className="dot"/>}
                         {statusBadgeLabel(match.status, c)}
                     </span>
                 </div>
-
                 <div className="detail-info-grid">
-                    <div className="detail-info-cell">
-                        <div className="detail-info-val">{match.leagueName||'—'}</div>
-                        <div className="detail-info-lbl">Competition</div>
-                    </div>
-                    <div className="detail-info-cell">
-                        <div className="detail-info-val">{match.country||'—'}</div>
-                        <div className="detail-info-lbl">Country</div>
-                    </div>
-                    {match.time && (
-                        <div className="detail-info-cell">
-                            <div className="detail-info-val">{match.time}</div>
-                            <div className="detail-info-lbl">Kick-off (UTC)</div>
-                        </div>
-                    )}
-                    {match.date && (
-                        <div className="detail-info-cell">
-                            <div className="detail-info-val">{fmtDate(match.date)}</div>
-                            <div className="detail-info-lbl">Date</div>
-                        </div>
-                    )}
+                    <div className="detail-info-cell"><div className="detail-info-val">{match.leagueName||'—'}</div><div className="detail-info-lbl">Competition</div></div>
+                    <div className="detail-info-cell"><div className="detail-info-val">{match.country||'—'}</div><div className="detail-info-lbl">Country</div></div>
+                    {match.time && <div className="detail-info-cell"><div className="detail-info-val">{match.time}</div><div className="detail-info-lbl">Kick-off (UTC)</div></div>}
+                    {match.date && <div className="detail-info-cell"><div className="detail-info-val">{fmtDate(match.date)}</div><div className="detail-info-lbl">Date</div></div>}
                 </div>
-
                 {hasManual && (
                     <div className="manual-pred-box">
                         <div className="manual-pred-label"><IcoStar/> Official Professional Analysis</div>
@@ -741,20 +663,15 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                         {analysisLoading
                             ? <div className="ai-analysis-loading"><div className="spin-sm"/><span className="ai-analysis-loading-txt">Analysing match…</span></div>
                             : analysis
-                                ? <div className="ai-analysis-txt">
-                                    {analysis.split('\n').filter(s=>s.trim()).map((para,i)=>(
-                                        <p key={i}>{para.trim()}</p>
-                                    ))}
-                                  </div>
+                                ? <div className="ai-analysis-txt">{analysis.split('\n').filter(s=>s.trim()).map((p,i)=><p key={i}>{p.trim()}</p>)}</div>
                                 : <div className="ai-analysis-txt" style={{color:'var(--t3)'}}>Analysis unavailable for this match.</div>
                         }
                     </div>
                 )}
-
                 {events.length > 0 && (
                     <div style={{marginBottom:16}}>
                         <div className="events-title">Match Events</div>
-                        {events.slice(0,12).map((ev,i) => (
+                        {events.slice(0,12).map((ev,i)=>(
                             <div key={i} className="event-row">
                                 <span className="event-min">{ev.minute ? ev.minute+"'" : '—'}</span>
                                 <span className="event-ico">{eventIcon(ev.type)}</span>
@@ -764,7 +681,6 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                         ))}
                     </div>
                 )}
-
                 {!hasManual && pred && !pred.loading && pred.code && (
                     <div style={{background:'#1D1D1F',borderRadius:'var(--r)',padding:'18px',marginBottom:14}}>
                         <div style={{fontSize:10,fontWeight:700,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:14}}>Poisson Prediction</div>
@@ -781,8 +697,7 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                         <div style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,.4)',textTransform:'uppercase',letterSpacing:'.4px',marginBottom:8}}>Probability Breakdown</div>
                         <div style={{display:'flex',gap:6}}>
                             {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>{
-                                const active=pred.code===code;
-                                const isDraw=code==='X';
+                                const active=pred.code===code, isDraw=code==='X';
                                 const col=active?(isDraw?'#86868B':'#FF9500'):'#fff';
                                 return (
                                     <div key={code} style={{flex:1,textAlign:'center',background:active?(isDraw?'rgba(134,134,139,.18)':'rgba(255,149,0,.18)'):'rgba(255,255,255,.06)',borderRadius:10,padding:'10px 4px',outline:active?('1.5px solid '+(isDraw?'#86868B':'#FF9500')):'none'}}>
@@ -801,16 +716,14 @@ const DetailSheet = ({ match, logos, analysis, analysisLoading, pred, onClose })
                     </div>
                 )}
                 {!hasManual && pred && !pred.loading && !pred.code && (
-                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available for this match.</div>
+                    <div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available.</div>
                 )}
-
                 <button className="btn-secondary" onClick={onClose}>Close</button>
             </div>
         </div>
     );
 };
 
-/* ── App ── */
 function App() {
     const [splash,          setSplash]          = useState(true);
     const [calOpen,         setCalOpen]         = useState(false);
@@ -829,8 +742,10 @@ function App() {
     const [analysis,        setAnalysis]        = useState(null);
     const [analysisLoading, setAnalysisLoading] = useState(false);
     const [predCache,       setPredCache]       = useState({});
-    const fetchingRef = useRef(new Set());
-    const resolvedRef = useRef(new Set());
+
+    const fetchingRef  = useRef(new Set());
+    const resolvedRef  = useRef(new Set());
+    const logoCacheRef = useRef({});  /* tracks fetched logos without causing re-renders */
 
     const fetchOnePred = useCallback(async (id, matchData) => {
         if (!id||fetchingRef.current.has(id)||resolvedRef.current.has(id)) return;
@@ -848,7 +763,7 @@ function App() {
                 if (matchData.status)     params.set('status',statusLabel(matchData.status)||matchData.status);
                 if (g) params.set('score',g.h+'-'+g.a);
             }
-            const res  = await fetch(BACKEND_URL+'/api/get-predictions?'+params, {signal:AbortSignal.timeout(12000)});
+            const res  = await fetch(BACKEND_URL+'/api/get-predictions?'+params,{signal:AbortSignal.timeout(12000)});
             const data = await res.json();
             const p    = data.response&&data.response[0];
             if (p&&p.predictions&&p.predictions.percent) {
@@ -880,18 +795,23 @@ function App() {
         }
     }, [fetchOnePred]);
 
-    const fetchLogosForMatches = useCallback(async (ms) => {
+    /* FIX: empty deps — uses logoCacheRef instead of logoCache state to avoid loop */
+    const fetchLogosForMatches = useCallback(async ms => {
         const names = [...new Set(ms.flatMap(m=>[m.home&&m.home.name,m.away&&m.away.name].filter(Boolean)))];
         for (const name of names) {
-            if (logoCache[name]!==undefined) continue;
+            if (logoCacheRef.current[name] !== undefined) continue;
+            logoCacheRef.current[name] = null;
             try {
                 const res  = await fetch(BACKEND_URL+'/api/team-logo?name='+encodeURIComponent(name));
                 const data = await res.json();
+                logoCacheRef.current[name] = data.logo || null;
                 setLogoCache(prev=>({...prev,[name]:data.logo||null}));
-            } catch(e) { setLogoCache(prev=>({...prev,[name]:null})); }
+            } catch(e) {
+                setLogoCache(prev=>({...prev,[name]:null}));
+            }
             await new Promise(r=>setTimeout(r,120));
         }
-    }, [logoCache]);
+    }, []);
 
     const load = useCallback(async (isManual=false) => {
         setLoading(true); setErr(null);
@@ -926,39 +846,37 @@ function App() {
         setDetailMatch(m);
         setAnalysis(null);
         setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
-
         const getLogo = async name => {
-            if (logoCache[name]!==undefined) return logoCache[name];
+            if (logoCacheRef.current[name] !== undefined) return logoCacheRef.current[name];
             try {
                 const res  = await fetch(BACKEND_URL+'/api/team-logo?name='+encodeURIComponent(name));
                 const data = await res.json();
                 return data.logo||null;
             } catch(e) { return null; }
         };
-
         const [hl,al] = await Promise.all([getLogo(m.home&&m.home.name),getLogo(m.away&&m.away.name)]);
+        logoCacheRef.current[m.home&&m.home.name] = hl;
+        logoCacheRef.current[m.away&&m.away.name] = al;
         setLogoCache(prev=>({...prev,[m.home&&m.home.name]:hl,[m.away&&m.away.name]:al}));
         setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
-
         if (m.manual_prediction) return;
-
         setAnalysisLoading(true);
         try {
             const g = getGoals(m);
             const p = new URLSearchParams({
-                home:   (m.home&&m.home.name)||'',
-                away:   (m.away&&m.away.name)||'',
+                home:  (m.home&&m.home.name)||'',
+                away:  (m.away&&m.away.name)||'',
                 league: m.leagueName||'',
                 status: statusLabel(m.status)||m.status||'',
                 score:  g?g.h+'-'+g.a:'Not started',
-                ht:     (m.ht&&m.ht.score)||''
+                ht:    (m.ht&&m.ht.score)||''
             });
             const res  = await fetch(BACKEND_URL+'/api/match-analysis?'+p);
             const data = await res.json();
             setAnalysis(data.analysis||null);
         } catch(e) { setAnalysis(null); }
         finally { setAnalysisLoading(false); }
-    }, [logoCache]);
+    }, []);
 
     const toggleFav = useCallback(id=>{
         if (!id) return;
@@ -971,18 +889,16 @@ function App() {
     const savedMatches    = useMemo(()=>matches.filter(m=>favs.includes(fid(m))),                  [matches,favs]);
     const alertMatches    = useMemo(()=>matches.filter(m=>{const n=parseInt(m.status);return !isNaN(n)&&n>=75&&n<120;}).slice(0,15),[matches]);
 
-    const card = (m) => (
+    const card = m => (
         <MatchCard
             key={fid(m)||(((m.home&&m.home.name)||'')+'_'+((m.away&&m.away.name)||'')+'_'+m.status)}
-            match={m} logos={logoCache}
-            pred={predCache[fid(m)]||null}
-            onOpen={openDetail} onToggleFav={toggleFav}
-            isFav={favs.includes(fid(m))}
+            match={m} logos={logoCache} pred={predCache[fid(m)]||null}
+            onOpen={openDetail} onToggleFav={toggleFav} isFav={favs.includes(fid(m))}
         />
     );
 
-    const today  = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    const sports = [['Football','⚽'],['Basketball','🏀'],['Tennis','🎾'],['Hockey','🏒']];
+    const today   = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    const sports  = [['Football','⚽'],['Basketball','🏀'],['Tennis','🎾'],['Hockey','🏒']];
     const calDays = () => {
         const t=new Date(), s=t.getDate()-t.getDay()+1;
         return Array.from({length:5},(_,i)=>{
@@ -1008,10 +924,7 @@ function App() {
             )}
 
             {showToast && (
-                <div className="toast">
-                    <div className="spin"/>
-                    Fetching live info, please wait…
-                </div>
+                <div className="toast"><div className="spin"/>Fetching live info, please wait…</div>
             )}
 
             <header className="hdr">
@@ -1055,21 +968,8 @@ function App() {
                                 ? liveMatches.map(m=>card(m))
                                 : <div className="empty-state"><div className="empty-state-title">No live matches right now</div><div className="empty-state-sub">Live matches appear here automatically.</div></div>
                         }
-
-                        {!loading && upcomingMatches.length>0 && (
-                            <>
-                                <Grp label="🔵 Upcoming Picks"/>
-                                {upcomingMatches.map(m=>card(m))}
-                            </>
-                        )}
-
-                        {!loading && pastMatches.length>0 && (
-                            <>
-                                <Grp label="✅ Recent Results"/>
-                                {pastMatches.map(m=>card(m))}
-                            </>
-                        )}
-
+                        {!loading && upcomingMatches.length>0 && (<><Grp label="🔵 Upcoming Picks"/>{upcomingMatches.map(m=>card(m))}</>)}
+                        {!loading && pastMatches.length>0    && (<><Grp label="✅ Recent Results"/>{pastMatches.map(m=>card(m))}</>)}
                         <SocialHome/>
                     </div>
                 )}
@@ -1149,10 +1049,8 @@ function App() {
 
             {detailMatch && (
                 <DetailSheet
-                    match={detailMatch}
-                    logos={detailLogos}
-                    analysis={analysis}
-                    analysisLoading={analysisLoading}
+                    match={detailMatch} logos={detailLogos}
+                    analysis={analysis} analysisLoading={analysisLoading}
                     pred={predCache[fid(detailMatch)]||null}
                     onClose={()=>{setDetailMatch(null);setAnalysis(null);}}
                 />
@@ -1160,8 +1058,8 @@ function App() {
 
             <nav className="nav">
                 {[
-                    {id:'Home',   lbl:'Home',   ico:<IcoHome/>},
-                    {id:'Alerts', lbl:'Alerts',  ico:<IcoBell/>},
+                    {id:'Home',   lbl:'Home',  ico:<IcoHome/>},
+                    {id:'Alerts', lbl:'Alerts', ico:<IcoBell/>},
                     {id:'Favs',   lbl:'Saved',  ico:<IcoHeart on={false}/>},
                     {id:'More',   lbl:'More',   ico:<IcoMenu/>}
                 ].map(({id,lbl,ico})=>(
