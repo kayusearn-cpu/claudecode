@@ -25,10 +25,20 @@ let scoresCache     = null;
 let scoresCacheTime = 0;
 const SCORES_TTL    = 60 * 1000;
 
-// ─── Prediction cache (TTL: 4 hours so predictions refresh each session) ──────
-const predCache    = {};
-const predCacheTs  = {};
-const PRED_TTL     = 4 * 60 * 60 * 1000;
+// ─── Prediction cache (TTL: 4 hours) ──────────────────────────────────────────
+const predCache   = {};
+const predCacheTs = {};
+const PRED_TTL    = 4 * 60 * 60 * 1000;
+
+// ─── News cache (TTL: 1 hour) ─────────────────────────────────────────────────
+let newsCache     = null;
+let newsCacheTime = 0;
+const NEWS_TTL    = 60 * 60 * 1000;
+
+// ─── Upcoming cache ───────────────────────────────────────────────────────────
+let upcomingCache     = null;
+let upcomingCacheTime = 0;
+const UPCOMING_TTL    = 5 * 60 * 1000;
 
 // ─── Sportmonks helpers ───────────────────────────────────────────────────────
 function smStatus(state, kickoffTime) {
@@ -166,21 +176,73 @@ function apfFixturesToFlat(fixtures) {
     });
 }
 
-// ─── StatPal: flatten nested livescore → flat matches ─────────────────────────
+// ─── StatPal: status mapper ───────────────────────────────────────────────────
+function mapStatpalStatus(status, matchStart) {
+    if (status === undefined || status === null) return matchStart || 'NS';
+    const s = String(status).trim();
+    if (s === 'HT') return 'HT';
+    if (s === 'FT' || s === 'Ended') return 'FT';
+    if (s === 'AET' || s === 'FT_ET') return 'AET';
+    if (s === 'PEN' || s === 'PENALTIES' || s === 'PEN_BREAK') return 'PEN';
+    if (['POSTP','Postponed','postponed'].includes(s)) return 'Postp.';
+    if (['CANC','Cancelled','cancelled'].includes(s)) return 'Canc.';
+    if (['SUSP','Suspended','suspended'].includes(s)) return 'Susp.';
+    if (/^\d+$/.test(s) && Number(s) > 0) return s;  // live minute like "45"
+    if (s === '0' || s === 'NS' || s === 'Not started' || s === '') return matchStart || 'NS';
+    return matchStart || 'NS';
+}
+
+// ─── StatPal: flatten nested livescore → normalized flat matches ──────────────
 function statpalToFlat(livescore) {
     if (!livescore?.league) return [];
     const leagues = Array.isArray(livescore.league) ? livescore.league : [livescore.league];
     const matches = [];
+    const today = new Date().toISOString().split('T')[0];
     leagues.forEach(lg => {
         const items = Array.isArray(lg.match) ? lg.match : (lg.match ? [lg.match] : []);
-        items.forEach(m => matches.push({ ...m, leagueName: lg.name, country: lg.country }));
+        items.forEach(m => {
+            const homeGoals = (m.home?.score != null && m.home.score !== '') ? String(m.home.score) : null;
+            const awayGoals = (m.away?.score != null && m.away.score !== '') ? String(m.away.score) : null;
+            const kickoff   = m.match_start || m.time || '';
+            const status    = mapStatpalStatus(m.status, kickoff);
+            const isFt      = status === 'FT' || status === 'AET';
+
+            let htObj = null;
+            if (m.ht_score && String(m.ht_score).includes('-')) {
+                const [hh, ah] = String(m.ht_score).split('-');
+                htObj = { score: `[${hh.trim()}-${ah.trim()}]` };
+            }
+
+            matches.push({
+                id:         String(m.id || ''),
+                static_id:  String(m.id || ''),
+                date:       m.date || today,
+                time:       kickoff,
+                status,
+                leagueName: lg.name || '',
+                country:    typeof lg.country === 'string' ? lg.country : (lg.country?.name || ''),
+                home: {
+                    id:    String(m.home?.id || ''),
+                    name:  m.home?.name || '',
+                    goals: homeGoals,
+                    logo:  m.home?.image_path || null,
+                },
+                away: {
+                    id:    String(m.away?.id || ''),
+                    name:  m.away?.name || '',
+                    goals: awayGoals,
+                    logo:  m.away?.image_path || null,
+                },
+                ht: htObj,
+                ft: isFt && homeGoals !== null ? { score: `[${homeGoals}-${awayGoals}]` } : null,
+            });
+        });
     });
     return matches;
 }
 
 // ─── /api/scores ──────────────────────────────────────────────────────────────
-//  Returns: { matches: [...] }  — flat array, leagueName + country on every item
-//  Priority: StatPal (broadest coverage) → API-Football → Sportmonks → stale cache
+//  Priority: StatPal → API-Football → Sportmonks → stale cache
 app.get('/api/scores', async (req, res) => {
     if (scoresCache && (Date.now() - scoresCacheTime < SCORES_TTL)) return res.json(scoresCache);
 
@@ -189,7 +251,7 @@ app.get('/api/scores', async (req, res) => {
     const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
     const today      = new Date().toISOString().split('T')[0];
 
-    // ── 1: StatPal (100+ leagues, broadest free coverage) ────────────────────
+    // ── 1: StatPal ────────────────────────────────────────────────────────────
     try {
         const r = await axios.get('https://statpal.io/api/v1/soccer/livescores', {
             params: { access_key: statpalKey }, timeout: 10000,
@@ -266,6 +328,16 @@ app.get('/api/status', async (req, res) => {
     res.json(result);
 });
 
+// ─── /api/cache/clear ─────────────────────────────────────────────────────────
+app.post('/api/cache/clear', (req, res) => {
+    scoresCache = null;   scoresCacheTime = 0;
+    upcomingCache = null; upcomingCacheTime = 0;
+    newsCache = null;     newsCacheTime = 0;
+    Object.keys(predCache).forEach(k => { delete predCache[k]; delete predCacheTs[k]; });
+    console.log('All caches cleared');
+    res.json({ cleared: true, timestamp: new Date().toISOString() });
+});
+
 // ─── Math fallback prediction ─────────────────────────────────────────────────
 function generatePrediction(fixtureId) {
     const seed = String(fixtureId).split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 7);
@@ -290,7 +362,7 @@ app.get('/api/get-predictions', async (req, res) => {
     const cached = predCache[fixtureId];
     if (cached && (Date.now() - predCacheTs[fixtureId] < PRED_TTL)) return res.json(cached);
 
-    // 1. Sportmonks
+    // 1. Sportmonks — only works with numeric Sportmonks IDs
     if (smKey && /^\d+$/.test(fixtureId)) {
         try {
             const r = await axios.get(`${SM}/fixtures/${fixtureId}`, {
@@ -301,7 +373,7 @@ app.get('/api/get-predictions', async (req, res) => {
         } catch (e) { console.warn('Sportmonks predictions failed:', e.message); }
     }
 
-    // 2. API-Football
+    // 2. API-Football — only works with numeric API-Football IDs
     if (apfKey && /^\d+$/.test(fixtureId)) {
         try {
             const r = await axios.get('https://v3.football.api-sports.io/predictions', {
@@ -314,7 +386,7 @@ app.get('/api/get-predictions', async (req, res) => {
         } catch (e) { console.warn('API-Football predictions failed:', e.message); }
     }
 
-    // 3. OpenAI gpt-4o-mini — intelligent Poisson-style prediction
+    // 3. OpenAI gpt-4o-mini — always works as long as team names are provided
     if (openaiKey && home && away) {
         try {
             const openai = getOpenAI();
@@ -329,17 +401,7 @@ app.get('/api/get-predictions', async (req, res) => {
                 messages: [
                     {
                         role: 'system',
-                        content: `You are an elite football prediction analyst. Use Poisson distribution methodology — like Forebet and WinDrawWin — factoring in:
-• Team attack/defense xG ratings and season averages
-• Home advantage (adds ~0.35 expected goals to home team)
-• Recent 5-match form, current injuries, squad depth
-• Head-to-head record (last 5 meetings)
-• League position, goal difference, and momentum
-
-You MUST respond ONLY with raw JSON — no markdown fences, no extra text, nothing else:
-{"home":55,"draw":26,"away":19,"homeGoals":2,"awayGoals":1,"advice":"One sharp sentence (max 20 words) with specific insight about this fixture"}
-
-Rules: home+draw+away must sum to exactly 100. All numbers must be integers.`,
+                        content: `You are an elite football prediction analyst. Use Poisson distribution methodology — like Forebet and WinDrawWin — factoring in:\n• Team attack/defense xG ratings and season averages\n• Home advantage (adds ~0.35 expected goals to home team)\n• Recent 5-match form, current injuries, squad depth\n• Head-to-head record (last 5 meetings)\n• League position, goal difference, and momentum\n\nYou MUST respond ONLY with raw JSON — no markdown fences, no extra text, nothing else:\n{"home":55,"draw":26,"away":19,"homeGoals":2,"awayGoals":1,"advice":"One sharp sentence (max 20 words) with specific insight about this fixture"}\n\nRules: home+draw+away must sum to exactly 100. All numbers must be integers.`,
                     },
                     {
                         role: 'user',
@@ -368,7 +430,7 @@ Rules: home+draw+away must sum to exactly 100. All numbers must be integers.`,
         } catch (e) { console.warn('OpenAI prediction failed:', e.message); }
     }
 
-    // 4. Math fallback
+    // 4. Math fallback — always works
     const result = generatePrediction(fixtureId);
     predCache[fixtureId] = result; predCacheTs[fixtureId] = Date.now();
     return res.json(result);
@@ -392,8 +454,6 @@ app.get('/api/team-logo', async (req, res) => {
 });
 
 // ─── /api/match-analysis ──────────────────────────────────────────────────────
-//  Returns a conversational, expert-level match analysis using gpt-4o-mini.
-//  Reads like a knowledgeable friend explaining the game — tactical, specific, engaging.
 app.get('/api/match-analysis', async (req, res) => {
     const { home, away, league, status, score, ht } = req.query;
     const apiKey = process.env.OPENAI_API_KEY;
@@ -401,7 +461,7 @@ app.get('/api/match-analysis', async (req, res) => {
 
     try {
         const openai = getOpenAI();
-        const isLive    = status && !['NS','FT','AET','PEN','Postp.','Canc.','Susp.'].includes(status);
+        const isLive     = status && !['NS','FT','AET','PEN','Postp.','Canc.','Susp.'].includes(status);
         const isFinished = ['FT','AET','PEN'].includes(status);
         const hasScore   = score && score !== 'Not started';
 
@@ -440,30 +500,48 @@ app.get('/api/match-analysis', async (req, res) => {
 });
 
 // ─── /api/upcoming ────────────────────────────────────────────────────────────
-let upcomingCache = null, upcomingCacheTime = 0;
-const UPCOMING_TTL = 5 * 60 * 1000;
-
 app.get('/api/upcoming', async (req, res) => {
     if (upcomingCache && (Date.now() - upcomingCacheTime < UPCOMING_TTL)) return res.json(upcomingCache);
 
-    const smKey    = process.env.SPORTMONKS_KEY;
-    const fdKey    = process.env.FOOTBALL_DATA_KEY;
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+    const smKey      = process.env.SPORTMONKS_KEY;
+    const fdKey      = process.env.FOOTBALL_DATA_KEY;
+    const statpalKey = process.env.STATPAL_API_KEY || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
+    const tomorrow   = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
-    // 1. Sportmonks tomorrow
+    // 1. StatPal fixtures — broadest free coverage
+    try {
+        const r = await axios.get('https://statpal.io/api/v1/soccer/fixtures', {
+            params: { access_key: statpalKey, date: tomorrow }, timeout: 10000,
+        });
+        // StatPal fixtures may return same livescore shape or a fixtures object
+        const livescore = r.data?.livescore || (r.data?.fixtures ? { league: r.data.fixtures } : null);
+        if (livescore) {
+            const matches = statpalToFlat(livescore);
+            if (matches.length > 0) {
+                upcomingCache = { matches, source: 'statpal', updated: new Date().toISOString() };
+                upcomingCacheTime = Date.now();
+                console.log(`StatPal upcoming: ${matches.length} matches`);
+                return res.json(upcomingCache);
+            }
+        }
+        console.warn('StatPal upcoming: 0 matches');
+    } catch (e) { console.error('StatPal upcoming failed:', e.message); }
+
+    // 2. Sportmonks tomorrow
     if (smKey) {
         try {
             const fixtures = await smFixturesByDate(tomorrow, smKey, 'participants;league.country;state');
             const matches  = smFixturesToFlat(fixtures);
             if (matches.length > 0) {
-                upcomingCache = { matches }; upcomingCacheTime = Date.now();
+                upcomingCache = { matches, source: 'sportmonks', updated: new Date().toISOString() };
+                upcomingCacheTime = Date.now();
                 console.log(`Sportmonks upcoming: ${matches.length} matches`);
                 return res.json(upcomingCache);
             }
         } catch (e) { console.error('Sportmonks upcoming failed:', e.message); }
     }
 
-    // 2. football-data.org fallback
+    // 3. football-data.org fallback
     if (fdKey) {
         try {
             const today = new Date().toISOString().split('T')[0];
@@ -484,13 +562,80 @@ app.get('/api/upcoming', async (req, res) => {
                     ht: null, ft: null,
                 };
             });
-            upcomingCache = { matches }; upcomingCacheTime = Date.now();
+            upcomingCache = { matches, source: 'football-data', updated: new Date().toISOString() };
+            upcomingCacheTime = Date.now();
             console.log(`football-data.org upcoming: ${matches.length} matches`);
             return res.json(upcomingCache);
         } catch (e) { console.error('football-data.org failed:', e.message); }
     }
 
-    return res.json(upcomingCache || { matches: [] });
+    return res.json(upcomingCache || { matches: [], updated: new Date().toISOString() });
+});
+
+// ─── /api/news ────────────────────────────────────────────────────────────────
+//  Returns daily football news. Tries NewsAPI first, falls back to OpenAI summary.
+app.get('/api/news', async (req, res) => {
+    if (newsCache && (Date.now() - newsCacheTime < NEWS_TTL)) return res.json(newsCache);
+
+    const newsApiKey = process.env.NEWS_API_KEY;
+    const openaiKey  = process.env.OPENAI_API_KEY;
+
+    // 1. NewsAPI.org
+    if (newsApiKey) {
+        try {
+            const r = await axios.get('https://newsapi.org/v2/top-headlines', {
+                params: { q: 'football soccer', language: 'en', pageSize: 8, apiKey: newsApiKey },
+                timeout: 8000,
+            });
+            if (r.data.articles?.length > 0) {
+                const articles = r.data.articles
+                    .filter(a => a.title && !a.title.includes('[Removed]'))
+                    .map(a => ({
+                        title:       a.title,
+                        summary:     a.description || '',
+                        source:      a.source?.name || '',
+                        url:         a.url,
+                        publishedAt: a.publishedAt,
+                        image:       a.urlToImage || null,
+                    }));
+                newsCache = { articles, source: 'newsapi', updated: new Date().toISOString() };
+                newsCacheTime = Date.now();
+                console.log(`NewsAPI: ${articles.length} articles loaded`);
+                return res.json(newsCache);
+            }
+        } catch (e) { console.error('NewsAPI failed:', e.message); }
+    }
+
+    // 2. OpenAI — generate football news headlines for today
+    if (openaiKey) {
+        try {
+            const openai = getOpenAI();
+            const today  = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+            const r = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a football news editor. Respond ONLY with a JSON array — no markdown, no extra text:\n[{"title":"...","summary":"...","source":"Analysis"}]',
+                    },
+                    {
+                        role: 'user',
+                        content: `Generate 6 football news headlines and summaries for ${today}. Cover Premier League, La Liga, Champions League, transfers, and manager news. Make them realistic and specific.`,
+                    },
+                ],
+                max_tokens:  600,
+                temperature: 0.7,
+            });
+            const raw      = r.choices[0].message.content.trim().replace(/```json|```/g, '').trim();
+            const articles = JSON.parse(raw).map(a => ({ ...a, url: null, publishedAt: new Date().toISOString(), image: null }));
+            newsCache = { articles, source: 'openai', updated: new Date().toISOString() };
+            newsCacheTime = Date.now();
+            console.log(`OpenAI news: ${articles.length} articles generated`);
+            return res.json(newsCache);
+        } catch (e) { console.error('OpenAI news failed:', e.message); }
+    }
+
+    res.json({ articles: [], source: 'none', updated: new Date().toISOString() });
 });
 
 app.listen(port, () => { console.log(`MagicBettingTips backend running on port ${port}`); });
