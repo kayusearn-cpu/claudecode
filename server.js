@@ -7,16 +7,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT       = process.env.PORT               || 3000;
-const OPENAI_KEY = process.env.OPENAI_API_KEY      || '';
-const TG_TOKEN   = process.env.TELEGRAM_BOT_TOKEN  || '';
-const ADMIN_ID   = process.env.TELEGRAM_ADMIN_ID   || '';
+const PORT        = process.env.PORT               || 3000;
+const OPENAI_KEY  = process.env.OPENAI_API_KEY      || '';
+const TG_TOKEN    = process.env.TELEGRAM_BOT_TOKEN  || '';
+const ADMIN_ID    = process.env.TELEGRAM_ADMIN_ID   || '';
+const APF_KEY     = process.env.API_FOOTBALL_KEY    || '';
+const STATPAL_KEY = process.env.STATPAL_API_KEY     || '98e5c7b5-5b16-412c-a270-c3196e4ef98f';
 
-// ── In-memory store ───────────────────────────────────────────────────────────
+// ── In-memory store ─────────────────────────────────────────────────────────────
 let store = { matches: {}, preds: {} };
 
-// ── Conversation state per user ───────────────────────────────────────────────
-// { [chatId]: { step: string, data: {} } }
+// ── Conversation state per user ──────────────────────────────────────────────
 const userState = {};
 
 function matchKey(home, away) {
@@ -27,7 +28,7 @@ function setState(chatId, step, data = {}) { userState[chatId] = { step, data };
 function clearState(chatId)                { delete userState[chatId]; }
 function getState(chatId)                  { return userState[chatId] || null; }
 
-// ── Telegram API helpers ──────────────────────────────────────────────────────
+// ── Telegram API helpers ─────────────────────────────────────────────────────────
 function tgPost(method, data) {
     if (!TG_TOKEN) return;
     const body = JSON.stringify(data);
@@ -51,7 +52,7 @@ const replyKb = (chatId, text, keyboard) =>
 const answerCb = (id) =>
     tgPost('answerCallbackQuery', { callback_query_id: id });
 
-// ── Main menu keyboard ────────────────────────────────────────────────────────
+// ── Main menu keyboard ────────────────────────────────────────────────────────────────
 const MAIN_KB = [
     [
         { text: '🔴  Live Matches',    callback_data: 'btn_live'     },
@@ -62,6 +63,7 @@ const MAIN_KB = [
         { text: '👁  Preview',         callback_data: 'btn_preview'  },
     ],
     [
+        { text: '🔄  Sync API: Today', callback_data: 'btn_sync'     },
         { text: '✏️  Edit / Delete',   callback_data: 'btn_edit'     },
     ],
 ];
@@ -74,7 +76,214 @@ function showMainMenu(chatId) {
     );
 }
 
-// ── Preview ───────────────────────────────────────────────────────────────────
+// ── HTTPS helpers for outbound API calls ───────────────────────────────────────────
+function httpsGet(hostname, path, headers) {
+    return new Promise((resolve, reject) => {
+        const req = https.request({
+            hostname, path, method: 'GET',
+            headers: Object.assign({ 'User-Agent': 'MagicBot/1.0' }, headers || {}),
+        }, res => {
+            let raw = '';
+            res.on('data', c => { raw += c; });
+            res.on('end', () => {
+                try { resolve(JSON.parse(raw)); }
+                catch (e) { reject(new Error('httpsGet JSON parse error')); }
+            });
+        });
+        req.on('error', reject);
+        req.end();
+    });
+}
+
+function httpsPostJson(hostname, path, body, headers) {
+    const bodyStr = JSON.stringify(body);
+    return new Promise((resolve, reject) => {
+        const req = https.request({
+            hostname, path, method: 'POST',
+            headers: Object.assign({
+                'Content-Type':   'application/json',
+                'Content-Length': Buffer.byteLength(bodyStr),
+            }, headers || {}),
+        }, res => {
+            let raw = '';
+            res.on('data', c => { raw += c; });
+            res.on('end', () => {
+                try { resolve(JSON.parse(raw)); }
+                catch (e) { reject(new Error('httpsPostJson JSON parse error')); }
+            });
+        });
+        req.on('error', reject);
+        req.write(bodyStr);
+        req.end();
+    });
+}
+
+// ── Sync API: Today ──────────────────────────────────────────────────────────────────
+async function syncTodayMatches(chatId) {
+    const today = new Date().toISOString().split('T')[0];
+    let converted = [];
+
+    reply(chatId, '⏳ Fetching today\'s matches from API...');
+
+    // 1. API-Football — try first if key is set
+    if (APF_KEY) {
+        try {
+            const data = await httpsGet(
+                'v3.football.api-sports.io',
+                `/fixtures?date=${today}`,
+                { 'x-apisports-key': APF_KEY }
+            );
+            const fixtures = data.response || [];
+            if (fixtures.length > 0) {
+                converted = fixtures.map(f => ({
+                    id:         String(f.fixture.id),
+                    date:       today,
+                    time:       f.fixture.date ? f.fixture.date.split('T')[1].substring(0, 5) : '',
+                    leagueName: f.league.name  || 'Unknown',
+                    country:    f.league.country || '',
+                    home:       { name: f.teams.home.name, score: null },
+                    away:       { name: f.teams.away.name, score: null },
+                    status:     'NS',
+                    manual_prediction: null,
+                }));
+                console.log(`Sync: API-Football returned ${converted.length} fixtures`);
+            }
+        } catch (e) { console.error('APF sync failed:', e.message); }
+    }
+
+    // 2. StatPal fallback
+    if (!converted.length) {
+        try {
+            const data = await httpsGet(
+                'statpal.io',
+                `/api/v1/soccer/livescores?access_key=${STATPAL_KEY}`
+            );
+            const leagues = data && data.livescore && data.livescore.league;
+            if (leagues) {
+                const lgArr = Array.isArray(leagues) ? leagues : [leagues];
+                lgArr.forEach(lg => {
+                    const items = Array.isArray(lg.match) ? lg.match : (lg.match ? [lg.match] : []);
+                    items.forEach(m => {
+                        converted.push({
+                            id:         String(m.id || matchKey(m.home && m.home.name, m.away && m.away.name)),
+                            date:       today,
+                            time:       m.match_start || m.time || '',
+                            leagueName: lg.name || '',
+                            country:    typeof lg.country === 'string' ? lg.country : ((lg.country && lg.country.name) || ''),
+                            home:       { name: (m.home && m.home.name) || '', score: null },
+                            away:       { name: (m.away && m.away.name) || '', score: null },
+                            status:     'NS',
+                            manual_prediction: null,
+                        });
+                    });
+                });
+                console.log(`Sync: StatPal returned ${converted.length} matches`);
+            }
+        } catch (e) { console.error('StatPal sync failed:', e.message); }
+    }
+
+    if (!converted.length) {
+        reply(chatId, '⚠️ No matches found for today from any API source.');
+        return;
+    }
+
+    reply(chatId, `📥 Found <b>${converted.length}</b> match(es).${OPENAI_KEY ? '\n🧠 Generating AI predictions...' : ''}`);
+
+    // ── OpenAI auto-prediction (with predicted scores) ──────────────────────────────
+    if (OPENAI_KEY && converted.length > 0) {
+        try {
+            const matchList = converted.map((m, i) =>
+                `${i + 1}. ${m.home.name} vs ${m.away.name} (${m.leagueName}, ${m.date} ${m.time})`
+            ).join('\n');
+
+            const aiResult = await httpsPostJson(
+                'api.openai.com',
+                '/v1/chat/completions',
+                {
+                    model: 'gpt-4o-mini',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: [
+                                'You are a professional football betting analyst. For each upcoming match, provide:',
+                                '- A 1X2 prediction: "1", "X", or "2"',
+                                '- A predicted correct score (e.g., "2-1")',
+                                '- Percentage probabilities for Home, Draw, and Away that add up to 100.',
+                                '',
+                                'Return a JSON object with a key "predictions" that is an array. Each element must have:',
+                                '- "match": the original match description (exactly as provided)',
+                                '- "prediction": "1", "X", or "2"',
+                                '- "pScore": the predicted correct score (e.g., "2-1")',
+                                '- "probabilityHome", "probabilityDraw", "probabilityAway": numbers 0-100, sum = 100',
+                            ].join('\n'),
+                        },
+                        {
+                            role: 'user',
+                            content: `Here are the matches:\n${matchList}\n\nPlease return your predictions in JSON.`,
+                        },
+                    ],
+                    response_format: { type: 'json_object' },
+                    temperature: 0.7,
+                    max_tokens: 1500,
+                },
+                { 'Authorization': `Bearer ${OPENAI_KEY}` }
+            );
+
+            const predictions = JSON.parse(aiResult.choices[0].message.content).predictions || [];
+            predictions.forEach((pred, idx) => {
+                if (idx < converted.length) {
+                    const tip    = pred.prediction || '';
+                    const pScore = pred.pScore     || '';
+                    // Format exactly as screenshot upload: "prediction (pScore)", e.g. "1 (2-1)"
+                    converted[idx].manual_prediction = `${tip} (${pScore})`.trim();
+                    const h = Math.round(Number(pred.probabilityHome) || 33);
+                    const d = Math.round(Number(pred.probabilityDraw) || 33);
+                    const a = 100 - h - d;
+                    const k = matchKey(converted[idx].home.name, converted[idx].away.name);
+                    store.preds[k] = {
+                        h, d, a,
+                        score:      pScore || null,
+                        advice:     tip === '1' ? 'Home Win' : tip === '2' ? 'Away Win' : 'Draw',
+                        confidence: Math.round(Math.max(h, d, a) / 10) / 10,
+                        sources:    ['openai'],
+                        aiUsed:     true,
+                    };
+                }
+            });
+        } catch (e) {
+            console.error('OpenAI sync prediction error:', e.message);
+            reply(chatId, '⚠️ AI prediction failed, saving matches without predictions.');
+        }
+    }
+
+    // Store all matches
+    for (const m of converted) {
+        const k = matchKey(m.home.name, m.away.name);
+        store.matches[k] = {
+            id:                m.id,
+            home:              { name: m.home.name, score: null },
+            away:              { name: m.away.name, score: null },
+            leagueName:        m.leagueName,
+            country:           m.country,
+            time:              m.time,
+            status:            'NS',
+            manual_prediction: m.manual_prediction || null,
+        };
+    }
+
+    const hasPreds = converted.filter(m => m.manual_prediction).length;
+    reply(chatId, [
+        `✅ Synced <b>${converted.length}</b> match(es) for today.`,
+        hasPreds
+            ? `🧠 <b>${hasPreds}</b> predictions generated (format: \"1 (2-1)\").`
+            : 'No predictions generated (set OPENAI_API_KEY to enable).',
+        '',
+        'Use 👁 Preview to review.',
+    ].join('\n'));
+    showMainMenu(chatId);
+}
+
+// ── Preview ───────────────────────────────────────────────────────────────────────────
 function showPreview(chatId) {
     const keys = Object.keys(store.matches);
     if (!keys.length) {
@@ -90,7 +299,8 @@ function showPreview(chatId) {
         const pred = p
             ? `   ↳ ${p.h}% / ${p.d}% / ${p.a}%${p.score ? ' · ' + p.score : ''}${p.advice ? '\n   ↳ ' + p.advice : ''}`
             : '   ↳ No prediction';
-        return `${i + 1}. ${icon} <b>${m.home.name} vs ${m.away.name}</b>${sc}\n   ${m.leagueName}${m.country ? ' · ' + m.country : ''}${time}\n${pred}`;
+        const tip  = m.manual_prediction ? `\n   ↳ Tip: ${m.manual_prediction}` : '';
+        return `${i + 1}. ${icon} <b>${m.home.name} vs ${m.away.name}</b>${sc}\n   ${m.leagueName}${m.country ? ' · ' + m.country : ''}${time}\n${pred}${tip}`;
     });
     replyKb(chatId,
         `<b>👁 Preview — ${keys.length} match(es)</b>\n\n${lines.join('\n\n')}`,
@@ -98,7 +308,7 @@ function showPreview(chatId) {
     );
 }
 
-// ── Edit list ─────────────────────────────────────────────────────────────────
+// ── Edit list ───────────────────────────────────────────────────────────────────────
 function showEditList(chatId) {
     const keys = Object.keys(store.matches);
     if (!keys.length) {
@@ -117,7 +327,7 @@ function showEditList(chatId) {
     replyKb(chatId, '<b>✏️ Edit / Delete Matches</b>\n\nTap a match to edit, or 🗑️ to delete:', rows);
 }
 
-// ── Process state input (text typed after pressing a button) ──────────────────
+// ── Process state input (text typed after pressing a button) ────────────────────────
 function handleStateInput(chatId, text, state) {
     const args = text.split('|').map(s => s.trim());
 
@@ -224,14 +434,14 @@ function handleStateInput(chatId, text, state) {
     }
 }
 
-// ── Handle button presses ─────────────────────────────────────────────────────
+// ── Handle button presses ─────────────────────────────────────────────────────────────────
 function handleCallbackQuery(cq) {
-    const chatId = cq.message?.chat?.id;
+    const chatId = cq.message && cq.message.chat && cq.message.chat.id;
     const data   = cq.data || '';
     if (!chatId) return;
     answerCb(cq.id);
 
-    if (ADMIN_ID && String(cq.from?.id) !== String(ADMIN_ID)) return;
+    if (ADMIN_ID && String(cq.from && cq.from.id) !== String(ADMIN_ID)) return;
 
     if (data === 'btn_live') {
         setState(chatId, 'live_input');
@@ -285,6 +495,15 @@ function handleCallbackQuery(cq) {
         return;
     }
 
+    if (data === 'btn_sync') {
+        clearState(chatId);
+        syncTodayMatches(chatId).catch(e => {
+            console.error('Sync error:', e.message);
+            reply(chatId, `❌ Sync failed: ${e.message}`);
+        });
+        return;
+    }
+
     if (data === 'btn_edit') {
         clearState(chatId);
         showEditList(chatId);
@@ -331,25 +550,23 @@ function handleCallbackQuery(cq) {
     }
 }
 
-// ── Handle text messages ──────────────────────────────────────────────────────
+// ── Handle text messages ────────────────────────────────────────────────────────────────
 function handleMessage(msg) {
-    const chatId = msg.chat?.id;
+    const chatId = msg.chat && msg.chat.id;
     const text   = (msg.text || '').trim();
     if (!chatId) return;
 
-    if (ADMIN_ID && String(msg.from?.id) !== String(ADMIN_ID)) {
+    if (ADMIN_ID && String(msg.from && msg.from.id) !== String(ADMIN_ID)) {
         reply(chatId, '⛔ Unauthorized');
         return;
     }
 
-    // /cancel or /start always resets to main menu
     if (text === '/cancel' || text === '/start') {
         clearState(chatId);
         showMainMenu(chatId);
         return;
     }
 
-    // If user is mid-conversation, handle state input
     const state = getState(chatId);
     if (state && !text.startsWith('/')) {
         handleStateInput(chatId, text, state);
@@ -358,7 +575,6 @@ function handleMessage(msg) {
 
     if (!text.startsWith('/')) return;
 
-    // ── Slash commands (still supported for power users) ────────────────────
     const spaceIdx = text.indexOf(' ');
     const cmd      = (spaceIdx === -1 ? text : text.slice(0, spaceIdx)).toLowerCase();
     const rawArgs  = spaceIdx === -1 ? '' : text.slice(spaceIdx + 1);
@@ -491,7 +707,7 @@ function handleMessage(msg) {
                 const m = store.matches[k], p = store.preds[k];
                 const sc = m.home.score != null && m.away.score != null ? ` ${m.home.score}–${m.away.score}` : '';
                 const icon = m.status==='FT'?'✅':m.status==='NS'?'🔵':'🔴';
-                return `${i+1}. ${icon} <b>${m.home.name} vs ${m.away.name}</b>${sc}${p?` [${p.h}/${p.d}/${p.a}]':' [no pred]'}\n   ${m.leagueName}${m.time?' @ '+m.time:''}`;
+                return `${i+1}. ${icon} <b>${m.home.name} vs ${m.away.name}</b>${sc}${p?` [${p.h}/${p.d}/${p.a}]`:' [no pred]'}\n   ${m.leagueName}${m.time?' @ '+m.time:''}`;
             });
             reply(chatId, `<b>Matches (${keys.length}):</b>\n\n${lines.join('\n\n')}`);
             break;
@@ -502,7 +718,7 @@ function handleMessage(msg) {
     }
 }
 
-// ── POST /telegram — webhook ──────────────────────────────────────────────────
+// ── POST /telegram — webhook ──────────────────────────────────────────────────────────────
 app.post('/telegram', (req, res) => {
     res.sendStatus(200);
     const { message, callback_query } = req.body;
@@ -510,7 +726,7 @@ app.post('/telegram', (req, res) => {
     if (callback_query) handleCallbackQuery(callback_query);
 });
 
-// ── GET /api/scores ───────────────────────────────────────────────────────────
+// ── GET /api/scores ──────────────────────────────────────────────────────────────────────
 app.get('/api/scores', (req, res) => {
     const byLeague = {};
     for (const m of Object.values(store.matches)) {
@@ -526,7 +742,7 @@ app.get('/api/scores', (req, res) => {
     res.json({ livescore: { league: Object.values(byLeague) } });
 });
 
-// ── GET /api/get-predictions ──────────────────────────────────────────────────
+// ── GET /api/get-predictions ──────────────────────────────────────────────────────────────
 app.get('/api/get-predictions', (req, res) => {
     const k = matchKey(req.query.home || '', req.query.away || '');
     const p = store.preds[k];
@@ -539,9 +755,9 @@ app.get('/api/get-predictions', (req, res) => {
     }
     const goalMatch = (p.score || '').match(/(\d+)\D+(\d+)/);
     const winner    = p.h >= p.d && p.h >= p.a
-        ? `${m?.home.name || 'Home'} to win`
+        ? `${(m && m.home.name) || 'Home'} to win`
         : p.a > p.h && p.a >= p.d
-            ? `${m?.away.name || 'Away'} to win`
+            ? `${(m && m.away.name) || 'Away'} to win`
             : 'Draw likely';
     res.json({
         response: [{ predictions: {
@@ -553,10 +769,10 @@ app.get('/api/get-predictions', (req, res) => {
     });
 });
 
-// ── GET /api/upcoming ─────────────────────────────────────────────────────────
+// ── GET /api/upcoming ──────────────────────────────────────────────────────────────────
 app.get('/api/upcoming', (req, res) => res.json({ matches: [] }));
 
-// ── GET /api/match-analysis (OpenAI — optional) ───────────────────────────────
+// ── GET /api/match-analysis (OpenAI — optional) ──────────────────────────────────────
 app.get('/api/match-analysis', async (req, res) => {
     if (!OPENAI_KEY) return res.json({ analysis: null });
     const { home, away, league, status, score } = req.query;
@@ -571,11 +787,11 @@ app.get('/api/match-analysis', async (req, res) => {
             r.on('error', reject); r.write(body); r.end();
         });
         let raw = ''; for await (const c of apiRes) raw += c;
-        res.json({ analysis: JSON.parse(raw).choices?.[0]?.message?.content?.trim() || null });
-    } catch { res.json({ analysis: null }); }
+        res.json({ analysis: JSON.parse(raw).choices && JSON.parse(raw).choices[0] && JSON.parse(raw).choices[0].message && JSON.parse(raw).choices[0].message.content.trim() || null });
+    } catch (e) { res.json({ analysis: null }); }
 });
 
-// ── GET /api/team-logo ────────────────────────────────────────────────────────
+// ── GET /api/team-logo ─────────────────────────────────────────────────────────────────────
 app.get('/api/team-logo', async (req, res) => {
     const { name } = req.query;
     if (!name) return res.json({ logo: null });
@@ -589,14 +805,14 @@ app.get('/api/team-logo', async (req, res) => {
             r.on('error', reject); r.end();
         });
         let raw = ''; for await (const c of apiRes) raw += c;
-        res.json({ logo: JSON.parse(raw).teams?.[0]?.strBadge || null });
-    } catch { res.json({ logo: null }); }
+        res.json({ logo: JSON.parse(raw).teams && JSON.parse(raw).teams[0] && JSON.parse(raw).teams[0].strBadge || null });
+    } catch (e) { res.json({ logo: null }); }
 });
 
-// ── GET /api/admin/data ───────────────────────────────────────────────────────
+// ── GET /api/admin/data ────────────────────────────────────────────────────────────────────
 app.get('/api/admin/data', (req, res) => res.json(store));
 
-// ── GET /health ───────────────────────────────────────────────────────────────
+// ── GET /health ────────────────────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ ok: true, matches: Object.keys(store.matches).length }));
 
 app.listen(PORT, () => console.log(`Magic Analysis on port ${PORT}`));
