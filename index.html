@@ -17,11 +17,19 @@
       --muted:   #6b6b80;
       --header-h: 52px;
 
-      /* ── Crop controls — tweak these to fine-tune the visible window ── */
-      --crop-top:    80px;   /* pixels of site header to hide  */
-      --crop-left:   240px;  /* pixels of left sidebar to hide */
-      --crop-right:  260px;  /* pixels of right sidebar to hide */
-      --crop-bottom: 60px;   /* pixels of site footer to hide  */
+      /*
+       * ── CROP TUNING ───────────────────────────────────────
+       * Adjust these if the cut-off shifts on your screen.
+       * --crop-top    : hides pitchpredictions top nav bar
+       * --crop-left   : hides left leagues sidebar
+       * --crop-right  : hides right calendar + Game of the Day
+       * --crop-bottom : hides bet9ja / footer ads
+       * ──────────────────────────────────────────────────────
+       */
+      --crop-top:    35px;
+      --crop-left:   155px;
+      --crop-right:  200px;
+      --crop-bottom: 95px;
     }
 
     html, body {
@@ -32,7 +40,7 @@
       overflow: hidden;
     }
 
-    /* ── Header ── */
+    /* ── Top header bar ── */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -69,13 +77,23 @@
       font-weight: 700;
       color: var(--text);
     }
-
     .logo-name span { color: var(--green); }
 
     .header-right {
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ff4444;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.7); }
     }
 
     .tag {
@@ -90,19 +108,6 @@
       border: 1px solid rgba(37,211,102,0.25);
     }
 
-    .live-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #ff4444;
-      animation: pulse 1.4s ease-in-out infinite;
-      display: inline-block;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: .4; transform: scale(.7); }
-    }
-
     .open-btn {
       font-size: 12px;
       font-weight: 600;
@@ -115,34 +120,33 @@
     }
     .open-btn:hover { color: var(--text); border-color: var(--muted); }
 
-    /* ── Viewport that clips the iframe ── */
+    /* ── Clip window: only the orange-box area shows through ── */
     .viewport {
       position: fixed;
       top: var(--header-h);
       left: 0; right: 0; bottom: 0;
-      overflow: hidden;         /* this does the cropping */
+      overflow: hidden;
       background: var(--bg);
     }
 
     /*
-      The iframe is positioned so that:
-        - its top is shifted UP by --crop-top  (hides the site header)
-        - its left is shifted LEFT by --crop-left (hides left sidebar)
-        - its width is expanded to also cover --crop-right (hides right sidebar)
-        - its height is expanded to also cover --crop-bottom (hides footer)
-      Combined with overflow:hidden on .viewport, only the middle shows.
+      The iframe is larger than the viewport in every direction.
+      Negative top/left positioning pushes the unwanted parts
+      outside the viewport's overflow:hidden boundary.
+      Width/height are expanded to compensate so the right and
+      bottom edges also get hidden.
     */
     iframe {
       position: absolute;
       top:    calc(-1 * var(--crop-top));
       left:   calc(-1 * var(--crop-left));
       width:  calc(100% + var(--crop-left) + var(--crop-right));
-      height: calc(100% + var(--crop-top) + var(--crop-bottom));
+      height: calc(100% + var(--crop-top)  + var(--crop-bottom));
       border: none;
       background: #fff;
     }
 
-    /* ── Blocked fallback ── */
+    /* ── Fallback shown if site blocks embedding ── */
     .blocked {
       display: none;
       position: absolute;
@@ -156,18 +160,9 @@
       padding: 24px;
     }
     .blocked.show { display: flex; }
-
     .blocked-icon { font-size: 48px; }
-
-    .blocked h2 { font-size: 20px; font-weight: 700; }
-
-    .blocked p {
-      font-size: 14px;
-      color: var(--muted);
-      max-width: 340px;
-      line-height: 1.6;
-    }
-
+    .blocked h2   { font-size: 20px; font-weight: 700; }
+    .blocked p    { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
     .blocked a {
       display: inline-block;
       margin-top: 4px;
@@ -178,7 +173,6 @@
       font-size: 14px;
       border-radius: 8px;
       text-decoration: none;
-      transition: opacity .15s;
     }
     .blocked a:hover { opacity: .85; }
   </style>
@@ -203,7 +197,7 @@
     <iframe
       id="predFrame"
       src="https://www.pitchpredictions.com"
-      title="Live Scores – Pitch Predictions"
+      title="Live Football Predictions"
       loading="eager"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
     ></iframe>
@@ -213,10 +207,10 @@
       <h2>Embed Restricted</h2>
       <p>
         <strong>pitchpredictions.com</strong> has blocked embedding.
-        Tap below to view live scores directly.
+        Tap below to open predictions directly.
       </p>
       <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-        View Live Scores ↗
+        View Predictions ↗
       </a>
     </div>
   </div>
@@ -227,7 +221,6 @@
 
     frame.addEventListener('error', () => blocked.classList.add('show'));
 
-    // Fallback: if 9 s pass and frame is still blank, show the blocked overlay
     setTimeout(() => {
       try {
         if (frame.contentWindow.location.href === 'about:blank') {
