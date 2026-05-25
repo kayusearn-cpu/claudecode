@@ -16,31 +16,14 @@
       --text:    #e8e8f0;
       --muted:   #6b6b80;
       --header-h: 52px;
-
-      /*
-       * ── CROP TUNING ───────────────────────────────────────
-       * Adjust these if the cut-off shifts on your screen.
-       * --crop-top    : hides pitchpredictions top nav bar
-       * --crop-left   : hides left leagues sidebar
-       * --crop-right  : hides right calendar + Game of the Day
-       * --crop-bottom : hides bet9ja / footer ads
-       * ──────────────────────────────────────────────────────
-       */
-      --crop-top:    35px;
-      --crop-left:   155px;
-      --crop-right:  200px;
-      --crop-bottom: 95px;
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       overflow: hidden;
     }
 
-    /* ── Top header bar ── */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -52,6 +35,8 @@
       justify-content: space-between;
       padding: 0 20px;
       z-index: 100;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
     }
 
     .logo {
@@ -62,8 +47,7 @@
     }
 
     .logo-icon {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       background: var(--green);
       border-radius: 8px;
       display: flex;
@@ -72,18 +56,10 @@
       font-size: 17px;
     }
 
-    .logo-name {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text);
-    }
+    .logo-name { font-size: 17px; font-weight: 700; color: var(--text); }
     .logo-name span { color: var(--green); }
 
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
 
     .live-dot {
       width: 8px; height: 8px;
@@ -97,31 +73,25 @@
     }
 
     .tag {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.5px; text-transform: uppercase;
       color: var(--green);
       background: rgba(37,211,102,0.12);
-      padding: 3px 9px;
-      border-radius: 20px;
+      padding: 3px 9px; border-radius: 20px;
       border: 1px solid rgba(37,211,102,0.25);
     }
 
     .open-btn {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      text-decoration: none;
+      font-size: 12px; font-weight: 600;
+      color: var(--muted); text-decoration: none;
       padding: 5px 11px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      border: 1px solid var(--border); border-radius: 6px;
       transition: color .15s, border-color .15s;
     }
     .open-btn:hover { color: var(--text); border-color: var(--muted); }
 
-    /* ── Clip window: only the orange-box area shows through ── */
-    .viewport {
+    /* The clip window — overflow:hidden is what does the actual cropping */
+    #viewport {
       position: fixed;
       top: var(--header-h);
       left: 0; right: 0; bottom: 0;
@@ -129,50 +99,33 @@
       background: var(--bg);
     }
 
-    /*
-      The iframe is larger than the viewport in every direction.
-      Negative top/left positioning pushes the unwanted parts
-      outside the viewport's overflow:hidden boundary.
-      Width/height are expanded to compensate so the right and
-      bottom edges also get hidden.
-    */
-    iframe {
+    /* iframe size & position is set entirely by JS */
+    #predFrame {
       position: absolute;
-      top:    calc(-1 * var(--crop-top));
-      left:   calc(-1 * var(--crop-left));
-      width:  calc(100% + var(--crop-left) + var(--crop-right));
-      height: calc(100% + var(--crop-top)  + var(--crop-bottom));
       border: none;
       background: #fff;
     }
 
-    /* ── Fallback shown if site blocks embedding ── */
+    /* Fallback if site blocks embedding */
     .blocked {
       display: none;
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       background: var(--bg);
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      text-align: center;
-      padding: 24px;
+      align-items: center; justify-content: center;
+      gap: 16px; text-align: center; padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
     }
     .blocked.show { display: flex; }
     .blocked-icon { font-size: 48px; }
-    .blocked h2   { font-size: 20px; font-weight: 700; }
-    .blocked p    { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
+    .blocked h2 { font-size: 20px; font-weight: 700; }
+    .blocked p { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
     .blocked a {
-      display: inline-block;
-      margin-top: 4px;
-      padding: 10px 24px;
-      background: var(--green);
-      color: #000;
-      font-weight: 700;
-      font-size: 14px;
-      border-radius: 8px;
-      text-decoration: none;
+      display: inline-block; margin-top: 4px;
+      padding: 10px 24px; background: var(--green);
+      color: #000; font-weight: 700; font-size: 14px;
+      border-radius: 8px; text-decoration: none;
     }
     .blocked a:hover { opacity: .85; }
   </style>
@@ -193,7 +146,7 @@
     </div>
   </header>
 
-  <div class="viewport">
+  <div id="viewport">
     <iframe
       id="predFrame"
       src="https://www.pitchpredictions.com"
@@ -216,9 +169,62 @@
   </div>
 
   <script>
+    /*
+     * CROP SETTINGS (in desktop pixels at SITE_WIDTH)
+     * ─────────────────────────────────────────────────
+     * SITE_WIDTH  – width we force the iframe to render at (desktop layout)
+     * CROP_LEFT   – left sidebar (leagues / nav links)
+     * CROP_RIGHT  – right sidebar (calendar + Game of the Day)
+     * CROP_TOP    – pitchpredictions top nav bar
+     * CROP_BOTTOM – bet9ja / footer ad strip
+     *
+     * To tweak: open DevTools → inspect pitchpredictions.com at 1200px
+     * wide and measure each section's pixel width/height, then update
+     * the numbers below.
+     */
+    const SITE_WIDTH  = 1200;
+    const CROP_LEFT   = 185;
+    const CROP_RIGHT  = 230;
+    const CROP_TOP    = 55;
+    const CROP_BOTTOM = 90;
+
     const frame   = document.getElementById('predFrame');
+    const vp      = document.getElementById('viewport');
     const blocked = document.getElementById('blockedMsg');
 
+    function layout() {
+      const vpW = vp.offsetWidth;
+      const vpH = vp.offsetHeight;
+
+      /*
+       * The visible content column width at desktop (1200px):
+       *   contentW = SITE_WIDTH - CROP_LEFT - CROP_RIGHT
+       *
+       * Scale the iframe so that content column fills the viewport width:
+       *   scale = vpW / contentW
+       *
+       * The iframe element top-left is placed at:
+       *   left = -(CROP_LEFT * scale)
+       *   top  = -(CROP_TOP  * scale)
+       *
+       * This makes the point (CROP_LEFT, CROP_TOP) in site space land
+       * exactly at (0, 0) in the viewport, which is what we want.
+       */
+      const contentW = SITE_WIDTH - CROP_LEFT - CROP_RIGHT;
+      const scale    = vpW / contentW;
+
+      frame.style.width           = SITE_WIDTH + 'px';
+      frame.style.height          = Math.max(Math.ceil(vpH / scale) + CROP_TOP + CROP_BOTTOM, 900) + 'px';
+      frame.style.left            = -(CROP_LEFT * scale) + 'px';
+      frame.style.top             = -(CROP_TOP  * scale) + 'px';
+      frame.style.transformOrigin = '0 0';
+      frame.style.transform       = 'scale(' + scale + ')';
+    }
+
+    layout();
+    window.addEventListener('resize', layout);
+
+    // Detect if embedding is blocked
     frame.addEventListener('error', () => blocked.classList.add('show'));
 
     setTimeout(() => {
@@ -226,7 +232,7 @@
         if (frame.contentWindow.location.href === 'about:blank') {
           blocked.classList.add('show');
         }
-      } catch (_) { /* cross-origin = loaded fine */ }
+      } catch (_) { /* cross-origin means the iframe loaded fine */ }
     }, 9000);
   </script>
 
