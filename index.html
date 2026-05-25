@@ -3,513 +3,228 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AimBet – Today's Predictions</title>
+  <title>Magicbetingtips – Free Football Predictions</title>
+  <meta name="description" content="Daily AI-powered football predictions and betting tips from Magicbetingtips." />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0c0c14;
-      --card:      #16161f;
-      --card2:     #1e1e2a;
-      --border:    #2a2a3a;
-      --green:     #25d366;
-      --green-bg:  rgba(37,211,102,0.10);
-      --green-br:  rgba(37,211,102,0.30);
-      --text:      #f0f0f8;
-      --dim:       #7070a0;
-      --red:       #ef4444;
-      --red-bg:    rgba(239,68,68,0.12);
+      --bg:      #0c0c14;
+      --surface: #13131f;
+      --border:  #1e1e30;
+      --green:   #25d366;
+      --text:    #e8e8f0;
+      --muted:   #6b6b80;
+      --header-h: 56px;
     }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    html, body {
+      height: 100%;
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      overflow: hidden;
     }
 
-    /* ── Header ────────────────────────────────────────────────────────────── */
+    /* ── Header ── */
     header {
-      position: sticky;
-      top: 0;
-      z-index: 50;
-      background: rgba(12,12,20,0.92);
-      backdrop-filter: blur(14px);
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      height: 56px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 1rem;
+      padding: 0 20px;
+      z-index: 100;
     }
 
     .logo {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      font-weight: 800;
-      font-size: 1.1rem;
-      letter-spacing: -0.02em;
-      color: var(--text);
+      gap: 10px;
+      text-decoration: none;
     }
 
     .logo-icon {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       background: var(--green);
-      border-radius: 9px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1rem;
+      font-size: 18px;
+    }
+
+    .logo-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .logo-name span {
+      color: var(--green);
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 12px;
     }
 
-    .date-chip {
-      font-size: 0.72rem;
-      color: var(--dim);
-      background: var(--card2);
-      border: 1px solid var(--border);
-      padding: 0.25rem 0.65rem;
-      border-radius: 999px;
+    .tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--green);
+      background: rgba(37,211,102,0.12);
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid rgba(37,211,102,0.25);
     }
 
-    .refresh-btn {
-      background: none;
+    .open-btn {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-decoration: none;
+      padding: 5px 11px;
       border: 1px solid var(--border);
-      color: var(--dim);
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      display: flex;
+      border-radius: 6px;
+      transition: color .15s, border-color .15s;
+    }
+    .open-btn:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ── Iframe container ── */
+    .frame-wrap {
+      position: fixed;
+      top: var(--header-h);
+      left: 0; right: 0; bottom: 0;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background: #fff;
+    }
+
+    /* ── Blocked overlay (shown if iframe is blocked) ── */
+    .blocked {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
     }
-    .refresh-btn:hover { border-color: var(--green); color: var(--green); }
-    .refresh-btn.spinning { animation: spin 0.6s linear; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .blocked.show { display: flex; }
 
-    /* ── Main ──────────────────────────────────────────────────────────────── */
-    main {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
+    .blocked-icon { font-size: 48px; }
 
-    /* ── Section header ────────────────────────────────────────────────────── */
-    .section-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.95rem;
+    .blocked h2 {
+      font-size: 20px;
       font-weight: 700;
     }
 
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
+    .blocked p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 340px;
+      line-height: 1.6;
+    }
+
+    .blocked a {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 10px 24px;
       background: var(--green);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-
-    .count-tag {
-      font-size: 0.68rem;
+      color: #000;
       font-weight: 700;
-      background: var(--green-bg);
-      color: var(--green);
-      border: 1px solid var(--green-br);
-      padding: 0.18rem 0.55rem;
-      border-radius: 999px;
-    }
-
-    .no-pred-tag {
-      font-size: 0.68rem;
-      color: var(--dim);
-      background: var(--card2);
-      border: 1px solid var(--border);
-      padding: 0.18rem 0.55rem;
-      border-radius: 999px;
-    }
-
-    /* ── Match card ────────────────────────────────────────────────────────── */
-    .match-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1rem;
-      margin-bottom: 0.65rem;
-      transition: border-color 0.2s;
-    }
-    .match-card:hover { border-color: rgba(37,211,102,0.25); }
-    .match-card.has-pred { border-left: 3px solid var(--green); }
-
-    /* League row */
-    .league-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.8rem;
-    }
-
-    .league-label {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: var(--dim);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      max-width: 70%;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .status-chip {
-      font-size: 0.68rem;
-      font-weight: 600;
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      white-space: nowrap;
-    }
-    .s-ns   { background: var(--card2); color: var(--dim); border: 1px solid var(--border); }
-    .s-live { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-    .s-ft   { background: var(--card2); color: var(--dim); border: 1px solid var(--border); }
-
-    /* Teams row */
-    .teams-row {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.85rem;
-    }
-
-    .team-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      line-height: 1.25;
-    }
-    .team-name.home { text-align: left; }
-    .team-name.away { text-align: right; }
-
-    .score-vs {
-      text-align: center;
-      min-width: 52px;
-    }
-    .score-num {
-      font-size: 1.3rem;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-    }
-    .vs-txt {
-      font-size: 0.7rem;
-      color: var(--dim);
-      font-weight: 700;
-    }
-
-    /* Prediction row */
-    .pred-row {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      padding-top: 0.8rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .tip-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.35rem;
-      background: var(--green-bg);
-      border: 1px solid var(--green-br);
-      color: var(--green);
-      padding: 0.35rem 0.8rem;
+      font-size: 14px;
       border-radius: 8px;
-      font-size: 0.8rem;
-      font-weight: 700;
+      text-decoration: none;
+      transition: opacity .15s;
     }
-
-    .tip-code {
-      font-size: 1.05rem;
-      font-weight: 900;
-      border-right: 1px solid var(--green-br);
-      padding-right: 0.5rem;
-      margin-right: 0.05rem;
-    }
-
-    .pred-score {
-      margin-left: auto;
-      background: var(--card2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.3rem 0.7rem;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-    }
-
-    /* ── Skeleton ──────────────────────────────────────────────────────────── */
-    .skel-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1rem;
-      margin-bottom: 0.65rem;
-    }
-    .skel {
-      background: linear-gradient(90deg, var(--border) 25%, rgba(255,255,255,0.04) 50%, var(--border) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 6px;
-    }
-    @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-
-    /* ── Empty / Error ─────────────────────────────────────────────────────── */
-    .empty-box {
-      text-align: center;
-      padding: 3.5rem 1rem;
-      color: var(--dim);
-    }
-    .empty-icon { font-size: 2.8rem; margin-bottom: 0.75rem; }
-    .empty-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.35rem; }
-    .empty-sub { font-size: 0.82rem; line-height: 1.6; }
-
-    /* ── Divider ───────────────────────────────────────────────────────────── */
-    .divider-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--dim);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin: 1.25rem 0 0.65rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .divider-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* ── Footer ────────────────────────────────────────────────────────────── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 1.5rem 1rem;
-      text-align: center;
-      color: var(--dim);
-      font-size: 0.72rem;
-      margin-top: 2rem;
-    }
-
-    /* ── Mobile ────────────────────────────────────────────────────────────── */
-    @media (max-width: 480px) {
-      .team-name { font-size: 0.82rem; }
-      .score-num { font-size: 1.1rem; }
-    }
+    .blocked a:hover { opacity: .85; }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">
-    <div class="logo-icon">⚽</div>
-    AimBet
-  </div>
-  <div class="header-right">
-    <span class="date-chip" id="dateChip"></span>
-    <button class="refresh-btn" id="refreshBtn" title="Refresh" onclick="loadPredictions(true)">↻</button>
-  </div>
-</header>
-
-<main>
-  <div class="section-head">
-    <div class="section-title">
-      <div class="pulse-dot"></div>
-      Today's Predictions
-      <span class="count-tag" id="countTag">–</span>
+  <header>
+    <a class="logo" href="#">
+      <div class="logo-icon">⚽</div>
+      <div class="logo-name">Magic<span>Beting</span>Tips</div>
+    </a>
+    <div class="header-right">
+      <span class="tag">Free Tips</span>
+      <a class="open-btn" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
+        Open ↗
+      </a>
     </div>
-    <span class="no-pred-tag" id="noPredTag" style="display:none"></span>
+  </header>
+
+  <div class="frame-wrap">
+    <iframe
+      id="predFrame"
+      src="https://www.pitchpredictions.com"
+      title="Pitch Predictions – Football Tips"
+      loading="lazy"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+    ></iframe>
+
+    <!-- Shown if the site blocks iframe embedding -->
+    <div class="blocked" id="blockedMsg">
+      <div class="blocked-icon">🔒</div>
+      <h2>Preview Unavailable</h2>
+      <p>
+        <strong>pitchpredictions.com</strong> has restricted embedding.
+        Click below to view predictions in a new tab.
+      </p>
+      <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
+        View Predictions ↗
+      </a>
+    </div>
   </div>
 
-  <div id="matchList"></div>
-</main>
+  <script>
+    // Detect if the iframe was blocked (load fires but src stays about:blank,
+    // or the server sends X-Frame-Options which triggers an error event).
+    const frame = document.getElementById('predFrame');
+    const blocked = document.getElementById('blockedMsg');
 
-<footer>
-  AimBet &nbsp;·&nbsp; AI Football Predictions &nbsp;·&nbsp; Gamble Responsibly &nbsp;·&nbsp; 18+
-</footer>
+    frame.addEventListener('error', () => {
+      blocked.classList.add('show');
+    });
 
-<script>
-  const API = 'https://sportprediction-production.up.railway.app';
-
-  document.getElementById('dateChip').textContent =
-    new Date().toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
-
-  function parsePred(str) {
-    if (!str) return null;
-    const m = str.match(/^([1X2])\s*\(([^)]+)\)/);
-    if (m) {
-      const label = m[1]==='1' ? 'Home Win' : m[1]==='2' ? 'Away Win' : 'Draw';
-      return { tip: m[1], score: m[2], label };
-    }
-    const label = str==='1' ? 'Home Win' : str==='2' ? 'Away Win' : str==='X' ? 'Draw' : str;
-    return { tip: str, score: null, label };
-  }
-
-  function statusHtml(status, time) {
-    if (status === 'FT' || status === 'AET')
-      return `<span class="status-chip s-ft">FT</span>`;
-    if (status === 'HT')
-      return `<span class="status-chip s-ft">HT</span>`;
-    if (/^\d+$/.test(status))
-      return `<span class="status-chip s-live">${status}'</span>`;
-    if (status === 'NS' || !status)
-      return `<span class="status-chip s-ns">${time || 'TBC'}</span>`;
-    return `<span class="status-chip s-ns">${status}</span>`;
-  }
-
-  function renderMatch(m) {
-    const pred     = parsePred(m.manual_prediction);
-    const hasScore = m.home.score != null && m.away.score != null;
-
-    const scoreOrVs = hasScore
-      ? `<div class="score-num">${m.home.score}&ndash;${m.away.score}</div>`
-      : `<div class="vs-txt">VS</div>`;
-
-    const predHtml = pred ? `
-      <div class="pred-row">
-        <div class="tip-badge">
-          <span class="tip-code">${pred.tip}</span>
-          ${pred.label}
-        </div>
-        ${pred.score ? `<div class="pred-score">📊 ${pred.score}</div>` : ''}
-      </div>` : '';
-
-    const league  = m.leagueName || 'Unknown League';
-    const country = m.country    ? ` · ${m.country}` : '';
-
-    return `
-      <div class="match-card${pred ? ' has-pred' : ''}">
-        <div class="league-row">
-          <span class="league-label">🏆 ${league}${country}</span>
-          ${statusHtml(m.status, m.time)}
-        </div>
-        <div class="teams-row">
-          <div class="team-name home">${m.home.name}</div>
-          <div class="score-vs">${scoreOrVs}</div>
-          <div class="team-name away">${m.away.name}</div>
-        </div>
-        ${predHtml}
-      </div>`;
-  }
-
-  function skeletons(n) {
-    return Array.from({length:n}, () => `
-      <div class="skel-card">
-        <div style="display:flex;justify-content:space-between;margin-bottom:.8rem">
-          <div class="skel" style="width:45%;height:11px"></div>
-          <div class="skel" style="width:14%;height:11px"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:.5rem;align-items:center;margin-bottom:.8rem">
-          <div class="skel" style="height:15px"></div>
-          <div class="skel" style="width:36px;height:22px"></div>
-          <div class="skel" style="height:15px"></div>
-        </div>
-        <div style="border-top:1px solid #2a2a3a;padding-top:.7rem">
-          <div class="skel" style="width:52%;height:11px"></div>
-        </div>
-      </div>`).join('');
-  }
-
-  async function loadPredictions(fromButton) {
-    const list  = document.getElementById('matchList');
-    const badge = document.getElementById('countTag');
-    const noTag = document.getElementById('noPredTag');
-    const btn   = document.getElementById('refreshBtn');
-
-    if (fromButton) {
-      btn.classList.add('spinning');
-      setTimeout(() => btn.classList.remove('spinning'), 600);
-    }
-
-    list.innerHTML = skeletons(5);
-    noTag.style.display = 'none';
-
-    try {
-      const res = await fetch(`${API}/api/scores`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const data = await res.json();
-
-      const raw     = data?.livescore?.league || [];
-      const leagues = Array.isArray(raw) ? raw : [raw];
-      const all     = leagues.flatMap(lg => {
-        const matches = lg.match
-          ? (Array.isArray(lg.match) ? lg.match : [lg.match])
-          : [];
-        return matches;
-      });
-
-      badge.textContent = all.length;
-
-      if (!all.length) {
-        list.innerHTML = `
-          <div class="empty-box">
-            <div class="empty-icon">📭</div>
-            <div class="empty-title">No matches today</div>
-            <div class="empty-sub">Sync via the Telegram bot to populate predictions.</div>
-          </div>`;
-        return;
+    // Some browsers fire load even on blocked frames — check if navigated away
+    frame.addEventListener('load', () => {
+      try {
+        // If we can access contentWindow.location.href it's same-origin; cross-origin
+        // throws, meaning the frame likely loaded. Do nothing.
+        void frame.contentWindow.location.href;
+      } catch (_) {
+        // cross-origin = probably loaded fine
       }
+    });
 
-      const withPred    = all.filter(m => m.manual_prediction);
-      const withoutPred = all.filter(m => !m.manual_prediction);
+    // Fallback: if after 8 s the frame is still on about:blank, show blocked msg
+    setTimeout(() => {
+      try {
+        if (frame.contentWindow.location.href === 'about:blank') {
+          blocked.classList.add('show');
+        }
+      } catch (_) { /* cross-origin, frame loaded */ }
+    }, 8000);
+  </script>
 
-      if (withoutPred.length) {
-        noTag.textContent  = `${withoutPred.length} without tip`;
-        noTag.style.display = '';
-      }
-
-      let html = withPred.map(renderMatch).join('');
-
-      if (withoutPred.length) {
-        html += `<div class="divider-label">Other fixtures (no prediction yet)</div>`;
-        html += withoutPred.map(renderMatch).join('');
-      }
-
-      list.innerHTML = html;
-
-    } catch (err) {
-      list.innerHTML = `
-        <div class="empty-box">
-          <div class="empty-icon">⚠️</div>
-          <div class="empty-title">Failed to load predictions</div>
-          <div class="empty-sub">${err.message}</div>
-        </div>`;
-      badge.textContent = '!';
-    }
-  }
-
-  loadPredictions();
-  setInterval(loadPredictions, 5 * 60 * 1000);
-</script>
 </body>
 </html>
