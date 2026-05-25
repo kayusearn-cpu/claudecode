@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Magicbetingtips – Free Football Predictions</title>
+  <title>Magicbetingtips – Live Scores & Predictions</title>
   <meta name="description" content="Daily AI-powered football predictions and betting tips from Magicbetingtips." />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -15,7 +15,13 @@
       --green:   #25d366;
       --text:    #e8e8f0;
       --muted:   #6b6b80;
-      --header-h: 56px;
+      --header-h: 52px;
+
+      /* ── Crop controls — tweak these to fine-tune the visible window ── */
+      --crop-top:    80px;   /* pixels of site header to hide  */
+      --crop-left:   240px;  /* pixels of left sidebar to hide */
+      --crop-right:  260px;  /* pixels of right sidebar to hide */
+      --crop-bottom: 60px;   /* pixels of site footer to hide  */
     }
 
     html, body {
@@ -55,7 +61,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: 17px;
     }
 
     .logo-name {
@@ -64,14 +70,12 @@
       color: var(--text);
     }
 
-    .logo-name span {
-      color: var(--green);
-    }
+    .logo-name span { color: var(--green); }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .tag {
@@ -86,6 +90,19 @@
       border: 1px solid rgba(37,211,102,0.25);
     }
 
+    .live-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ff4444;
+      animation: pulse 1.4s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .4; transform: scale(.7); }
+    }
+
     .open-btn {
       font-size: 12px;
       font-weight: 600;
@@ -98,22 +115,34 @@
     }
     .open-btn:hover { color: var(--text); border-color: var(--muted); }
 
-    /* ── Iframe container ── */
-    .frame-wrap {
+    /* ── Viewport that clips the iframe ── */
+    .viewport {
       position: fixed;
       top: var(--header-h);
       left: 0; right: 0; bottom: 0;
+      overflow: hidden;         /* this does the cropping */
+      background: var(--bg);
     }
 
+    /*
+      The iframe is positioned so that:
+        - its top is shifted UP by --crop-top  (hides the site header)
+        - its left is shifted LEFT by --crop-left (hides left sidebar)
+        - its width is expanded to also cover --crop-right (hides right sidebar)
+        - its height is expanded to also cover --crop-bottom (hides footer)
+      Combined with overflow:hidden on .viewport, only the middle shows.
+    */
     iframe {
-      width: 100%;
-      height: 100%;
+      position: absolute;
+      top:    calc(-1 * var(--crop-top));
+      left:   calc(-1 * var(--crop-left));
+      width:  calc(100% + var(--crop-left) + var(--crop-right));
+      height: calc(100% + var(--crop-top) + var(--crop-bottom));
       border: none;
-      display: block;
       background: #fff;
     }
 
-    /* ── Blocked overlay (shown if iframe is blocked) ── */
+    /* ── Blocked fallback ── */
     .blocked {
       display: none;
       position: absolute;
@@ -130,10 +159,7 @@
 
     .blocked-icon { font-size: 48px; }
 
-    .blocked h2 {
-      font-size: 20px;
-      font-weight: 700;
-    }
+    .blocked h2 { font-size: 20px; font-weight: 700; }
 
     .blocked p {
       font-size: 14px;
@@ -165,65 +191,50 @@
       <div class="logo-name">Magic<span>Beting</span>Tips</div>
     </a>
     <div class="header-right">
-      <span class="tag">Free Tips</span>
+      <span class="live-dot"></span>
+      <span class="tag">Live Scores</span>
       <a class="open-btn" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-        Open ↗
+        Full Site ↗
       </a>
     </div>
   </header>
 
-  <div class="frame-wrap">
+  <div class="viewport">
     <iframe
       id="predFrame"
       src="https://www.pitchpredictions.com"
-      title="Pitch Predictions – Football Tips"
-      loading="lazy"
+      title="Live Scores – Pitch Predictions"
+      loading="eager"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
     ></iframe>
 
-    <!-- Shown if the site blocks iframe embedding -->
     <div class="blocked" id="blockedMsg">
       <div class="blocked-icon">🔒</div>
-      <h2>Preview Unavailable</h2>
+      <h2>Embed Restricted</h2>
       <p>
-        <strong>pitchpredictions.com</strong> has restricted embedding.
-        Click below to view predictions in a new tab.
+        <strong>pitchpredictions.com</strong> has blocked embedding.
+        Tap below to view live scores directly.
       </p>
       <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-        View Predictions ↗
+        View Live Scores ↗
       </a>
     </div>
   </div>
 
   <script>
-    // Detect if the iframe was blocked (load fires but src stays about:blank,
-    // or the server sends X-Frame-Options which triggers an error event).
-    const frame = document.getElementById('predFrame');
+    const frame   = document.getElementById('predFrame');
     const blocked = document.getElementById('blockedMsg');
 
-    frame.addEventListener('error', () => {
-      blocked.classList.add('show');
-    });
+    frame.addEventListener('error', () => blocked.classList.add('show'));
 
-    // Some browsers fire load even on blocked frames — check if navigated away
-    frame.addEventListener('load', () => {
-      try {
-        // If we can access contentWindow.location.href it's same-origin; cross-origin
-        // throws, meaning the frame likely loaded. Do nothing.
-        void frame.contentWindow.location.href;
-      } catch (_) {
-        // cross-origin = probably loaded fine
-      }
-    });
-
-    // Fallback: if after 8 s the frame is still on about:blank, show blocked msg
+    // Fallback: if 9 s pass and frame is still blank, show the blocked overlay
     setTimeout(() => {
       try {
         if (frame.contentWindow.location.href === 'about:blank') {
           blocked.classList.add('show');
         }
-      } catch (_) { /* cross-origin, frame loaded */ }
-    }, 8000);
+      } catch (_) { /* cross-origin = loaded fine */ }
+    }, 9000);
   </script>
 
 </body>
