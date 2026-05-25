@@ -15,15 +15,20 @@
       --green:   #25d366;
       --text:    #e8e8f0;
       --muted:   #6b6b80;
+      --red:     #ff4444;
       --header-h: 52px;
+      --tabs-h:   64px;
     }
 
     html, body {
       height: 100%;
       background: var(--bg);
       overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--text);
     }
 
+    /* ── Header ── */
     header {
       position: fixed;
       top: 0; left: 0; right: 0;
@@ -34,28 +39,17 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 20px;
-      z-index: 100;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text);
+      z-index: 200;
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-    }
-
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .logo-icon {
       width: 32px; height: 32px;
       background: var(--green);
       border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       font-size: 17px;
     }
-
     .logo-name { font-size: 17px; font-weight: 700; color: var(--text); }
     .logo-name span { color: var(--green); }
 
@@ -64,7 +58,7 @@
     .live-dot {
       width: 8px; height: 8px;
       border-radius: 50%;
-      background: #ff4444;
+      background: var(--red);
       animation: pulse 1.4s ease-in-out infinite;
     }
     @keyframes pulse {
@@ -90,23 +84,322 @@
     }
     .open-btn:hover { color: var(--text); border-color: var(--muted); }
 
-    /* The clip window — overflow:hidden is what does the actual cropping */
+    /* ── Home: iframe viewport ── */
     #viewport {
       position: fixed;
       top: var(--header-h);
-      left: 0; right: 0; bottom: 0;
+      left: 0; right: 0;
+      bottom: var(--tabs-h);
       overflow: hidden;
       background: var(--bg);
+      z-index: 1;
     }
+    #viewport.hidden { display: none; }
 
-    /* iframe size & position is set entirely by JS */
     #predFrame {
       position: absolute;
       border: none;
       background: #fff;
     }
 
-    /* Fallback if site blocks embedding */
+    /* ── Panels ── */
+    .panel {
+      display: none;
+      position: fixed;
+      top: var(--header-h);
+      left: 0; right: 0;
+      bottom: var(--tabs-h);
+      background: var(--bg);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      z-index: 1;
+    }
+    .panel.active { display: block; }
+
+    .panel-inner {
+      padding: 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    /* ── Save panel ── */
+    .add-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .form-row { display: flex; gap: 8px; }
+
+    .add-form input,
+    .add-form select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 12px;
+      width: 100%;
+      outline: none;
+      font-family: inherit;
+    }
+    .add-form input::placeholder { color: var(--muted); }
+    .add-form input:focus,
+    .add-form select:focus { border-color: var(--green); }
+    .add-form select option { background: #1a1a2e; }
+
+    .btn-primary {
+      background: var(--green);
+      color: #000;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      width: 100%;
+      font-family: inherit;
+      transition: opacity .15s;
+    }
+    .btn-primary:hover { opacity: .85; }
+
+    .saved-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .saved-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      animation: slideIn .2s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .saved-info { flex: 1; min-width: 0; }
+    .saved-match {
+      font-size: 14px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .saved-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .tip-badge {
+      font-size: 13px; font-weight: 700;
+      padding: 4px 10px; border-radius: 6px; flex-shrink: 0;
+    }
+    .tip-1 { background: rgba(37,211,102,0.15); color: var(--green); border: 1px solid rgba(37,211,102,0.3); }
+    .tip-X { background: rgba(255,193,7,0.15);  color: #ffc107;       border: 1px solid rgba(255,193,7,0.3); }
+    .tip-2 { background: rgba(255,68,68,0.15);  color: var(--red);    border: 1px solid rgba(255,68,68,0.3); }
+
+    .btn-del {
+      background: none; border: none;
+      color: var(--muted); font-size: 20px;
+      cursor: pointer; padding: 2px 4px;
+      line-height: 1; flex-shrink: 0;
+      transition: color .15s;
+    }
+    .btn-del:hover { color: var(--red); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .empty-icon { font-size: 40px; display: block; margin-bottom: 12px; }
+
+    /* ── Alert panel ── */
+    .alert-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .alert-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .alert-label { font-size: 14px; font-weight: 600; }
+    .alert-desc  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .toggle-wrap { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+    .toggle-wrap input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 26px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform .2s;
+    }
+    .toggle-wrap input:checked + .toggle-slider { background: var(--green); }
+    .toggle-wrap input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    .time-row {
+      margin-top: 14px;
+      display: none;
+    }
+    .time-row.show { display: block; }
+    .time-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
+    .time-row input[type="time"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 16px;
+      padding: 10px 14px;
+      outline: none;
+      width: 100%;
+      font-family: inherit;
+    }
+    .time-row input[type="time"]:focus { border-color: var(--green); }
+
+    .notif-msg {
+      margin-top: 10px;
+      font-size: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+    }
+    .notif-msg.show { display: block; }
+    .notif-msg.ok  { background: rgba(37,211,102,0.12); color: var(--green); }
+    .notif-msg.err { background: rgba(255,68,68,0.12);  color: var(--red); }
+
+    .info-card {
+      background: rgba(37,211,102,0.06);
+      border: 1px solid rgba(37,211,102,0.2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 4px;
+    }
+
+    /* ── More panel ── */
+    .section-title {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .more-section { margin-bottom: 24px; }
+
+    .more-list {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .more-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      text-decoration: none;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+      cursor: pointer;
+      background: none;
+      border-left: none; border-right: none; border-top: none;
+      width: 100%;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .more-item:last-child { border-bottom: none; }
+    .more-item:hover { background: rgba(255,255,255,0.04); }
+
+    .more-icon {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .more-text { flex: 1; text-align: left; }
+    .more-title { font-size: 14px; font-weight: 600; }
+    .more-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
+    .chevron    { color: var(--muted); font-size: 16px; }
+
+    /* ── Bottom tabs ── */
+    #bottom-tabs {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: var(--tabs-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      font-family: inherit;
+      transition: color .15s;
+      padding: 0;
+      position: relative;
+    }
+    .tab-btn.active { color: var(--green); }
+    .tab-btn svg { width: 22px; height: 22px; }
+
+    .tab-dot {
+      position: absolute;
+      top: 6px; right: calc(50% - 18px);
+      width: 7px; height: 7px;
+      background: var(--red);
+      border-radius: 50%;
+      border: 2px solid var(--surface);
+      display: none;
+    }
+    .tab-dot.show { display: block; }
+
+    /* ── Iframe blocked fallback ── */
     .blocked {
       display: none;
       position: absolute; inset: 0;
@@ -114,13 +407,11 @@
       flex-direction: column;
       align-items: center; justify-content: center;
       gap: 16px; text-align: center; padding: 24px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text);
     }
     .blocked.show { display: flex; }
     .blocked-icon { font-size: 48px; }
-    .blocked h2 { font-size: 20px; font-weight: 700; }
-    .blocked p { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
+    .blocked h2   { font-size: 20px; font-weight: 700; }
+    .blocked p    { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
     .blocked a {
       display: inline-block; margin-top: 4px;
       padding: 10px 24px; background: var(--green);
@@ -132,6 +423,7 @@
 </head>
 <body>
 
+  <!-- ── Header ── -->
   <header>
     <a class="logo" href="#">
       <div class="logo-icon">⚽</div>
@@ -139,13 +431,12 @@
     </a>
     <div class="header-right">
       <span class="live-dot"></span>
-      <span class="tag">Live Scores</span>
-      <a class="open-btn" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-        Full Site ↗
-      </a>
+      <span class="tag" id="headerTag">Live Scores</span>
+      <a class="open-btn" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">Full Site ↗</a>
     </div>
   </header>
 
+  <!-- ── Home tab: iframe ── -->
   <div id="viewport">
     <iframe
       id="predFrame"
@@ -154,87 +445,191 @@
       loading="eager"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
     ></iframe>
-
     <div class="blocked" id="blockedMsg">
       <div class="blocked-icon">🔒</div>
       <h2>Embed Restricted</h2>
-      <p>
-        <strong>pitchpredictions.com</strong> has blocked embedding.
-        Tap below to open predictions directly.
-      </p>
-      <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-        View Predictions ↗
-      </a>
+      <p><strong>pitchpredictions.com</strong> has blocked embedding. Tap below to open predictions directly.</p>
+      <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">View Predictions ↗</a>
     </div>
   </div>
 
+  <!-- ── Save tab panel ── -->
+  <div class="panel" id="panel-save">
+    <div class="panel-inner">
+      <p class="panel-title">🔖 Saved Tips</p>
+
+      <div class="add-form">
+        <input type="text" id="saveMatch" placeholder="Match (e.g. Arsenal vs Chelsea)" maxlength="60" />
+        <div class="form-row">
+          <select id="saveTip" style="flex:1;">
+            <option value="1">1 – Home Win</option>
+            <option value="X">X – Draw</option>
+            <option value="2">2 – Away Win</option>
+          </select>
+          <input type="text" id="saveScore" placeholder="Score e.g. 2-1" maxlength="10" style="flex:1;" />
+        </div>
+        <input type="text" id="saveLeague" placeholder="League (optional)" maxlength="40" />
+        <button class="btn-primary" onclick="addSaved()">+ Save Tip</button>
+      </div>
+
+      <div class="saved-list" id="savedList"></div>
+    </div>
+  </div>
+
+  <!-- ── Alert tab panel ── -->
+  <div class="panel" id="panel-alert">
+    <div class="panel-inner">
+      <p class="panel-title">🔔 Alerts</p>
+
+      <div class="alert-card">
+        <div class="alert-row">
+          <div>
+            <div class="alert-label">Daily Predictions Reminder</div>
+            <div class="alert-desc">Get notified when today's tips are ready</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggleDaily" onchange="toggleDaily(this)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="time-row" id="timeRow">
+          <label>Reminder time</label>
+          <input type="time" id="alertTime" value="09:00" onchange="saveAlertTime(this.value)" />
+        </div>
+        <div class="notif-msg" id="dailyMsg"></div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-row">
+          <div>
+            <div class="alert-label">Live Score Alerts</div>
+            <div class="alert-desc">Push alert when a saved match kicks off</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggleLive" onchange="toggleLive(this)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="notif-msg" id="liveMsg"></div>
+      </div>
+
+      <div class="info-card">
+        ⚡ Alerts use browser push notifications. You'll be prompted to allow notifications when you enable either toggle above.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── More tab panel ── -->
+  <div class="panel" id="panel-more">
+    <div class="panel-inner">
+      <p class="panel-title">⋯ More</p>
+
+      <div class="more-section">
+        <div class="section-title">Predictions</div>
+        <div class="more-list">
+          <a class="more-item" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
+            <div class="more-icon" style="background:rgba(37,211,102,0.12);">⚽</div>
+            <div class="more-text">
+              <div class="more-title">Full Pitch Predictions Site</div>
+              <div class="more-sub">Open the complete website in new tab</div>
+            </div>
+            <span class="chevron">↗</span>
+          </a>
+          <button class="more-item" onclick="switchTab('home')">
+            <div class="more-icon" style="background:rgba(37,211,102,0.12);">🏠</div>
+            <div class="more-text">
+              <div class="more-title">Live Scores</div>
+              <div class="more-sub">Go back to live predictions view</div>
+            </div>
+            <span class="chevron">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <div class="section-title">App</div>
+        <div class="more-list">
+          <button class="more-item" onclick="reloadFrame()">
+            <div class="more-icon" style="background:rgba(37,211,102,0.12);">🔄</div>
+            <div class="more-text">
+              <div class="more-title">Refresh Predictions</div>
+              <div class="more-sub">Reload the live scores frame</div>
+            </div>
+            <span class="chevron">›</span>
+          </button>
+          <button class="more-item" onclick="clearAllSaved()">
+            <div class="more-icon" style="background:rgba(255,68,68,0.12);">🗑</div>
+            <div class="more-text">
+              <div class="more-title">Clear All Saved Tips</div>
+              <div class="more-sub">Remove all bookmarked predictions</div>
+            </div>
+            <span class="chevron">›</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="more-section">
+        <div class="section-title">Info</div>
+        <div class="more-list">
+          <div class="more-item" style="cursor:default;">
+            <div class="more-icon" style="background:rgba(107,107,128,0.15);">ℹ️</div>
+            <div class="more-text">
+              <div class="more-title">Magicbetingtips</div>
+              <div class="more-sub">For entertainment purposes only. Bet responsibly.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Bottom tab bar ── -->
+  <nav id="bottom-tabs">
+
+    <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      Home
+    </button>
+
+    <button class="tab-btn" data-tab="save" onclick="switchTab('save')">
+      <span class="tab-dot" id="saveDot"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+      </svg>
+      Save
+    </button>
+
+    <button class="tab-btn" data-tab="alert" onclick="switchTab('alert')">
+      <span class="tab-dot" id="alertDot"></span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      Alert
+    </button>
+
+    <button class="tab-btn" data-tab="more" onclick="switchTab('more')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="5"  cy="12" r="1.5"/>
+        <circle cx="12" cy="12" r="1.5"/>
+        <circle cx="19" cy="12" r="1.5"/>
+      </svg>
+      More
+    </button>
+
+  </nav>
+
   <script>
-    /*
-     * CROP SETTINGS (in desktop pixels at SITE_WIDTH)
-     * ─────────────────────────────────────────────────
-     * SITE_WIDTH  – width we force the iframe to render at (desktop layout)
-     * CROP_LEFT   – left sidebar (leagues / nav links)
-     * CROP_RIGHT  – right sidebar (calendar + Game of the Day)
-     * CROP_TOP    – pitchpredictions top nav bar
-     * CROP_BOTTOM – bet9ja / footer ad strip
-     *
-     * To tweak: open DevTools → inspect pitchpredictions.com at 1200px
-     * wide and measure each section's pixel width/height, then update
-     * the numbers below.
-     */
+    /* ─────────────────────────────────────────────
+     * CROP SETTINGS
+     * All pixel values at SITE_WIDTH = 1200 px.
+     * Tweak to fine-tune the visible content window.
+     * ───────────────────────────────────────────── */
     const SITE_WIDTH  = 1200;
     const CROP_LEFT   = 185;
     const CROP_RIGHT  = 230;
     const CROP_TOP    = 55;
-    const CROP_BOTTOM = 90;
-
-    const frame   = document.getElementById('predFrame');
-    const vp      = document.getElementById('viewport');
-    const blocked = document.getElementById('blockedMsg');
-
-    function layout() {
-      const vpW = vp.offsetWidth;
-      const vpH = vp.offsetHeight;
-
-      /*
-       * The visible content column width at desktop (1200px):
-       *   contentW = SITE_WIDTH - CROP_LEFT - CROP_RIGHT
-       *
-       * Scale the iframe so that content column fills the viewport width:
-       *   scale = vpW / contentW
-       *
-       * The iframe element top-left is placed at:
-       *   left = -(CROP_LEFT * scale)
-       *   top  = -(CROP_TOP  * scale)
-       *
-       * This makes the point (CROP_LEFT, CROP_TOP) in site space land
-       * exactly at (0, 0) in the viewport, which is what we want.
-       */
-      const contentW = SITE_WIDTH - CROP_LEFT - CROP_RIGHT;
-      const scale    = vpW / contentW;
-
-      frame.style.width           = SITE_WIDTH + 'px';
-      frame.style.height          = Math.max(Math.ceil(vpH / scale) + CROP_TOP + CROP_BOTTOM, 900) + 'px';
-      frame.style.left            = -(CROP_LEFT * scale) + 'px';
-      frame.style.top             = -(CROP_TOP  * scale) + 'px';
-      frame.style.transformOrigin = '0 0';
-      frame.style.transform       = 'scale(' + scale + ')';
-    }
-
-    layout();
-    window.addEventListener('resize', layout);
-
-    // Detect if embedding is blocked
-    frame.addEventListener('error', () => blocked.classList.add('show'));
-
-    setTimeout(() => {
-      try {
-        if (frame.contentWindow.location.href === 'about:blank') {
-          blocked.classList.add('show');
-        }
-      } catch (_) { /* cross-origin means the iframe loaded fine */ }
-    }, 9000);
-  </script>
-
-</body>
-</html>
+    const CROP_BOT
