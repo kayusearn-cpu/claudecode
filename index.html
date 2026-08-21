@@ -1,635 +1,600 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Magicbetingtips – Live Scores & Predictions</title>
-  <meta name="description" content="Daily AI-powered football predictions and betting tips from Magicbetingtips." />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic Analysis</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{
+  --bg:#F5F5F7;--surface:#fff;
+  --t1:#1D1D1F;--t2:#6E6E73;--t3:#86868B;
+  --sep:rgba(0,0,0,.08);--sep2:rgba(0,0,0,.14);
+  --live:#FF3B30;--blue:#007AFF;--orange:#FF9500;
+  --r:16px;--r2:24px;
+  --shadow:0 1px 1px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.05),0 0 0 .5px rgba(0,0,0,.05);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--t1);overflow-x:hidden}
+::-webkit-scrollbar{display:none}*{scrollbar-width:none}
 
-    :root {
-      --bg:      #0c0c14;
-      --surface: #13131f;
-      --border:  #1e1e30;
-      --green:   #25d366;
-      --text:    #e8e8f0;
-      --muted:   #6b6b80;
-      --red:     #ff4444;
-      --header-h: 52px;
-      --tabs-h:   64px;
-    }
+/* Header */
+.hdr{position:sticky;top:0;z-index:100;height:56px;background:rgba(255,255,255,.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:.5px solid var(--sep);display:flex;align-items:center;padding:0 16px;gap:8px}
+.hdr-btn{width:34px;height:34px;border-radius:50%;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--t1);transition:background .15s;flex-shrink:0}
+.hdr-btn:hover{background:rgba(0,0,0,.06)}
+.hdr-center{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}
+.hdr-title{font-size:16px;font-weight:600;letter-spacing:-.3px}
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--text);
-    }
+/* Sport tabs */
+.tabs-bar{background:var(--surface);border-bottom:.5px solid var(--sep);padding:10px 14px;display:flex;gap:7px;overflow-x:auto}
+.tab{padding:6px 15px;border-radius:100px;font-size:14px;font-weight:500;letter-spacing:-.2px;border:none;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab-on{background:var(--t1);color:#fff}
+.tab-off{background:var(--bg);color:var(--t2)}
+.tab-off:hover{background:#E8E8ED}
 
-    /* ── Header ── */
-    header {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 20px;
-      z-index: 200;
-    }
+/* Toast */
+.toast{position:fixed;top:68px;left:50%;transform:translateX(-50%);background:var(--t1);color:#fff;padding:10px 18px;border-radius:100px;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;z-index:150;pointer-events:none;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.22);animation:toastAnim 3s ease forwards}
+@keyframes toastAnim{0%{opacity:0;transform:translateX(-50%) translateY(-16px)}12%{opacity:1;transform:translateX(-50%) translateY(0)}78%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
 
-    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .logo-icon {
-      width: 32px; height: 32px;
-      background: var(--green);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 17px;
-    }
-    .logo-name { font-size: 17px; font-weight: 700; color: var(--text); }
-    .logo-name span { color: var(--green); }
+/* Page */
+.page{max-width:640px;margin:0 auto;padding:0 14px 110px}
+.page-in{animation:pgIn .3s ease forwards}
+@keyframes pgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.page-head{padding:26px 0 20px}
+.page-h1{font-size:30px;font-weight:700;letter-spacing:-.6px;line-height:1;margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--t3)}
 
-    .header-right { display: flex; align-items: center; gap: 10px; }
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:28px}
+.stat{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 10px;text-align:center}
+.stat-n{font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1;margin-bottom:3px}
+.stat-l{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.3px}
 
-    .live-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--red);
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: .4; transform: scale(.7); }
-    }
+/* Group divider */
+.grp{display:flex;align-items:center;gap:10px;margin:24px 0 10px}
+.grp-line{flex:1;height:.5px;background:var(--sep2)}
+.grp-txt{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 
-    .tag {
-      font-size: 11px; font-weight: 600;
-      letter-spacing: 0.5px; text-transform: uppercase;
-      color: var(--green);
-      background: rgba(37,211,102,0.12);
-      padding: 3px 9px; border-radius: 20px;
-      border: 1px solid rgba(37,211,102,0.25);
-    }
+/* Card */
+.card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:9px;overflow:hidden;cursor:pointer;transition:transform .14s,box-shadow .14s;-webkit-tap-highlight-color:transparent}
+.card:active{transform:scale(.984)}
+.card:hover{box-shadow:0 4px 22px rgba(0,0,0,.10),0 0 0 .5px rgba(0,0,0,.05)}
+.card-inner{padding:13px 15px 11px}
+.card-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.card-league{font-size:11px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.fav{background:none;border:none;cursor:pointer;padding:2px;color:var(--sep2);transition:color .15s,transform .2s cubic-bezier(.34,1.56,.64,1);line-height:0;flex-shrink:0}
+.fav.on{color:var(--live)}
+.card-body{display:flex;align-items:stretch;gap:10px}
+.card-logos{display:flex;flex-direction:column;gap:5px;justify-content:center;width:26px;flex-shrink:0}
+.logo-sm{width:24px;height:24px;object-fit:contain;border-radius:4px}
+.logo-ph{width:24px;height:24px;background:var(--bg);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--t3)}
+.card-teams{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0}
+.team-nm{font-size:15px;font-weight:600;letter-spacing:-.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-scores{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;min-width:22px}
+.score-n{font-size:15px;font-weight:700;letter-spacing:-.2px}
+.score-n.dim{color:var(--t3);font-weight:400}
+.card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:.5px solid var(--sep)}
+.s-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:100px;letter-spacing:.3px;text-transform:uppercase}
+.s-live{background:rgba(255,59,48,.12);color:var(--live)}
+.s-fin{background:rgba(0,0,0,.05);color:var(--t3)}
+.s-upc{background:rgba(0,122,255,.1);color:var(--blue)}
+.s-canc{background:rgba(0,0,0,.05);color:var(--t3)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--live);animation:blink 1.6s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.info-pill{font-size:11px;font-weight:600;color:var(--t2);background:var(--bg);border:none;border-radius:100px;padding:4px 10px;cursor:pointer;transition:background .15s,color .15s;display:flex;align-items:center;gap:4px}
+.info-pill:hover{background:var(--t1);color:#fff}
 
-    .open-btn {
-      font-size: 12px; font-weight: 600;
-      color: var(--muted); text-decoration: none;
-      padding: 5px 11px;
-      border: 1px solid var(--border); border-radius: 6px;
-      transition: color .15s, border-color .15s;
-    }
-    .open-btn:hover { color: var(--text); border-color: var(--muted); }
+/* Forebet-style prediction block on card */
+.pred-block{margin-top:9px;border-radius:11px;background:#1D1D1F;overflow:hidden}
+.pred-block-inner{display:flex;align-items:center;gap:12px;padding:11px 13px}
+.pred-circle{width:44px;height:44px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 2px 10px rgba(255,149,0,.45)}
+.pred-mid{flex:1;min-width:0}
+.pred-lbl{font-size:13px;font-weight:700;color:#fff;letter-spacing:-.1px}
+.pred-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pred-pcts{display:flex;gap:6px;flex-shrink:0}
+.pred-pct{text-align:center;min-width:30px}
+.pred-pct-val{font-size:12px;font-weight:700;color:rgba(255,255,255,.45)}
+.pred-pct-code{font-size:9px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.pred-pct.hi .pred-pct-val{color:var(--orange)}
+.pred-pct.hi .pred-pct-code{color:rgba(255,149,0,.6)}
+.pred-skel{height:66px;background:linear-gradient(90deg,rgba(0,0,0,.04) 25%,rgba(0,0,0,.08) 50%,rgba(0,0,0,.04) 75%);background-size:200% 100%;animation:shim 1.4s infinite;border-radius:11px;margin-top:9px}
 
-    /* ── Home: iframe viewport ── */
-    #viewport {
-      position: fixed;
-      top: var(--header-h);
-      left: 0; right: 0;
-      bottom: var(--tabs-h);
-      overflow: hidden;
-      background: var(--bg);
-      z-index: 1;
-    }
-    #viewport.hidden { display: none; }
+/* Banners */
+.err-bar{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);border-left:3px solid var(--live);padding:13px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.retry-btn{font-size:11px;font-weight:700;background:var(--bg);border:none;border-radius:100px;padding:5px 12px;cursor:pointer;flex-shrink:0}
+.wake-bar{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:13px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
 
-    #predFrame {
-      position: absolute;
-      border: none;
-      background: #fff;
-    }
+/* Skeleton */
+.skel-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 15px;margin-bottom:9px;display:flex;flex-direction:column;gap:9px}
+.skel{background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%);background-size:200% 100%;animation:shim 1.4s infinite;border-radius:5px}
+@keyframes shim{from{background-position:200% 0}to{background-position:-200% 0}}
 
-    /* ── Panels ── */
-    .panel {
-      display: none;
-      position: fixed;
-      top: var(--header-h);
-      left: 0; right: 0;
-      bottom: var(--tabs-h);
-      background: var(--bg);
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      z-index: 1;
-    }
-    .panel.active { display: block; }
+/* Bottom nav */
+.nav{position:fixed;bottom:0;left:0;right:0;height:80px;background:rgba(255,255,255,.9);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-top:.5px solid var(--sep);display:flex;align-items:flex-start;justify-content:space-around;padding-top:11px;z-index:100}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;min-width:56px;-webkit-tap-highlight-color:transparent}
+.nav-ico{width:26px;height:26px;display:flex;align-items:center;justify-content:center}
+.nav-lbl{font-size:10px;font-weight:500;letter-spacing:.1px}
+.nav-item.on .nav-ico,.nav-item.on .nav-lbl{color:var(--t1)}
+.nav-item.off .nav-ico,.nav-item.off .nav-lbl{color:#C7C7CC}
+.nav-item.on .nav-lbl{font-weight:600}
 
-    .panel-inner {
-      padding: 20px;
-      max-width: 600px;
-      margin: 0 auto;
-    }
+/* Overlay / Sheet */
+.overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.48);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);border-radius:var(--r2) var(--r2) 0 0;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:10px 22px 44px;animation:sheetUp .38s cubic-bezier(.32,.72,0,1) forwards}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.handle{width:34px;height:4px;background:var(--sep2);border-radius:2px;margin:0 auto 18px}
 
-    .panel-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
+/* Detail sheet */
+.detail-league-lbl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:16px}
+.detail-teams{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px}
+.detail-team{flex:1;text-align:center}
+.detail-logo{width:64px;height:64px;object-fit:contain;margin:0 auto 8px;display:block}
+.detail-logo-ph{width:64px;height:64px;background:var(--bg);border-radius:16px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--t2)}
+.detail-logo-loading{width:64px;height:64px;background:linear-gradient(90deg,var(--bg) 25%,#E8E8ED 50%,var(--bg) 75%);background-size:200% 100%;animation:shim 1.4s infinite;border-radius:16px;margin:0 auto 8px}
+.detail-team-nm{font-size:13px;font-weight:600;letter-spacing:-.1px}
+.detail-vs{font-size:12px;color:var(--t3);font-weight:600;flex-shrink:0}
+.score-box{background:var(--t1);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;text-align:center}
+.score-big{font-size:40px;font-weight:700;color:#fff;letter-spacing:-1px;line-height:1;margin-bottom:6px}
+.score-sub{font-size:12px;color:rgba(255,255,255,.5);font-weight:500}
+.detail-status-row{display:flex;justify-content:center;margin-bottom:16px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}
+.detail-cell{background:var(--bg);border-radius:12px;padding:12px;text-align:center}
+.detail-cell-val{font-size:15px;font-weight:700;letter-spacing:-.2px;margin-bottom:2px}
+.detail-cell-lbl{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.3px}
 
-    /* ── Save panel ── */
-    .add-form {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
+/* Pred detail block */
+.pred-detail-box{background:#1D1D1F;border-radius:var(--r);padding:16px;margin-bottom:14px}
+.pred-detail-ttl{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px}
+.pred-detail-top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.pred-detail-circle{width:56px;height:56px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 3px 12px rgba(255,149,0,.45)}
+.pred-detail-lbl{font-size:16px;font-weight:700;color:#fff;margin-bottom:3px}
+.pred-detail-sub{font-size:12px;color:rgba(255,255,255,.5)}
+.pred-detail-pcts{display:flex;gap:8px}
+.pred-detail-pct{flex:1;text-align:center;background:rgba(255,255,255,.06);border-radius:10px;padding:8px 4px}
+.pred-detail-pct.hi{background:rgba(255,149,0,.2);outline:1.5px solid var(--orange)}
+.pred-detail-pct-val{font-size:16px;font-weight:800;color:rgba(255,255,255,.5)}
+.pred-detail-pct.hi .pred-detail-pct-val{color:var(--orange)}
+.pred-detail-pct-lbl{font-size:9px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.3px;margin-top:1px}
+.pred-detail-pct.hi .pred-detail-pct-lbl{color:rgba(255,149,0,.55)}
 
-    .form-row { display: flex; gap: 8px; }
+/* AI analysis */
+.ai-box{background:var(--bg);border-radius:var(--r);padding:14px 16px;margin-bottom:14px}
+.ai-lbl{font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.ai-txt{font-size:14px;color:var(--t1);line-height:1.55}
 
-    .add-form input,
-    .add-form select {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 14px;
-      padding: 10px 12px;
-      width: 100%;
-      outline: none;
-      font-family: inherit;
-    }
-    .add-form input::placeholder { color: var(--muted); }
-    .add-form input:focus,
-    .add-form select:focus { border-color: var(--green); }
-    .add-form select option { background: #1a1a2e; }
+/* Events */
+.ev-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:10px}
+.ev-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--sep)}
+.ev-row:last-child{border-bottom:none}
+.ev-min{font-size:11px;font-weight:700;color:var(--t2);width:28px;flex-shrink:0}
+.ev-ico{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+.ev-player{font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev-team{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.2px;flex-shrink:0}
 
-    .btn-primary {
-      background: var(--green);
-      color: #000;
-      font-weight: 700;
-      font-size: 14px;
-      border: none;
-      border-radius: 8px;
-      padding: 12px;
-      cursor: pointer;
-      width: 100%;
-      font-family: inherit;
-      transition: opacity .15s;
-    }
-    .btn-primary:hover { opacity: .85; }
+/* Buttons */
+.btn-primary{width:100%;background:var(--t1);color:#fff;border:none;border-radius:var(--r);padding:14px;font-weight:700;font-size:15px;cursor:pointer;letter-spacing:-.2px;margin-bottom:8px}
+.btn-secondary{width:100%;background:var(--bg);color:var(--t1);border:none;border-radius:var(--r);padding:14px;font-weight:600;font-size:15px;cursor:pointer;letter-spacing:-.2px}
 
-    .saved-list { display: flex; flex-direction: column; gap: 10px; }
+/* Social */
+.social{padding:36px 0 16px;text-align:center}
+.social-lbl{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:18px}
+.social-row{display:flex;justify-content:center;gap:14px}
+.social-ico{width:42px;height:42px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--t1);text-decoration:none;transition:background .15s,transform .18s}
+.social-ico:hover{background:var(--t1);color:#fff;transform:translateY(-2px)}
 
-    .saved-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      animation: slideIn .2s ease;
-    }
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+/* Settings */
+.settings-group{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
+.settings-item{display:flex;align-items:center;justify-content:space-between;padding:15px 16px;text-decoration:none;color:var(--t1);font-size:15px;font-weight:500;letter-spacing:-.2px;border-bottom:.5px solid var(--sep);transition:background .1s}
+.settings-item:last-child{border-bottom:none}
+.settings-item:hover{background:var(--bg)}
 
-    .saved-info { flex: 1; min-width: 0; }
-    .saved-match {
-      font-size: 14px; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .saved-meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+/* Calendar */
+.cal-days{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.cal-day{display:flex;flex-direction:column;align-items:center;padding:9px 5px;border-radius:11px;cursor:pointer;transition:background .15s}
+.cal-day.on{background:var(--t1)}
+.cal-day.on .cal-dd,.cal-day.on .cal-dn{color:#fff}
+.cal-dd{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.3px;margin-bottom:3px}
+.cal-dn{font-size:16px;font-weight:700;color:var(--t1);letter-spacing:-.3px}
+.cal-day.on .cal-dd{color:rgba(255,255,255,.65)}
 
-    .tip-badge {
-      font-size: 13px; font-weight: 700;
-      padding: 4px 10px; border-radius: 6px; flex-shrink: 0;
-    }
-    .tip-1 { background: rgba(37,211,102,0.15); color: var(--green); border: 1px solid rgba(37,211,102,0.3); }
-    .tip-X { background: rgba(255,193,7,0.15);  color: #ffc107;       border: 1px solid rgba(255,193,7,0.3); }
-    .tip-2 { background: rgba(255,68,68,0.15);  color: var(--red);    border: 1px solid rgba(255,68,68,0.3); }
+/* Spin */
+.spin{width:22px;height:22px;border:2px solid var(--sep2);border-top-color:var(--t1);border-radius:50%;animation:rot .7s linear infinite}
+.spin-sm{width:14px;height:14px;border:1.5px solid var(--sep2);border-top-color:var(--blue);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
 
-    .btn-del {
-      background: none; border: none;
-      color: var(--muted); font-size: 20px;
-      cursor: pointer; padding: 2px 4px;
-      line-height: 1; flex-shrink: 0;
-      transition: color .15s;
-    }
-    .btn-del:hover { color: var(--red); }
+/* Center modal */
+.c-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.46);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px}
+.c-card{background:var(--surface);border-radius:var(--r2);width:100%;max-width:340px;padding:32px 26px;box-shadow:0 24px 64px rgba(0,0,0,.22);animation:pop .28s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.7;
-    }
-    .empty-icon { font-size: 40px; display: block; margin-bottom: 12px; }
-
-    /* ── Alert panel ── */
-    .alert-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 12px;
-    }
-
-    .alert-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .alert-label { font-size: 14px; font-weight: 600; }
-    .alert-desc  { font-size: 12px; color: var(--muted); margin-top: 3px; }
-
-    .toggle-wrap { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
-    .toggle-wrap input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute; inset: 0;
-      background: var(--border);
-      border-radius: 26px;
-      cursor: pointer;
-      transition: background .2s;
-    }
-    .toggle-slider::before {
-      content: '';
-      position: absolute;
-      width: 20px; height: 20px;
-      left: 3px; top: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: transform .2s;
-    }
-    .toggle-wrap input:checked + .toggle-slider { background: var(--green); }
-    .toggle-wrap input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-    .time-row {
-      margin-top: 14px;
-      display: none;
-    }
-    .time-row.show { display: block; }
-    .time-row label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; }
-    .time-row input[type="time"] {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 16px;
-      padding: 10px 14px;
-      outline: none;
-      width: 100%;
-      font-family: inherit;
-    }
-    .time-row input[type="time"]:focus { border-color: var(--green); }
-
-    .notif-msg {
-      margin-top: 10px;
-      font-size: 12px;
-      padding: 8px 12px;
-      border-radius: 8px;
-      display: none;
-    }
-    .notif-msg.show { display: block; }
-    .notif-msg.ok  { background: rgba(37,211,102,0.12); color: var(--green); }
-    .notif-msg.err { background: rgba(255,68,68,0.12);  color: var(--red); }
-
-    .info-card {
-      background: rgba(37,211,102,0.06);
-      border: 1px solid rgba(37,211,102,0.2);
-      border-radius: 12px;
-      padding: 14px 16px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.6;
-      margin-top: 4px;
-    }
-
-    /* ── More panel ── */
-    .section-title {
-      font-size: 11px; font-weight: 600;
-      letter-spacing: 1px; text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-
-    .more-section { margin-bottom: 24px; }
-
-    .more-list {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-    }
-
-    .more-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 14px 16px;
-      text-decoration: none;
-      color: var(--text);
-      border-bottom: 1px solid var(--border);
-      transition: background .15s;
-      cursor: pointer;
-      background: none;
-      border-left: none; border-right: none; border-top: none;
-      width: 100%;
-      font-size: 14px;
-      font-family: inherit;
-    }
-    .more-item:last-child { border-bottom: none; }
-    .more-item:hover { background: rgba(255,255,255,0.04); }
-
-    .more-icon {
-      width: 36px; height: 36px;
-      border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-
-    .more-text { flex: 1; text-align: left; }
-    .more-title { font-size: 14px; font-weight: 600; }
-    .more-sub   { font-size: 12px; color: var(--muted); margin-top: 1px; }
-    .chevron    { color: var(--muted); font-size: 16px; }
-
-    /* ── Bottom tabs ── */
-    #bottom-tabs {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: var(--tabs-h);
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      z-index: 200;
-      padding-bottom: env(safe-area-inset-bottom, 0);
-    }
-
-    .tab-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: 11px;
-      font-weight: 600;
-      font-family: inherit;
-      transition: color .15s;
-      padding: 0;
-      position: relative;
-    }
-    .tab-btn.active { color: var(--green); }
-    .tab-btn svg { width: 22px; height: 22px; }
-
-    .tab-dot {
-      position: absolute;
-      top: 6px; right: calc(50% - 18px);
-      width: 7px; height: 7px;
-      background: var(--red);
-      border-radius: 50%;
-      border: 2px solid var(--surface);
-      display: none;
-    }
-    .tab-dot.show { display: block; }
-
-    /* ── Iframe blocked fallback ── */
-    .blocked {
-      display: none;
-      position: absolute; inset: 0;
-      background: var(--bg);
-      flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 16px; text-align: center; padding: 24px;
-    }
-    .blocked.show { display: flex; }
-    .blocked-icon { font-size: 48px; }
-    .blocked h2   { font-size: 20px; font-weight: 700; }
-    .blocked p    { font-size: 14px; color: var(--muted); max-width: 340px; line-height: 1.6; }
-    .blocked a {
-      display: inline-block; margin-top: 4px;
-      padding: 10px 24px; background: var(--green);
-      color: #000; font-weight: 700; font-size: 14px;
-      border-radius: 8px; text-decoration: none;
-    }
-    .blocked a:hover { opacity: .85; }
-  </style>
+/* Splash */
+.splash{position:fixed;inset:0;z-index:300;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;animation:splFade .5s ease forwards;animation-delay:2.6s;pointer-events:none}
+@keyframes splFade{to{opacity:0}}
+.splash-inner{animation:splPop .55s cubic-bezier(.34,1.56,.64,1) forwards;display:flex;flex-direction:column;align-items:center;gap:14px}
+@keyframes splPop{from{opacity:0;transform:scale(.82)}to{opacity:1;transform:scale(1)}}
+</style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo,useCallback,useRef} = React;
+const BACKEND = 'https://sportprediction.onrender.com';
 
-  <!-- ── Header ── -->
-  <header>
-    <a class="logo" href="#">
-      <div class="logo-icon">⚽</div>
-      <div class="logo-name">Magic<span>Beting</span>Tips</div>
-    </a>
-    <div class="header-right">
-      <span class="live-dot"></span>
-      <span class="tag" id="headerTag">Live Scores</span>
-      <a class="open-btn" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">Full Site ↗</a>
-    </div>
-  </header>
+/* ── Status helpers ── */
+const FIN=['FT','AET','PEN','Pen.'],CANC=['Postp.','Canc.','Susp.','WO','AWD','ABD'],UPC=['NS','TBD'];
+const TIME_RE=/^\d{2}:\d{2}$/,FT_RE=/\[(\d+)-(\d+)\]/;
+const cat=s=>{if(!s)return'unknown';if(FIN.includes(s))return'finished';if(CANC.includes(s))return'cancelled';if(UPC.includes(s)||TIME_RE.test(s))return'upcoming';return'live'};
+const sLbl=s=>{if(!s)return'';if(s==='HT')return'Half Time';if(s==='FT')return'Full Time';if(s==='AET')return'AET';if(s==='PEN'||s==='Pen.')return'Penalties';if(s==='ET')return'Extra Time';if(s==='BT')return'Break';if(TIME_RE.test(s))return s;const n=parseInt(s);return isNaN(n)?s:`${n}'`};
+const badgeLbl=(s,c)=>{if(c==='live')return`LIVE  ${sLbl(s)}`;if(c==='finished')return sLbl(s)||'Full Time';if(c==='upcoming')return`KO  ${sLbl(s)}`;return sLbl(s)||'Cancelled'};
+const fid=m=>m?.static_id||m?.id||null;
+const getGoals=m=>{const c=cat(m.status);if(c==='finished'){const r=m.ft?.score;if(r){const x=FT_RE.exec(r);if(x)return{h:x[1],a:x[2]}}}const h=m.home?.goals,a=m.away?.goals;if(h==null||h==='?'||a==null||a==='?')return null;return{h:String(h),a:String(a)}};
+const getPredOutcome=pct=>{const h=parseInt(pct?.home)||0,d=parseInt(pct?.draw)||0,a=parseInt(pct?.away)||0;if(h>=d&&h>=a)return{code:'1',label:'Home Win'};if(a>h&&a>=d)return{code:'2',label:'Away Win'};return{code:'X',label:'Draw'}};
+const parseEvents=m=>{try{const ev=m.events?.event;if(!ev)return[];const arr=Array.isArray(ev)?ev:[ev];return arr.filter(e=>e&&(e.type||e.minute)).map(e=>({minute:e.minute||e.min||'',type:(e.type||'').toLowerCase(),player:e.player||e.Player||'',team:e.team||e.Team||''}))}catch{return[]}};
+const evIco=t=>{if(t.includes('goal')||t==='g')return'⚽';if(t.includes('yellow'))return'🟨';if(t.includes('red'))return'🟥';if(t.includes('sub'))return'🔄';return'•'};
 
-  <!-- ── Home tab: iframe ── -->
-  <div id="viewport">
-    <iframe
-      id="predFrame"
-      src="https://www.pitchpredictions.com"
-      title="Live Football Predictions"
-      loading="eager"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-    ></iframe>
-    <div class="blocked" id="blockedMsg">
-      <div class="blocked-icon">🔒</div>
-      <h2>Embed Restricted</h2>
-      <p><strong>pitchpredictions.com</strong> has blocked embedding. Tap below to open predictions directly.</p>
-      <a href="https://www.pitchpredictions.com" target="_blank" rel="noopener">View Predictions ↗</a>
-    </div>
-  </div>
+/* ── SVG Icons ── */
+const IcoHome=()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>;
+const IcoBell=()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+const IcoHeart=({on})=><svg width="17" height="17" viewBox="0 0 24 24" fill={on?'currentColor':'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+const IcoMenu=()=><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+const IcoCal=()=><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>;
+const IcoRef=()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
+const IcoChev=()=><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>;
+const IcoZap=()=><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+const IcoIG=()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>;
+const IcoTG=()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+const IcoX=()=><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>;
+const IcoMail=()=><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>;
+const IcoThreads=()=><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.471 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.783 3.631 2.698 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142c-.126-.742-.375-1.332-.75-1.757-.513-.586-1.267-.883-2.24-.887h-.047c-.69 0-1.952.19-2.653 1.344l-1.728-1.053c.932-1.545 2.368-2.31 4.38-2.31h.078c3.018.022 4.81 1.836 5.071 5.055l.014.187c.972.56 1.76 1.323 2.296 2.54.763 1.754.747 4.474-1.53 6.712-1.737 1.71-3.857 2.524-7.066 2.545zm.168-9.79c-.223 0-.447.008-.671.025-1.501.092-2.657.695-2.595 1.875.038.698.447 1.684 2.168 1.684h.055c1.226-.035 2.164-.554 2.78-1.503.432-.663.677-1.504.747-2.55a11.823 11.823 0 0 0-2.484-.531z"/></svg>;
 
-  <!-- ── Save tab panel ── -->
-  <div class="panel" id="panel-save">
-    <div class="panel-inner">
-      <p class="panel-title">🔖 Saved Tips</p>
+/* ── Logo ── */
+const MagicLogo=({size=26})=>{
+  const [err,setErr]=useState(false);
+  const r=Math.round(size*.25);
+  if(!err)return<img src="/photo_2026-05-02%2011.59.07.jpeg" width={size} height={size} style={{objectFit:'contain',borderRadius:r,flexShrink:0,display:'block'}} alt="Magic Analysis" onError={()=>setErr(true)}/>;
+  return<svg width={size} height={size} viewBox="0 0 40 40" style={{flexShrink:0,borderRadius:r,display:'block'}}><rect width="40" height="40" fill="#1D1D1F"/><path d="M8 30 L8 11 L20 24 L32 11 L32 30" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/><circle cx="31" cy="10" r="4.5" fill="#007AFF"/></svg>;
+};
 
-      <div class="add-form">
-        <input type="text" id="saveMatch" placeholder="Match (e.g. Arsenal vs Chelsea)" maxlength="60" />
-        <div class="form-row">
-          <select id="saveTip" style="flex:1;">
-            <option value="1">1 – Home Win</option>
-            <option value="X">X – Draw</option>
-            <option value="2">2 – Away Win</option>
-          </select>
-          <input type="text" id="saveScore" placeholder="Score e.g. 2-1" maxlength="10" style="flex:1;" />
+/* ── TeamLogo ── */
+const TeamLogo=({url,name,small})=>{
+  const [err,setErr]=useState(false);
+  const initials=(name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  if(!url||err){if(small)return<div className="logo-ph">{initials}</div>;return<div className="detail-logo-ph">{initials}</div>;}
+  if(small)return<img className="logo-sm" src={url} alt={name} onError={()=>setErr(true)}/>;
+  return<img className="detail-logo" src={url} alt={name} onError={()=>setErr(true)}/>;
+};
+
+/* ── Skeleton card ── */
+const Skel=()=><div className="skel-card"><div className="skel" style={{height:9,width:'45%'}}/><div style={{display:'flex',justifyContent:'space-between'}}><div className="skel" style={{height:13,width:'52%'}}/><div className="skel" style={{height:13,width:18}}/></div><div style={{display:'flex',justifyContent:'space-between'}}><div className="skel" style={{height:13,width:'42%'}}/><div className="skel" style={{height:13,width:18}}/></div><div className="skel" style={{height:.5,width:'100%'}}/><div style={{display:'flex',justifyContent:'space-between'}}><div className="skel" style={{height:9,width:55}}/><div className="skel" style={{height:9,width:75}}/></div><div className="pred-skel"/></div>;
+
+/* ── Match Card ── */
+const MatchCard=({match,pred,logos,onOpen,onToggleFav,isFav})=>{
+  const c=cat(match.status),g=getGoals(match),id=fid(match);
+  const bc=c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
+  return(
+    <div className="card" onClick={()=>onOpen(match)}>
+      <div className="card-inner">
+        <div className="card-meta">
+          <span className="card-league">{(match.country||'').toUpperCase()}{match.country&&match.leagueName?' · ':''}{match.leagueName||''}</span>
+          <button className={`fav${isFav?' on':''}`} onClick={e=>{e.stopPropagation();if(id)onToggleFav(id);}}><IcoHeart on={isFav}/></button>
         </div>
-        <input type="text" id="saveLeague" placeholder="League (optional)" maxlength="40" />
-        <button class="btn-primary" onclick="addSaved()">+ Save Tip</button>
-      </div>
-
-      <div class="saved-list" id="savedList"></div>
-    </div>
-  </div>
-
-  <!-- ── Alert tab panel ── -->
-  <div class="panel" id="panel-alert">
-    <div class="panel-inner">
-      <p class="panel-title">🔔 Alerts</p>
-
-      <div class="alert-card">
-        <div class="alert-row">
-          <div>
-            <div class="alert-label">Daily Predictions Reminder</div>
-            <div class="alert-desc">Get notified when today's tips are ready</div>
+        <div className="card-body">
+          <div className="card-logos">
+            <TeamLogo url={logos[match.home?.name]} name={match.home?.name} small/>
+            <TeamLogo url={logos[match.away?.name]} name={match.away?.name} small/>
           </div>
-          <label class="toggle-wrap">
-            <input type="checkbox" id="toggleDaily" onchange="toggleDaily(this)" />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="time-row" id="timeRow">
-          <label>Reminder time</label>
-          <input type="time" id="alertTime" value="09:00" onchange="saveAlertTime(this.value)" />
-        </div>
-        <div class="notif-msg" id="dailyMsg"></div>
-      </div>
-
-      <div class="alert-card">
-        <div class="alert-row">
-          <div>
-            <div class="alert-label">Live Score Alerts</div>
-            <div class="alert-desc">Push alert when a saved match kicks off</div>
+          <div className="card-teams">
+            <span className="team-nm">{match.home?.name||'—'}</span>
+            <span className="team-nm">{match.away?.name||'—'}</span>
           </div>
-          <label class="toggle-wrap">
-            <input type="checkbox" id="toggleLive" onchange="toggleLive(this)" />
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="notif-msg" id="liveMsg"></div>
-      </div>
-
-      <div class="info-card">
-        ⚡ Alerts use browser push notifications. You'll be prompted to allow notifications when you enable either toggle above.
-      </div>
-    </div>
-  </div>
-
-  <!-- ── More tab panel ── -->
-  <div class="panel" id="panel-more">
-    <div class="panel-inner">
-      <p class="panel-title">⋯ More</p>
-
-      <div class="more-section">
-        <div class="section-title">Predictions</div>
-        <div class="more-list">
-          <a class="more-item" href="https://www.pitchpredictions.com" target="_blank" rel="noopener">
-            <div class="more-icon" style="background:rgba(37,211,102,0.12);">⚽</div>
-            <div class="more-text">
-              <div class="more-title">Full Pitch Predictions Site</div>
-              <div class="more-sub">Open the complete website in new tab</div>
-            </div>
-            <span class="chevron">↗</span>
-          </a>
-          <button class="more-item" onclick="switchTab('home')">
-            <div class="more-icon" style="background:rgba(37,211,102,0.12);">🏠</div>
-            <div class="more-text">
-              <div class="more-title">Live Scores</div>
-              <div class="more-sub">Go back to live predictions view</div>
-            </div>
-            <span class="chevron">›</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="more-section">
-        <div class="section-title">App</div>
-        <div class="more-list">
-          <button class="more-item" onclick="reloadFrame()">
-            <div class="more-icon" style="background:rgba(37,211,102,0.12);">🔄</div>
-            <div class="more-text">
-              <div class="more-title">Refresh Predictions</div>
-              <div class="more-sub">Reload the live scores frame</div>
-            </div>
-            <span class="chevron">›</span>
-          </button>
-          <button class="more-item" onclick="clearAllSaved()">
-            <div class="more-icon" style="background:rgba(255,68,68,0.12);">🗑</div>
-            <div class="more-text">
-              <div class="more-title">Clear All Saved Tips</div>
-              <div class="more-sub">Remove all bookmarked predictions</div>
-            </div>
-            <span class="chevron">›</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="more-section">
-        <div class="section-title">Info</div>
-        <div class="more-list">
-          <div class="more-item" style="cursor:default;">
-            <div class="more-icon" style="background:rgba(107,107,128,0.15);">ℹ️</div>
-            <div class="more-text">
-              <div class="more-title">Magicbetingtips</div>
-              <div class="more-sub">For entertainment purposes only. Bet responsibly.</div>
-            </div>
+          <div className="card-scores">
+            {g?<><span className="score-n">{g.h}</span><span className="score-n">{g.a}</span></>:<><span className="score-n dim">—</span><span className="score-n dim">—</span></>}
           </div>
         </div>
+        <div className="card-foot">
+          <span className={`s-badge ${bc}`}>{c==='live'&&<span className="dot"/>}{badgeLbl(match.status,c)}</span>
+          {id&&<button className="info-pill" onClick={e=>{e.stopPropagation();onOpen(match);}}><IcoZap/> Details</button>}
+        </div>
+        {/* Forebet-style prediction block */}
+        {pred?.loading&&<div className="pred-skel"/>}
+        {pred&&!pred.loading&&pred.code&&(
+          <div className="pred-block" onClick={e=>e.stopPropagation()}>
+            <div className="pred-block-inner">
+              <div className="pred-circle">{pred.code}</div>
+              <div className="pred-mid">
+                <div className="pred-lbl">{pred.label}</div>
+                <div className="pred-sub">{[pred.score?`Score: ${pred.score}`:null,pred.advice].filter(Boolean).join('  ·  ')}</div>
+              </div>
+              <div className="pred-pcts">
+                {[['1',pred.hp],['X',pred.dp],['2',pred.ap]].map(([code,pct])=>(
+                  <div key={code} className={`pred-pct${pred.code===code?' hi':''}`}>
+                    <div className="pred-pct-val">{pct||'—'}</div>
+                    <div className="pred-pct-code">{code}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
+  );
+};
+
+/* ── Detail Sheet ── */
+const DetailSheet=({match,logos,analysis,analysisLoading,pred,onClose})=>{
+  const c=cat(match.status),g=getGoals(match),events=parseEvents(match);
+  const htScore=match.ht?.score?(()=>{const x=FT_RE.exec(match.ht.score);return x?`${x[1]} - ${x[2]}`:null})():null;
+  const bc=c==='live'?'s-live':c==='finished'?'s-fin':c==='upcoming'?'s-upc':'s-canc';
+  return(
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="handle"/>
+        <div className="detail-league-lbl">{match.country} · {match.leagueName}</div>
+        <div className="detail-teams">
+          <div className="detail-team">
+            {logos.homeLoading?<div className="detail-logo-loading"/>:<TeamLogo url={logos.home} name={match.home?.name}/>}
+            <div className="detail-team-nm">{match.home?.name}</div>
+          </div>
+          <div className="detail-vs">vs</div>
+          <div className="detail-team">
+            {logos.awayLoading?<div className="detail-logo-loading"/>:<TeamLogo url={logos.away} name={match.away?.name}/>}
+            <div className="detail-team-nm">{match.away?.name}</div>
+          </div>
+        </div>
+        <div className="score-box">
+          <div className="score-big">{g?`${g.h}  —  ${g.a}`:'—  vs  —'}</div>
+          {htScore&&<div className="score-sub">Half time: {htScore}</div>}
+          {!htScore&&c==='upcoming'&&<div className="score-sub">Match not started yet</div>}
+        </div>
+        <div className="detail-status-row"><span className={`s-badge ${bc}`} style={{fontSize:12,padding:'5px 14px'}}>{c==='live'&&<span className="dot"/>}{badgeLbl(match.status,c)}</span></div>
+        <div className="detail-grid">
+          <div className="detail-cell"><div className="detail-cell-val">{match.leagueName||'—'}</div><div className="detail-cell-lbl">Competition</div></div>
+          <div className="detail-cell"><div className="detail-cell-val">{match.country||'—'}</div><div className="detail-cell-lbl">Country</div></div>
+          {match.time&&<div className="detail-cell"><div className="detail-cell-val">{match.time}</div><div className="detail-cell-lbl">Kick-off (UTC)</div></div>}
+          {match.date&&<div className="detail-cell"><div className="detail-cell-val">{match.date}</div><div className="detail-cell-lbl">Date</div></div>}
+        </div>
+        {/* Prediction inline */}
+        {pred?.loading&&<div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:16,marginBottom:14,display:'flex',alignItems:'center',gap:10}}><div className="spin-sm"/><span style={{fontSize:12,color:'var(--t3)'}}>Loading prediction…</span></div>}
+        {pred&&!pred.loading&&pred.code&&(
+          <div className="pred-detail-box">
+            <div className="pred-detail-ttl">Match Prediction</div>
+            <div className="pred-detail-top">
+              <div className="pred-detail-circle">{pred.code}</div>
+              <div><div className="pred-detail-lbl">{pred.label}</div>{pred.score&&<div className="pred-detail-sub">Predicted score: {pred.score}</div>}{pred.advice&&<div className="pred-detail-sub" style={{marginTop:2}}>{pred.advice}</div>}</div>
+            </div>
+            <div className="pred-detail-pcts">
+              {[['1','Home Win',pred.hp],['X','Draw',pred.dp],['2','Away Win',pred.ap]].map(([code,lbl,pct])=>(
+                <div key={code} className={`pred-detail-pct${pred.code===code?' hi':''}`}>
+                  <div className="pred-detail-pct-val">{pct||'—'}</div>
+                  <div className="pred-detail-pct-lbl">{lbl}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {pred&&!pred.loading&&!pred.code&&<div style={{background:'var(--bg)',borderRadius:'var(--r)',padding:'13px 14px',marginBottom:14,textAlign:'center',fontSize:12,color:'var(--t3)'}}>Prediction not available for this match.</div>}
+        {/* AI Analysis */}
+        <div className="ai-box">
+          <div className="ai-lbl">★ AI Match Analysis</div>
+          {analysisLoading?<div style={{display:'flex',alignItems:'center',gap:8}}><div className="spin-sm"/><span style={{fontSize:12,color:'var(--t3)'}}>Generating analysis…</span></div>:analysis?<div className="ai-txt">{analysis}</div>:<div className="ai-txt" style={{color:'var(--t3)'}}>Analysis unavailable for this match.</div>}
+        </div>
+        {/* Events */}
+        {events.length>0&&<div style={{marginBottom:16}}><div className="ev-title">Match Events</div>{events.slice(0,12).map((e,i)=><div key={i} className="ev-row"><span className="ev-min">{e.minute?`${e.minute}'`:'—'}</span><span className="ev-ico">{evIco(e.type)}</span><span className="ev-player">{e.player||'—'}</span><span className="ev-team">{e.team}</span></div>)}</div>}
+        <button className="btn-secondary" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+};
+
+/* ── Social ── */
+const Social=()=>(
+  <div className="social">
+    <div className="social-lbl">Follow Us</div>
+    <div className="social-row">
+      <a href="https://t.me/footballnisight" target="_blank" rel="noopener noreferrer" className="social-ico" title="Telegram"><IcoTG/></a>
+      <a href="https://x.com/tipsmagic30849" target="_blank" rel="noopener noreferrer" className="social-ico" title="X"><IcoX/></a>
+      <a href="https://www.threads.com/@magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Threads"><IcoThreads/></a>
+      <a href="https://www.instagram.com/magicbetting" target="_blank" rel="noopener noreferrer" className="social-ico" title="Instagram"><IcoIG/></a>
+    </div>
   </div>
+);
 
-  <!-- ── Bottom tab bar ── -->
-  <nav id="bottom-tabs">
+const Grp=({label})=><div className="grp"><div className="grp-line"/><span className="grp-txt">{label}</span><div className="grp-line"/></div>;
 
-    <button class="tab-btn active" data-tab="home" onclick="switchTab('home')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      Home
-    </button>
+/* ── App ── */
+function App(){
+  const [splash,setSplash]=useState(true);
+  const [tab,setTab]=useState('Home');
+  const [sport,setSport]=useState('Football');
+  const [csSport,setCsSport]=useState(null);
+  const [calOpen,setCalOpen]=useState(false);
+  const [favs,setFavs]=useState([]);
+  const [matches,setMatches]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [waking,setWaking]=useState(false);
+  const [err,setErr]=useState(null);
+  const [showToast,setShowToast]=useState(false);
+  const [logoCache,setLogoCache]=useState({});
+  const [detailMatch,setDetailMatch]=useState(null);
+  const [detailLogos,setDetailLogos]=useState({home:null,away:null,homeLoading:false,awayLoading:false});
+  const [analysis,setAnalysis]=useState(null);
+  const [analysisLoading,setAnalysisLoading]=useState(false);
+  const [predCache,setPredCache]=useState({});
+  const fetchingRef=useRef(new Set());
+  const resolvedRef=useRef(new Set());
 
-    <button class="tab-btn" data-tab="save" onclick="switchTab('save')">
-      <span class="tab-dot" id="saveDot"></span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-      </svg>
-      Save
-    </button>
+  /* ── Load scores ── */
+  const load=useCallback(async()=>{
+    setLoading(true);setErr(null);setShowToast(true);
+    setTimeout(()=>setShowToast(false),3000);
+    const wt=setTimeout(()=>setWaking(true),4000);
+    try{
+      const ctrl=new AbortController(),tt=setTimeout(()=>ctrl.abort(),35000);
+      const res=await fetch(`${BACKEND}/api/scores`,{signal:ctrl.signal});
+      clearTimeout(tt);clearTimeout(wt);setWaking(false);
+      if(!res.ok)throw new Error();
+      const data=await res.json();
+      if(data.livescore?.league){
+        const flat=[],leagues=Array.isArray(data.livescore.league)?data.livescore.league:[data.livescore.league];
+        leagues.forEach(lg=>{if(!lg.match)return;const items=Array.isArray(lg.match)?lg.match:[lg.match];items.forEach(m=>flat.push({...m,leagueName:lg.name,country:lg.country}));});
+        setMatches(flat);
+        fetchLogos(flat.slice(0,30));
+      }else throw new Error();
+    }catch(e){clearTimeout(wt);setWaking(false);setErr(e.name==='AbortError'?'Server taking too long — retry in a moment.':'Could not load data. Check your connection.');}
+    finally{setLoading(false);}
+  },[]);
 
-    <button class="tab-btn" data-tab="alert" onclick="switchTab('alert')">
-      <span class="tab-dot" id="alertDot"></span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-      </svg>
-      Alert
-    </button>
+  /* ── Fetch logos ── */
+  const fetchLogos=useCallback(async ms=>{
+    const names=[...new Set(ms.flatMap(m=>[m.home?.name,m.away?.name].filter(Boolean)))];
+    for(const name of names){
+      if(logoCache[name]!==undefined)continue;
+      try{const r=await fetch(`${BACKEND}/api/team-logo?name=${encodeURIComponent(name)}`);const d=await r.json();setLogoCache(p=>({...p,[name]:d.logo||null}));}
+      catch{setLogoCache(p=>({...p,[name]:null}));}
+      await new Promise(r=>setTimeout(r,120));
+    }
+  },[logoCache]);
 
-    <button class="tab-btn" data-tab="more" onclick="switchTab('more')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="5"  cy="12" r="1.5"/>
-        <circle cx="12" cy="12" r="1.5"/>
-        <circle cx="19" cy="12" r="1.5"/>
-      </svg>
-      More
-    </button>
+  /* ── Fetch one prediction ── */
+  const fetchOnePred=useCallback(async id=>{
+    if(!id||fetchingRef.current.has(id)||resolvedRef.current.has(id))return;
+    fetchingRef.current.add(id);
+    setPredCache(p=>({...p,[id]:{loading:true}}));
+    try{
+      const res=await fetch(`${BACKEND}/api/get-predictions?fixture=${id}`);
+      const data=await res.json();
+      const p=data.response?.[0];
+      if(!p?.predictions)throw new Error();
+      const o=getPredOutcome(p.predictions.percent);
+      const hs=p.predictions.goals?.home!=null&&p.predictions.goals?.away!=null;
+      setPredCache(prev=>({...prev,[id]:{loading:false,code:o.code,label:o.label,score:hs?`${p.predictions.goals.home}-${p.predictions.goals.away}`:null,advice:p.predictions.advice||null,hp:p.predictions.percent?.home||'—',dp:p.predictions.percent?.draw||'—',ap:p.predictions.percent?.away||'—'}}));
+    }catch{setPredCache(prev=>({...prev,[id]:{loading:false,code:null}}));}
+    finally{fetchingRef.current.delete(id);resolvedRef.current.add(id);}
+  },[]);
 
-  </nav>
+  /* ── Auto-fetch all predictions ── */
+  const autoPreds=useCallback(async ms=>{
+    const ids=[...new Set(ms.map(m=>fid(m)).filter(Boolean))];
+    for(const id of ids){
+      if(resolvedRef.current.has(id)||fetchingRef.current.has(id))continue;
+      await fetchOnePred(id);
+      await new Promise(r=>setTimeout(r,300));
+    }
+  },[fetchOnePred]);
 
-  <script>
-    /* ─────────────────────────────────────────────
-     * CROP SETTINGS
-     * All pixel values at SITE_WIDTH = 1200 px.
-     * Tweak to fine-tune the visible content window.
-     * ───────────────────────────────────────────── */
-    const SITE_WIDTH  = 1200;
-    const CROP_LEFT   = 185;
-    const CROP_RIGHT  = 230;
-    const CROP_TOP    = 55;
-    const CROP_BOT
+  useEffect(()=>{const t=setTimeout(()=>setSplash(false),3000);load();const iv=setInterval(()=>load(),60000);return()=>{clearTimeout(t);clearInterval(iv);};},[load]);
+  useEffect(()=>{if(matches.length>0)autoPreds(matches);},[matches,autoPreds]);
+
+  /* ── Open detail ── */
+  const openDetail=useCallback(async m=>{
+    setDetailMatch(m);setAnalysis(null);
+    setDetailLogos({home:null,away:null,homeLoading:true,awayLoading:true});
+    const getLogo=async name=>{if(logoCache[name]!==undefined)return logoCache[name];try{const r=await fetch(`${BACKEND}/api/team-logo?name=${encodeURIComponent(name)}`);const d=await r.json();return d.logo||null;}catch{return null;}};
+    const[hl,al]=await Promise.all([getLogo(m.home?.name),getLogo(m.away?.name)]);
+    setLogoCache(p=>({...p,[m.home?.name]:hl,[m.away?.name]:al}));
+    setDetailLogos({home:hl,away:al,homeLoading:false,awayLoading:false});
+    setAnalysisLoading(true);
+    try{const g=getGoals(m);const p=new URLSearchParams({home:m.home?.name||'',away:m.away?.name||'',league:m.leagueName||'',status:sLbl(m.status)||m.status||'',score:g?`${g.h}-${g.a}`:'Not started',ht:m.ht?.score||''});const res=await fetch(`${BACKEND}/api/match-analysis?${p}`);const d=await res.json();setAnalysis(d.analysis||null);}
+    catch{setAnalysis(null);}
+    finally{setAnalysisLoading(false);}
+  },[logoCache]);
+
+  const toggleFav=useCallback(id=>{if(!id)return;setFavs(p=>p.includes(id)?p.filter(f=>f!==id):[...p,id]);},[]);
+
+  const live=useMemo(()=>matches.filter(m=>cat(m.status)==='live').slice(0,20),[matches]);
+  const past=useMemo(()=>matches.filter(m=>cat(m.status)==='finished').slice(0,20),[matches]);
+  const upc=useMemo(()=>matches.filter(m=>cat(m.status)==='upcoming').slice(0,20),[matches]);
+  const saved=useMemo(()=>matches.filter(m=>favs.includes(fid(m))),[matches,favs]);
+  const alerts=useMemo(()=>matches.filter(m=>{const n=parseInt(m.status);return!isNaN(n)&&n>=75&&n<120;}).slice(0,15),[matches]);
+
+  const card=m=><MatchCard key={fid(m)||`${m.home?.name}${m.away?.name}${m.status}`} match={m} pred={predCache[fid(m)]||null} logos={logoCache} onOpen={openDetail} onToggleFav={toggleFav} isFav={favs.includes(fid(m))}/>;
+  const empty=(msg,sub)=><div style={{background:'var(--surface)',borderRadius:'var(--r)',boxShadow:'var(--shadow)',padding:'32px 20px',textAlign:'center',marginBottom:9}}><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>{msg}</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>{sub}</div></div>;
+  const today=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const sports=[['Football','⚽'],['Basketball','🏀'],['Tennis','🎾'],['Hockey','🏒'],['Baseball','⚾']];
+  const calDays=()=>{const t=new Date(),s=t.getDate()-t.getDay()+1;return Array.from({length:5},(_,i)=>{const d=new Date(t.getFullYear(),t.getMonth(),s+i);return{nm:d.toLocaleDateString('en-US',{weekday:'short'}),dn:d.getDate(),full:d.toDateString(),on:d.toDateString()===t.toDateString()};});};
+
+  return(
+    <>
+      {splash&&<div className="splash"><div className="splash-inner"><div style={{width:76,height:76,background:'#fff',borderRadius:18,boxShadow:'0 8px 32px rgba(0,0,0,.12)',display:'flex',alignItems:'center',justifyContent:'center',border:'.5px solid rgba(0,0,0,.06)'}}><MagicLogo size={58}/></div><div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:700,letterSpacing:'-.5px'}}>Magic Analysis</div><div style={{fontSize:13,color:'var(--t3)',marginTop:2}}>Live Football Intelligence</div></div></div></div>}
+      {showToast&&<div className="toast"><div className="spin"/>Fetching live info, please wait…</div>}
+
+      <header className="hdr">
+        <button className="hdr-btn" onClick={()=>setCalOpen(true)}><IcoCal/></button>
+        <div className="hdr-center"><MagicLogo size={22}/><span className="hdr-title">Magic Analysis</span></div>
+        <button className="hdr-btn" onClick={()=>load()}><IcoRef/></button>
+      </header>
+
+      <div className="tabs-bar">
+        {sports.map(([nm,ic])=><button key={nm} className={`tab ${sport===nm?'tab-on':'tab-off'}`} onClick={()=>nm==='Football'?setSport(nm):setCsSport(nm)}>{ic} {nm}</button>)}
+      </div>
+
+      <main className="page">
+        {tab==='Home'&&(
+          <div className="page-in">
+            <div className="page-head"><h1 className="page-h1">Predictions</h1><p className="page-sub">{today}</p></div>
+            <div className="stats">{[['Live',live.length],['Past',past.length],['Upcoming',upc.length],['Alerts',alerts.length]].map(([l,v])=><div key={l} className="stat"><div className="stat-n">{v}</div><div className="stat-l">{l}</div></div>)}</div>
+            {waking&&<div className="wake-bar"><div className="spin" style={{flexShrink:0}}/><span style={{fontSize:13,fontWeight:500,color:'var(--t2)'}}>Waking up server — up to 30s on first load…</span></div>}
+            {err&&!loading&&<div className="err-bar"><span style={{flex:1,fontSize:13,fontWeight:500}}>{err}</span><button className="retry-btn" onClick={()=>load()}>Retry</button></div>}
+            <Grp label="🔴 Live Now"/>
+            {loading?[1,2,3].map(i=><Skel key={i}/>):live.length>0?live.map(m=>card(m)):empty('No live matches right now','Live matches appear here automatically.')}
+            {!loading&&past.length>0&&<><Grp label="✅ Finished"/>{past.map(m=>card(m))}</>}
+            {!loading&&upc.length>0&&<><Grp label="🔵 Upcoming"/>{upc.map(m=>card(m))}</>}
+            <Social/>
+          </div>
+        )}
+        {tab==='Alerts'&&(
+          <div className="page-in">
+            <div className="page-head"><h1 className="page-h1">Alerts</h1><p className="page-sub">Matches past 75 minutes</p></div>
+            {alerts.length>0?alerts.map(m=>card(m)):empty('No alerts right now','')}
+            <Social/>
+          </div>
+        )}
+        {tab==='Favs'&&(
+          <div className="page-in">
+            <div className="page-head"><h1 className="page-h1">Saved</h1><p className="page-sub">Your saved matches</p></div>
+            {saved.length>0?saved.map(m=>card(m)):<div style={{paddingTop:56,textAlign:'center'}}><div style={{fontSize:36,color:'var(--sep2)',marginBottom:10}}>♡</div><div style={{fontSize:14,fontWeight:600,color:'var(--t2)'}}>Nothing saved yet</div><div style={{fontSize:12,color:'var(--t3)',marginTop:3}}>Tap the heart on any match to save it here.</div></div>}
+            <Social/>
+          </div>
+        )}
+        {tab==='More'&&(
+          <div className="page-in">
+            <div className="page-head"><h1 className="page-h1">More</h1></div>
+            <div className="settings-group">
+              {[['About Us','https://docs.google.com/document/d/1OaaYhaQi3FZzog6YLIoojh3CnX3aN0lrizXyQ5N9Dkw/edit?usp=sharing'],['Terms of Use','https://docs.google.com/document/d/1wO92_LRf7q1vS90SdmHgArGITPkimnMa7g_U_VHFZo4/edit?usp=sharing'],['Privacy Policy','https://docs.google.com/document/d/1qrcuBqJ3RoSTTdjtyHJXidpVNODILbHW5cLx4wlAe6Y/edit?usp=sharing']].map(([l,u])=><a key={l} href={u} target="_blank" rel="noopener noreferrer" className="settings-item">{l}<IcoChev/></a>)}
+              <a href="mailto:Magicbetingtips@gmail.com" className="settings-item"><span style={{display:'flex',alignItems:'center',gap:10}}><IcoMail/> Contact Us</span><span style={{fontSize:12,color:'var(--t3)'}}>Magicbetingtips@gmail.com</span></a>
+            </div>
+            <div style={{textAlign:'center',paddingTop:8}}><div style={{fontSize:12,color:'var(--t3)'}}>Magic Analysis · v2.0</div></div>
+            <Social/>
+          </div>
+        )}
+      </main>
+
+      {/* Calendar */}
+      {calOpen&&<div className="c-overlay" onClick={()=>setCalOpen(false)}><div className="c-card" onClick={e=>e.stopPropagation()}><div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:22}}><div><div style={{fontSize:19,fontWeight:700,letterSpacing:'-.4px',marginBottom:2}}>This Week</div><div style={{fontSize:12,color:'var(--t3)'}}>Select a date</div></div><button onClick={()=>setCalOpen(false)} style={{background:'var(--bg)',border:'none',borderRadius:'50%',width:28,height:28,cursor:'pointer',fontSize:16,color:'var(--t2)',display:'flex',alignItems:'center',justifyContent:'center'}}>×</button></div><div className="cal-days">{calDays().map(d=><div key={d.full} className={`cal-day${d.on?' on':''}`}><span className="cal-dd">{d.nm}</span><span className="cal-dn">{d.dn}</span></div>)}</div><button className="btn-primary" style={{marginTop:22}} onClick={()=>setCalOpen(false)}>Confirm</button></div></div>}
+
+      {/* Coming soon */}
+      {csSport&&<div className="c-overlay" onClick={()=>setCsSport(null)}><div className="c-card" style={{textAlign:'center'}} onClick={e=>e.stopPropagation()}><div style={{fontSize:38,marginBottom:14}}>🔜</div><div style={{fontSize:21,fontWeight:700,letterSpacing:'-.4px',marginBottom:8}}>Coming Soon</div><div style={{fontSize:14,color:'var(--t2)',lineHeight:1.55,marginBottom:26}}>Live <strong>{csSport}</strong> predictions are on the way.</div><button className="btn-primary" onClick={()=>setCsSport(null)}>Got it</button></div></div>}
+
+      {/* Detail sheet */}
+      {detailMatch&&<DetailSheet match={detailMatch} logos={detailLogos} analysis={analysis} analysisLoading={analysisLoading} pred={predCache[fid(detailMatch)]||null} onClose={()=>{setDetailMatch(null);setAnalysis(null);}}/>}
+
+      {/* Bottom nav */}
+      <nav className="nav">
+        {[{id:'Home',lbl:'Home',ico:<IcoHome/>},{id:'Alerts',lbl:'Alerts',ico:<IcoBell/>},{id:'Favs',lbl:'Saved',ico:<IcoHeart on={false}/>},{id:'More',lbl:'More',ico:<IcoMenu/>}].map(({id,lbl,ico})=><div key={id} className={`nav-item ${tab===id?'on':'off'}`} onClick={()=>setTab(id)}><div className="nav-ico">{ico}</div><span className="nav-lbl">{lbl}</span></div>)}
+      </nav>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+<!-- Monetag: Push Notifications -->
+<script src="https://5gvci.com/act/files/tag.min.js?z=10953340" data-cfasync="false" async></script>
+<!-- Monetag: Popunder -->
+<script>(function(s){s.dataset.zone='10953331',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+</body>
+</html>
