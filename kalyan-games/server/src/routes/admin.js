@@ -131,4 +131,53 @@ router.post('/withdrawals/:id/reject', adminAuth, async (req, res) => {
   res.json({ status: 'rejected' });
 });
 
+/* ---------------------------- Deposits --------------------------------- */
+router.get('/deposits', adminAuth, async (_req, res) => {
+  const deposits = await prisma.depositRequest.findMany({
+    orderBy: { createdAt: 'desc' },
+    include: { user: { select: { name: true, phone: true } } },
+  });
+  res.json({ deposits });
+});
+
+// POST /admin/deposits/:id/approve  -> credits the user's balance after the
+// admin has confirmed the real payment (UPI/bank) using the reference/UTR.
+router.post('/deposits/:id/approve', adminAuth, async (req, res) => {
+  const dr = await prisma.depositRequest.findUnique({ where: { id: req.params.id } });
+  if (!dr || dr.status !== 'pending') return res.status(400).json({ error: 'Request not pending' });
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: dr.userId }, data: { balance: { increment: dr.amount } } }),
+    prisma.transaction.create({
+      data: { userId: dr.userId, type: 'deposit', amount: dr.amount, note: 'Deposit approved (' + dr.method + ' ' + dr.reference + ')' },
+    }),
+    prisma.depositRequest.update({ where: { id: dr.id }, data: { status: 'approved' } }),
+  ]);
+  res.json({ status: 'approved' });
+});
+
+router.post('/deposits/:id/reject', adminAuth, async (req, res) => {
+  const dr = await prisma.depositRequest.findUnique({ where: { id: req.params.id } });
+  if (!dr || dr.status !== 'pending') return res.status(400).json({ error: 'Request not pending' });
+  await prisma.depositRequest.update({ where: { id: dr.id }, data: { status: 'rejected' } });
+  res.json({ status: 'rejected' });
+});
+
+/* ----------------------- Password reset (admin) ------------------------ */
+router.get('/reset-requests', adminAuth, async (_req, res) => {
+  const requests = await prisma.resetRequest.findMany({ orderBy: { createdAt: 'desc' }, take: 50 });
+  res.json({ requests });
+});
+
+// POST /admin/users/:id/reset-password  { password }
+router.post('/users/:id/reset-password', adminAuth, async (req, res) => {
+  const password = String(req.body?.password || '');
+  if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  await prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(password, 10) } });
+  // mark any pending reset requests for this phone as done
+  await prisma.resetRequest.updateMany({ where: { phone: user.phone, status: 'pending' }, data: { status: 'done' } });
+  res.json({ ok: true });
+});
+
 module.exports = router;

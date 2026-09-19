@@ -36,6 +36,17 @@ router.post('/login', async (req, res) => {
   res.json({ token, user: publicUser(user) });
 });
 
+// POST /auth/forgot  { phone }  -> logs a password-reset request for the admin.
+// No OTP/email channel exists, so reset is admin-assisted (secure by design).
+router.post('/forgot', async (req, res) => {
+  const phone = String(req.body?.phone || '').replace(/\D/g, '');
+  if (!phone) return res.status(400).json({ error: 'Enter your registered mobile number' });
+  const user = await prisma.user.findUnique({ where: { phone } });
+  // Always respond the same way (don't reveal whether the number exists)
+  await prisma.resetRequest.create({ data: { phone, name: user ? user.name : null } });
+  res.json({ ok: true, message: 'Request received. The admin will reset your password and contact you shortly.' });
+});
+
 // GET /auth/me
 router.get('/me', userAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.userId } });

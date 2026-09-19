@@ -13,21 +13,24 @@ router.get('/', userAuth, async (req, res) => {
   res.json({ balance: user.balance, transactions: txns });
 });
 
-// POST /wallet/add-fund  { amount }
-// DEMO: credits the wallet directly (mock). In production this must be gated
-// behind a verified payment / manual admin approval — see README section 5.
-router.post('/add-fund', userAuth, async (req, res) => {
+// POST /wallet/deposit  { amount, method, reference }
+// Creates a PENDING deposit request. Balance is only credited after an admin
+// verifies the real payment and approves it. No money is added automatically.
+async function createDeposit(req, res) {
   const amount = Math.floor(Number(req.body?.amount));
+  const method = String(req.body?.method || 'UPI').slice(0, 20);
+  const reference = String(req.body?.reference || '').trim().slice(0, 120);
   if (!amount || amount <= 0) return res.status(400).json({ error: 'Enter a valid amount' });
+  if (!reference) return res.status(400).json({ error: 'Enter your payment reference / UTR number' });
 
-  const [user] = await prisma.$transaction([
-    prisma.user.update({ where: { id: req.userId }, data: { balance: { increment: amount } } }),
-    prisma.transaction.create({
-      data: { userId: req.userId, type: 'deposit', amount, note: 'Added money to wallet' },
-    }),
-  ]);
-  res.json({ balance: user.balance });
-});
+  const request = await prisma.depositRequest.create({
+    data: { userId: req.userId, amount, method, reference, status: 'pending' },
+  });
+  res.json({ request, message: 'Deposit request submitted. Your balance updates once the admin verifies your payment.' });
+}
+router.post('/deposit', userAuth, createDeposit);
+// Back-compat: /add-fund now also creates a request (never credits directly)
+router.post('/add-fund', userAuth, createDeposit);
 
 // POST /wallet/withdraw  { amount }  -> creates a pending WithdrawRequest
 router.post('/withdraw', userAuth, async (req, res) => {

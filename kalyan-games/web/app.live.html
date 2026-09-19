@@ -258,7 +258,7 @@
       <p class="lead">Log in to play and win real rewards.</p>
       <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="lg-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>
       <div class="field"><label>Password</label><div class="input"><input id="lg-pass" type="password" placeholder="Enter password"></div></div>
-      <div class="fp">Forgot password?</div>
+      <div class="fp" onclick="openSheet('forgot')" style="cursor:pointer">Forgot password?</div>
       <button class="btn-grad big-btn" onclick="doLogin()">Log In</button>
       
       <div class="alt">New here? <b onclick="go('signup')" style="cursor:pointer">Create account</b></div>
@@ -372,7 +372,8 @@
 <script>
 
   const API='https://satta-matka-app-production.up.railway.app';
-  let TOKEN=localStorage.getItem('kg_token')||'';
+  const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+  let TOKEN=store.get('kg_token')||'';
   let balance=0, currentMarket='', currentMarketId=null, currentGame='Single Digit', marketsCache=[];
   const R='₹';
   const inr=n=>R+Number(n||0).toLocaleString('en-IN');
@@ -399,12 +400,12 @@
     if(!phone||!password){ toast('Enter mobile number and password'); return; }
     try{
       const d=await api('/auth/login',{method:'POST',body:JSON.stringify({phone,password})});
-      TOKEN=d.token; localStorage.setItem('kg_token',TOKEN);
+      TOKEN=d.token; store.set('kg_token',TOKEN);
       balance=d.user.balance; syncBalance();
       await loadMarkets(); go('home');
     }catch(e){ toast(e.message||'Login failed'); }
   }
-  function logout(){ TOKEN=''; localStorage.removeItem('kg_token'); balance=0; syncBalance(); go('login'); }
+  function logout(){ TOKEN=''; store.del('kg_token'); balance=0; syncBalance(); go('login'); }
   async function doSignup(){
     const name=(document.getElementById('su-name').value||'').trim();
     const phone=(document.getElementById('su-phone').value||'').replace(/\D/g,'');
@@ -413,7 +414,7 @@
     if(phone.length<10){ toast('Enter a valid mobile number'); return; }
     try{
       const d=await api('/auth/register',{method:'POST',body:JSON.stringify({name,phone,password})});
-      TOKEN=d.token; localStorage.setItem('kg_token',TOKEN); balance=d.user.balance; syncBalance();
+      TOKEN=d.token; store.set('kg_token',TOKEN); balance=d.user.balance; syncBalance();
       await loadMarkets(); go('home');
     }catch(e){ toast(e.message||'Sign up failed'); }
   }
@@ -510,24 +511,36 @@
   function openSheet(kind){
     const s=document.getElementById('sheet');
     if(kind==='add'){
-      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Enter the amount you want to add to your wallet.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account shared by admin, then submit the amount and your payment reference (UTR). Your balance is credited after the admin verifies it.</p>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
-        '<div style="display:flex;gap:8px;margin:14px 0 20px">'+[100,500,1000].map(a=>'<button class="chipsel" style="flex:1;justify-content:center;color:var(--ink)" onclick="document.getElementById(\'sheet-amt\').value='+a+'">'+R+a+'</button>').join('')+'</div>'+
-        '<button class="btn-grad big-btn" onclick="doAdd()">Add Fund</button>';
-    }else{
-      s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Enter the amount you want to withdraw.</p>'+
+        '<div class="field"><label>Payment method</label><div class="input" style="padding:0 6px 0 14px"><select id="sheet-method" style="flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:inherit;font-size:14px;height:100%"><option>UPI</option><option>Bank Transfer</option></select></div></div>'+
+        '<div class="field"><label>Transaction / UTR number</label><div class="input"><input id="sheet-ref" type="text" placeholder="e.g. 4051XXXXXXXX"></div></div>'+
+        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doDeposit()">Submit deposit request</button>';
+    }else if(kind==='withdraw'){
+      s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Enter the amount you want to withdraw. The admin will review and pay out to your account.</p>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
         '<button class="btn-grad big-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>';
+    }else{
+      s.innerHTML='<div class="grab"></div><h4>Forgot password?</h4><p>Enter your registered mobile number. The admin will reset your password and contact you.</p>'+
+        '<div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="sheet-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>'+
+        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doForgot()">Send reset request</button>';
     }
     document.getElementById('overlay').classList.add('show');
-    setTimeout(()=>{ const a=document.getElementById('sheet-amt'); if(a)a.focus(); },200);
+    setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('sheet-phone'); if(a)a.focus(); },200);
   }
   function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
-  async function doAdd(){
+  async function doDeposit(){
     const a=+document.getElementById('sheet-amt').value;
+    const method=document.getElementById('sheet-method').value;
+    const reference=(document.getElementById('sheet-ref').value||'').trim();
     if(a<=0){ toast('Enter a valid amount'); return; }
-    try{ const d=await api('/wallet/add-fund',{method:'POST',body:JSON.stringify({amount:a})}); balance=d.balance; syncBalance(); closeSheet(); toast(inr(a)+' added to wallet');
-      if(document.getElementById('wallet').classList.contains('active')) loadWallet(); }catch(e){ toast(e.message); }
+    if(!reference){ toast('Enter your payment reference / UTR'); return; }
+    try{ const d=await api('/wallet/deposit',{method:'POST',body:JSON.stringify({amount:a,method,reference})}); closeSheet(); toast(d.message||'Deposit request submitted'); }catch(e){ toast(e.message); }
+  }
+  async function doForgot(){
+    const phone=(document.getElementById('sheet-phone').value||'').replace(/\D/g,'');
+    if(phone.length<10){ toast('Enter a valid mobile number'); return; }
+    try{ const d=await api('/auth/forgot',{method:'POST',body:JSON.stringify({phone})}); closeSheet(); toast(d.message||'Reset request sent'); }catch(e){ toast(e.message); }
   }
   async function doWithdraw(){
     const a=+document.getElementById('sheet-amt').value;

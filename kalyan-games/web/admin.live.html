@@ -212,7 +212,8 @@
 <script>
 
 const API='https://satta-matka-app-production.up.railway.app';
-let TOKEN=localStorage.getItem('kg_admin_token')||'';
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let TOKEN=store.get('kg_admin_token')||'';
 let creds={};
 const R='₹';
 const inr=n=>R+Number(n||0).toLocaleString('en-IN');
@@ -245,9 +246,9 @@ async function submitOtp(){
   try{ finishLogin(await api('/admin/login',{method:'POST',body:JSON.stringify(Object.assign({},creds,{token:code}))})); }
   catch(e){ err.textContent=e.message; }
 }
-function finishLogin(d){ TOKEN=d.token; localStorage.setItem('kg_admin_token',TOKEN); enterApp(); }
+function finishLogin(d){ TOKEN=d.token; store.set('kg_admin_token',TOKEN); enterApp(); }
 function enterApp(){ document.getElementById('login').style.display='none'; document.getElementById('app').style.display='grid'; buildNav(); go('dashboard'); }
-function logout(){ TOKEN=''; localStorage.removeItem('kg_admin_token'); location.reload(); }
+function logout(){ TOKEN=''; store.del('kg_admin_token'); location.reload(); }
 document.querySelectorAll('#otp input').forEach((el,i,arr)=>{
   el.addEventListener('input',()=>{ el.value=el.value.replace(/\D/g,''); if(el.value&&arr[i+1])arr[i+1].focus(); });
   el.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!el.value&&arr[i-1])arr[i-1].focus(); if(e.key==='Enter')submitOtp(); });
@@ -259,13 +260,18 @@ const pages=[
   ['users','Users','All registered players','M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8'],
   ['markets','Markets','Open, close and add markets','M3 3v18h18M7 14l4-4 3 3 5-6'],
   ['results','Results','Declare and view results','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
+  ['deposits','Deposits','Verify and approve deposits','M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4'],
   ['withdrawals','Withdrawals','Approve or reject payouts','M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
   ['security','Security','Google Authenticator (2FA)','M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
 ];
 function buildNav(){
-  document.getElementById('nav').innerHTML=pages.map(p=>'<a id="nav-'+p[0]+'" onclick="go(\''+p[0]+'\')"><svg class="i" viewBox="0 0 24 24"><path d="'+p[3]+'"/></svg>'+p[1]+(p[0]==='withdrawals'?'<span class="badge" id="wd-badge">0</span>':'')+'</a>').join('');
+  document.getElementById('nav').innerHTML=pages.map(p=>{
+    let badge=''; if(p[0]==='withdrawals')badge='<span class="badge" id="wd-badge">0</span>'; if(p[0]==='deposits')badge='<span class="badge" id="dp-badge">0</span>';
+    return '<a id="nav-'+p[0]+'" onclick="go(\''+p[0]+'\')"><svg class="i" viewBox="0 0 24 24"><path d="'+p[3]+'"/></svg>'+p[1]+badge+'</a>';
+  }).join('');
 }
 function setBadge(n){ const b=document.getElementById('wd-badge'); if(b)b.textContent=n; }
+function setDepBadge(n){ const b=document.getElementById('dp-badge'); if(b)b.textContent=n; }
 async function go(id){
   const p=pages.find(x=>x[0]===id);
   document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
@@ -297,10 +303,17 @@ const loaders={
     `</div></div>`;
   },
   async users(view){
-    const d=await api('/admin/users'); const us=d.users||[];
-    view.innerHTML=`<div class="panel"><div class="head"><h3>Registered players</h3><span class="pill on">${us.length} total</span></div><div class="table-wrap"><table><thead><tr><th>Player</th><th>Mobile</th><th>Wallet</th><th>Joined</th></tr></thead><tbody>`+
-    (us.length? us.map(u=>`<tr><td class="u-name">${u.name}</td><td>+91 ${u.phone}</td><td class="amt">${inr(u.balance)}</td><td class="u-sub">${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td></tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted)">No users yet.</td></tr>')+
-    `</tbody></table></div></div>`;
+    const [d,rr]=await Promise.all([api('/admin/users'),api('/admin/reset-requests')]);
+    const us=d.users||[]; const reqs=(rr.requests||[]).filter(x=>x.status==='pending');
+    let html='';
+    if(reqs.length){
+      html+=`<div class="panel"><div class="head"><h3>Password reset requests</h3><span class="pill pend">${reqs.length} pending</span></div><div class="table-wrap"><table><thead><tr><th>Name</th><th>Mobile</th><th>Requested</th></tr></thead><tbody>`+
+      reqs.map(x=>`<tr><td class="u-name">${x.name||'—'}</td><td>+91 ${x.phone}</td><td class="u-sub">${new Date(x.createdAt).toLocaleString('en-IN')}</td></tr>`).join('')+`</tbody></table></div></div>`;
+    }
+    html+=`<div class="panel"><div class="head"><h3>Registered players</h3><span class="pill on">${us.length} total</span></div><div class="table-wrap"><table><thead><tr><th>Player</th><th>Mobile</th><th>Wallet</th><th>Joined</th><th style="text-align:right">Action</th></tr></thead><tbody>`+
+    (us.length? us.map(u=>`<tr><td class="u-name">${u.name}</td><td>+91 ${u.phone}</td><td class="amt">${inr(u.balance)}</td><td class="u-sub">${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td><td style="text-align:right"><button class="btn sm ghost" onclick="resetPw('${u.id}','${(u.name||'').replace(/'/g,'')}')">Reset password</button></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">No users yet.</td></tr>')+
+    `</tbody></table></div>`;
+    view.innerHTML=html;
   },
   async markets(view){
     const d=await api('/markets'); const ms=d.markets||[];
@@ -324,6 +337,13 @@ const loaders={
     (ws.length? ws.map(w=>`<tr><td class="u-name">${w.user?w.user.name:''}</td><td>+91 ${w.user?w.user.phone:''}</td><td class="amt">${inr(w.amount)}</td><td><span class="pill ${w.status==='approved'?'on':w.status==='rejected'?'off':'pend'}">${cap(w.status)}</span></td><td><div class="row-actions">${w.status==='pending'?`<button class="btn sm ok" onclick="decide('${w.id}','approved')">Approve</button><button class="btn sm no" onclick="decide('${w.id}','rejected')">Reject</button>`:'<span class="u-sub">Done</span>'}</div></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">No withdrawal requests.</td></tr>')+
     `</tbody></table></div></div>`;
   },
+  async deposits(view){
+    const d=await api('/admin/deposits'); const ds=d.deposits||[];
+    const pc=ds.filter(x=>x.status==='pending').length; setDepBadge(pc);
+    view.innerHTML=`<div class="panel"><div class="head"><h3>Deposit requests</h3><span class="pill pend">${pc} pending</span></div><p class="sub">Confirm the real payment using the reference/UTR before approving. Approving credits the player's wallet.</p><div class="table-wrap"><table><thead><tr><th>Player</th><th>Method</th><th>Reference / UTR</th><th>Amount</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>`+
+    (ds.length? ds.map(x=>`<tr><td class="u-name">${x.user?x.user.name:''}<div class="u-sub">+91 ${x.user?x.user.phone:''}</div></td><td>${x.method}</td><td class="u-sub">${x.reference}</td><td class="amt">${inr(x.amount)}</td><td><span class="pill ${x.status==='approved'?'on':x.status==='rejected'?'off':'pend'}">${cap(x.status)}</span></td><td><div class="row-actions">${x.status==='pending'?`<button class="btn sm ok" onclick="decideDep('${x.id}','approve')">Approve</button><button class="btn sm no" onclick="decideDep('${x.id}','reject')">Reject</button>`:'<span class="u-sub">Done</span>'}</div></td></tr>`).join('') : '<tr><td colspan="6" style="color:var(--muted)">No deposit requests.</td></tr>')+
+    `</tbody></table></div></div>`;
+  },
   async security(view){
     const me=await api('/admin/me'); const on=me.admin.totpEnabled;
     view.innerHTML=`<div class="panel"><div class="head"><h3>Google Authenticator</h3><span class="pill ${on?'on':'off'}">${on?'Enabled':'Not enabled'}</span></div><p class="sub">Every admin login requires a 6-digit code from the authenticator app — password alone is never enough.</p>`+
@@ -337,6 +357,8 @@ async function toggleMarket(id,cur){ try{ await api('/admin/markets/'+id,{method
 async function addMarket(){ const name=v('m-name'),o=v('m-open')||'07:00 PM',c=v('m-close')||'08:00 PM'; if(!name){ toast('Enter a market name'); return; } try{ await api('/admin/markets',{method:'POST',body:JSON.stringify({name,openTime:o,closeTime:c})}); go('markets'); toast('Market "'+name+'" added'); }catch(e){ toast(e.message); } }
 async function declareResult(){ const marketId=document.getElementById('r-market').value; const value=v('r-value'); if(!value){ toast('Enter a result value'); return; } try{ await api('/admin/results',{method:'POST',body:JSON.stringify({marketId,value})}); go('results'); toast('Result declared'); }catch(e){ toast(e.message); } }
 async function decide(id,status){ try{ await api('/admin/withdrawals/'+id+'/'+(status==='approved'?'approve':'reject'),{method:'POST'}); go('withdrawals'); toast('Withdrawal '+status); }catch(e){ toast(e.message); } }
+async function decideDep(id,action){ try{ await api('/admin/deposits/'+id+'/'+action,{method:'POST'}); go('deposits'); toast('Deposit '+(action==='approve'?'approved':'rejected')); }catch(e){ toast(e.message); } }
+async function resetPw(id,name){ const pw=prompt('Set a new password for '+name+':'); if(pw===null)return; if(pw.length<4){ toast('Password must be at least 4 characters'); return; } try{ await api('/admin/users/'+id+'/reset-password',{method:'POST',body:JSON.stringify({password:pw})}); toast('Password reset for '+name); go('users'); }catch(e){ toast(e.message); } }
 async function setupTotp(){
   try{ const d=await api('/admin/totp/setup',{method:'POST'});
     document.getElementById('twofa-setup').innerHTML=`<div class="twofa"><div><div id="qrbox"><img src="${d.qr}" alt="QR code"></div><div style="text-align:center;margin-top:12px"><div class="u-sub">Manual key</div><span class="secret">${d.secret}</span></div></div><div><ol class="steps"><li>Install <b>Google Authenticator</b> on your phone.</li><li>Tap <b>+</b> &rarr; <b>Scan a QR code</b> and scan this.</li><li>A 6-digit code for <b>Kalyan Games (admin)</b> appears.</li><li>Enter it below to turn on 2-step login.</li></ol><div class="step" style="max-width:240px"><label class="lbl">Enter the 6-digit code</label><input class="in" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456"></div><div style="margin-top:12px"><button class="btn" onclick="enableTotp()">Verify &amp; enable</button></div></div></div>`;
@@ -345,7 +367,7 @@ async function setupTotp(){
 async function enableTotp(){ const code=v('totp-code'); if(code.length!==6){ toast('Enter the 6-digit code'); return; } try{ await api('/admin/totp/enable',{method:'POST',body:JSON.stringify({token:code})}); toast('Google Authenticator enabled'); go('security'); }catch(e){ toast(e.message); } }
 
 /* ---- boot ---- */
-(async function(){ if(TOKEN){ try{ await api('/admin/me'); enterApp(); }catch(e){ TOKEN=''; localStorage.removeItem('kg_admin_token'); } } })();
+(async function(){ if(TOKEN){ try{ await api('/admin/me'); enterApp(); }catch(e){ TOKEN=''; store.del('kg_admin_token'); } } })();
 
 </script>
 
