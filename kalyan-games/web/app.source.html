@@ -271,7 +271,7 @@
         <div class="home-top">
           <div class="brand"><svg class="brand-svg" style="width:48px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
           <div style="display:flex;gap:10px;align-items:center">
-            <button class="icon-btn" onclick="toast('No new notifications')"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
+            <button class="icon-btn" onclick="openNotif()"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
             <div class="avatar" onclick="openSheet('account')" title="Account &amp; password" style="cursor:pointer">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
           </div>
         </div>
@@ -346,11 +346,18 @@
       <div class="nav" data-nav="results"></div>
     </div>
 
+    <div class="view" id="notif">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Notifications</div></div>
+        <div id="notif-list" style="padding:8px 20px 130px"></div>
+      </div>
+    </div>
+
     <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
     <div class="center-modal" id="success"><div class="card">
       <div class="tick"><svg width="40" height="40"><use href="#i-check" style="color:var(--green)"/></svg></div>
-      <h4>Submission Successful</h4>
-      <p>Your bid has been placed. Good luck for the draw!</p>
+      <h4 id="success-title">Submission Successful</h4>
+      <p id="success-msg">Your bid has been placed. Good luck for the draw!</p>
       <div class="receipt" id="receipt"></div>
       <button class="btn-grad big-btn" onclick="closeSuccess()">Done</button>
     </div></div>

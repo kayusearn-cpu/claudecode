@@ -39,6 +39,9 @@ async function createDeposit(req, res) {
   const request = await prisma.depositRequest.create({
     data: { userId: req.userId, amount, method, reference: reference || '(screenshot)', proof, status: 'pending' },
   });
+  await prisma.notification.create({
+    data: { userId: req.userId, type: 'deposit', title: 'Deposit request submitted', body: '₹' + amount + ' will be added within 24 hours after verification.' },
+  });
   res.json({ request, message: 'Deposit request submitted. Your balance updates once the admin verifies your payment.' });
 }
 router.post('/deposit', userAuth, createDeposit);
@@ -89,6 +92,34 @@ router.post('/bank', userAuth, async (req, res) => {
   res.json({ ok: true, message: 'Bank details saved', bank: bankView(updated) });
 });
 
+// POST /wallet/bank/remove  -> clears the saved bank (counts as the 30-day change)
+router.post('/bank/remove', userAuth, async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (user.bankUpdatedAt && new Date(user.bankUpdatedAt.getTime() + BANK_LOCK_MS) > new Date()) {
+    const next = new Date(user.bankUpdatedAt.getTime() + BANK_LOCK_MS);
+    return res.status(403).json({ error: 'Bank details can only be changed once every 30 days. Next change on ' + next.toLocaleDateString('en-IN') + '.' });
+  }
+  const updated = await prisma.user.update({
+    where: { id: req.userId },
+    data: { bankHolder: null, bankAccount: null, bankIfsc: null, bankName: null, bankUpi: null, bankUpdatedAt: new Date() },
+  });
+  res.json({ ok: true, message: 'Bank account removed', bank: bankView(updated) });
+});
+
+// GET /wallet/activity  -> merged notification feed (transactions + notifications)
+router.get('/activity', userAuth, async (req, res) => {
+  const [txns, notes] = await Promise.all([
+    prisma.transaction.findMany({ where: { userId: req.userId }, orderBy: { createdAt: 'desc' }, take: 100 }),
+    prisma.notification.findMany({ where: { userId: req.userId }, orderBy: { createdAt: 'desc' }, take: 100 }),
+  ]);
+  const titleFor = { deposit: 'Deposit', withdraw: 'Withdrawal', bid: 'Bid placed', win: 'You won', loss: 'Bid lost' };
+  const items = [];
+  for (const t of txns) items.push({ kind: t.type, title: titleFor[t.type] || t.type, body: t.note || '', amount: t.amount, at: t.createdAt });
+  for (const n of notes) items.push({ kind: n.type, title: n.title, body: n.body || '', amount: null, at: n.createdAt });
+  items.sort((a, b) => new Date(b.at) - new Date(a.at));
+  res.json({ items: items.slice(0, 120) });
+});
+
 // POST /wallet/withdraw  { amount }  -> creates a pending WithdrawRequest
 router.post('/withdraw', userAuth, async (req, res) => {
   const amount = Math.floor(Number(req.body?.amount));
@@ -102,6 +133,9 @@ router.post('/withdraw', userAuth, async (req, res) => {
     .filter(Boolean).join(' | ');
   const request = await prisma.withdrawRequest.create({
     data: { userId: req.userId, amount, bankInfo, status: 'pending' },
+  });
+  await prisma.notification.create({
+    data: { userId: req.userId, type: 'withdraw', title: 'Withdrawal requested', body: '₹' + amount + ' will be paid to your bank within 24 hours after review.' },
   });
   res.json({ request, message: 'Withdrawal request submitted for approval' });
 });

@@ -20,10 +20,21 @@ model User {
   bankName      String?
   bankUpi       String?
   bankUpdatedAt DateTime?
-  bids        Bid[]
-  txns        Transaction[]
-  withdrawals WithdrawRequest[]
-  deposits    DepositRequest[]
+  bids          Bid[]
+  txns          Transaction[]
+  withdrawals   WithdrawRequest[]
+  deposits      DepositRequest[]
+  notifications Notification[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String // deposit | withdraw | security | promo | system | win | loss
+  title     String
+  body      String?
+  createdAt DateTime @default(now())
 }
 
 model DepositRequest {

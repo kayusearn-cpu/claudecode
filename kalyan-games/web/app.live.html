@@ -280,7 +280,7 @@
         <div class="home-top">
           <div class="brand"><svg class="brand-svg" style="width:48px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
           <div style="display:flex;gap:10px;align-items:center">
-            <button class="icon-btn" onclick="toast('No new notifications')"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
+            <button class="icon-btn" onclick="openNotif()"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
             <div class="avatar" onclick="openSheet('account')" title="Account &amp; password" style="cursor:pointer">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
           </div>
         </div>
@@ -355,11 +355,18 @@
       <div class="nav" data-nav="results"></div>
     </div>
 
+    <div class="view" id="notif">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Notifications</div></div>
+        <div id="notif-list" style="padding:8px 20px 130px"></div>
+      </div>
+    </div>
+
     <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
     <div class="center-modal" id="success"><div class="card">
       <div class="tick"><svg width="40" height="40"><use href="#i-check" style="color:var(--green)"/></svg></div>
-      <h4>Submission Successful</h4>
-      <p>Your bid has been placed. Good luck for the draw!</p>
+      <h4 id="success-title">Submission Successful</h4>
+      <p id="success-msg">Your bid has been placed. Good luck for the draw!</p>
       <div class="receipt" id="receipt"></div>
       <button class="btn-grad big-btn" onclick="closeSuccess()">Done</button>
     </div></div>
@@ -499,11 +506,15 @@
     try{
       const d=await api('/bids',{method:'POST',body:JSON.stringify({marketId:currentMarketId,gameType:currentGame,selections})});
       balance=d.balance; syncBalance();
-      document.getElementById('receipt').innerHTML=
+      const rc=document.getElementById('receipt');
+      rc.style.display='block';
+      rc.innerHTML=
         '<div class="r"><span>Market</span><b>'+currentMarket+'</b></div>'+
         '<div class="r"><span>Digits played</span><b>'+Object.keys(selections).length+'</b></div>'+
         '<div class="r"><span>Total bid</span><b>'+inr(total)+'</b></div>'+
         '<div class="r"><span>New balance</span><b>'+inr(balance)+'</b></div>';
+      document.getElementById('success-title').textContent='Submission Successful';
+      document.getElementById('success-msg').textContent='Your bid has been placed. Good luck for the draw!';
       document.getElementById('success').classList.add('show');
     }catch(e){ toast(e.message); }
   }
@@ -532,7 +543,8 @@
         '<div class="field"><label>IFSC code</label><div class="input"><input id="bk-ifsc" type="text" placeholder="e.g. HDFC0001234"></div></div>'+
         '<div class="field"><label>Bank name (optional)</label><div class="input"><input id="bk-name" type="text" placeholder="Bank name"></div></div>'+
         '<div class="field"><label>UPI ID (optional)</label><div class="input"><input id="bk-upi" type="text" placeholder="yourname@bank"></div></div>'+
-        '<button class="btn-grad big-btn" id="bk-btn" style="margin-top:6px" onclick="doSaveBank()">Save bank details</button>';
+        '<button class="btn-grad big-btn" id="bk-btn" style="margin-top:6px" onclick="doSaveBank()">Save bank details</button>'+
+        '<div id="bk-extra" style="margin-top:10px"></div>';
       loadBank();
     }else{
       s.innerHTML='<div class="grab"></div><h4>My Account</h4>'+
@@ -582,7 +594,7 @@
   async function doWithdraw(){
     const a=+document.getElementById('sheet-amt').value;
     if(a<=0){ toast('Enter a valid amount'); return; }
-    try{ await api('/wallet/withdraw',{method:'POST',body:JSON.stringify({amount:a})}); closeSheet(); toast('Withdrawal request sent for '+inr(a)); }catch(e){ toast(e.message); }
+    try{ await api('/wallet/withdraw',{method:'POST',body:JSON.stringify({amount:a})}); closeSheet(); showSuccess('Withdrawal Submitted','Your withdrawal request has been submitted and will be paid to your bank account within 24 hours.'); }catch(e){ toast(e.message); }
   }
   async function loadWithdrawBank(){
     const box=document.getElementById('wd-bank'); const btn=document.getElementById('wd-btn');
@@ -601,6 +613,8 @@
         ['bk-holder','bk-acc','bk-ifsc','bk-name','bk-upi'].forEach(id=>document.getElementById(id).disabled=true);
         const btn=document.getElementById('bk-btn'); btn.style.opacity='.5'; btn.style.pointerEvents='none';
       } else { note.textContent='Add the bank account where you want withdrawals paid. You can change this only once every 30 days.'; }
+      const ex=document.getElementById('bk-extra');
+      if(ex && b.hasBank && b.canChange){ ex.innerHTML='<button class="chipsel" style="width:100%;justify-content:center;color:var(--red)" onclick="doRemoveBank()">Remove bank account</button>'; }
     }catch(e){ const note=document.getElementById('bank-note'); if(note)note.textContent='Could not load bank details.'; }
   }
   async function doSaveBank(){
@@ -612,6 +626,35 @@
     if(!holder||!account||!ifsc){ toast('Enter holder name, account number and IFSC'); return; }
     try{ const d=await api('/wallet/bank',{method:'POST',body:JSON.stringify({holder,account,ifsc,bankName,upi})}); closeSheet(); toast(d.message||'Bank details saved'); }catch(e){ toast(e.message); }
   }
+  async function doRemoveBank(){
+    if(!confirm('Remove your saved bank account?')) return;
+    try{ const d=await api('/wallet/bank/remove',{method:'POST'}); closeSheet(); toast(d.message||'Bank account removed'); }catch(e){ toast(e.message); }
+  }
+  function openNotif(){ go('notif'); loadActivity(); }
+  async function loadActivity(){
+    const el=document.getElementById('notif-list'); if(!el)return;
+    el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{
+      const d=await api('/wallet/activity'); const items=d.items||[];
+      if(!items.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No notifications yet.</div>'; return; }
+      const now=new Date();
+      const dayKey=dt=>{ const x=new Date(dt); const diff=Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(x.getFullYear(),x.getMonth(),x.getDate()))/86400000); if(diff===0)return 'Today'; if(diff===1)return 'Yesterday'; return x.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
+      let html='',last='';
+      for(const it of items){
+        const k=dayKey(it.at); if(k!==last){ html+='<div style="color:var(--sub);font-size:12px;font-weight:600;margin:18px 2px 8px">'+k+'</div>'; last=k; }
+        const pos=it.amount>0,neg=it.amount<0,cls=pos?'in':neg?'out':'';
+        const icon=(it.kind==='deposit'||it.kind==='win')?'i-up':(it.kind==='withdraw'||it.kind==='bid'||it.kind==='loss')?'i-down':(it.kind==='security')?'i-check':'i-bell';
+        const tint=cls?'':' style="background:rgba(139,59,255,.14);color:var(--violet)"';
+        const tm=new Date(it.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        const amt=it.amount!=null?('<div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(it.amount))+'</div>'):'';
+        html+='<div class="tx"><span class="ti '+cls+'"'+tint+'><svg width="18" height="18"><use href="#'+icon+'"/></svg></span>'+
+          '<div class="tmid"><div class="tt">'+it.title+'</div><div class="ts">'+(it.body||'')+'</div></div>'+
+          '<div>'+amt+'<div class="tdate">'+tm+'</div></div></div>';
+      }
+      el.innerHTML=html;
+    }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function showSuccess(title,msg){ document.getElementById('success-title').textContent=title; document.getElementById('success-msg').textContent=msg; const r=document.getElementById('receipt'); if(r)r.style.display='none'; document.getElementById('success').classList.add('show'); }
   function syncBalance(){
     const b=Number(balance||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
     const hb=document.getElementById('home-bal'); if(hb)hb.textContent=b;

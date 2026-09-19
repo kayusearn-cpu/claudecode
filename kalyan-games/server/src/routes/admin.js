@@ -128,6 +128,9 @@ router.post('/withdrawals/:id/reject', adminAuth, async (req, res) => {
   const wr = await prisma.withdrawRequest.findUnique({ where: { id: req.params.id } });
   if (!wr || wr.status !== 'pending') return res.status(400).json({ error: 'Request not pending' });
   await prisma.withdrawRequest.update({ where: { id: wr.id }, data: { status: 'rejected' } });
+  await prisma.notification.create({
+    data: { userId: wr.userId, type: 'withdraw', title: 'Withdrawal rejected', body: 'Your withdrawal of ₹' + wr.amount + ' was rejected. Please contact support.' },
+  });
   res.json({ status: 'rejected' });
 });
 
@@ -163,6 +166,9 @@ router.post('/deposits/:id/reject', adminAuth, async (req, res) => {
   const dr = await prisma.depositRequest.findUnique({ where: { id: req.params.id } });
   if (!dr || dr.status !== 'pending') return res.status(400).json({ error: 'Request not pending' });
   await prisma.depositRequest.update({ where: { id: dr.id }, data: { status: 'rejected' } });
+  await prisma.notification.create({
+    data: { userId: dr.userId, type: 'deposit', title: 'Deposit rejected', body: 'Your deposit of ₹' + dr.amount + ' could not be verified. Please contact support.' },
+  });
   res.json({ status: 'rejected' });
 });
 

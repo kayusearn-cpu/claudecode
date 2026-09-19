@@ -19,6 +19,9 @@ router.post('/register', async (req, res) => {
   const user = await prisma.user.create({
     data: { phone, name, password: await bcrypt.hash(password, 10) },
   });
+  await prisma.notification.create({
+    data: { userId: user.id, type: 'system', title: 'Welcome to Kalyan Games', body: 'Your account is ready. Add funds and start playing!' },
+  });
   const token = sign({ sub: user.id, role: 'user' });
   res.json({ token, user: publicUser(user) });
 });
@@ -46,6 +49,9 @@ router.post('/change-password', userAuth, async (req, res) => {
     return res.status(401).json({ error: 'Your current password is incorrect' });
   }
   await prisma.user.update({ where: { id: user.id }, data: { password: await bcrypt.hash(newPassword, 10) } });
+  await prisma.notification.create({
+    data: { userId: user.id, type: 'security', title: 'Password changed', body: 'Your password was changed successfully.' },
+  });
   res.json({ ok: true, message: 'Password updated successfully' });
 });
 
