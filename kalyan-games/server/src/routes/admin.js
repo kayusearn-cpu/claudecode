@@ -180,4 +180,24 @@ router.post('/users/:id/reset-password', adminAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+/* ------------------------- Payment settings ---------------------------- */
+router.get('/settings', adminAuth, async (_req, res) => {
+  const s = await prisma.setting.findUnique({ where: { id: 'payment' } });
+  res.json({ settings: s || { id: 'payment', upiId: '', upiName: '', bankDetails: '', qrImage: '' } });
+});
+
+// PUT /admin/settings  { upiId, upiName, bankDetails, qrImage }
+router.put('/settings', adminAuth, async (req, res) => {
+  const { upiId, upiName, bankDetails, qrImage } = req.body || {};
+  if (qrImage && String(qrImage).length > 3_000_000) return res.status(413).json({ error: 'QR image too large (max ~2MB)' });
+  const data = {
+    upiId: (upiId || '').slice(0, 120),
+    upiName: (upiName || '').slice(0, 120),
+    bankDetails: (bankDetails || '').slice(0, 1000),
+    qrImage: qrImage ? String(qrImage) : null,
+  };
+  const s = await prisma.setting.upsert({ where: { id: 'payment' }, update: data, create: { id: 'payment', ...data } });
+  res.json({ settings: s });
+});
+
 module.exports = router;

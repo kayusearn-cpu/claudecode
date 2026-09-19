@@ -511,36 +511,70 @@
   function openSheet(kind){
     const s=document.getElementById('sheet');
     if(kind==='add'){
-      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account shared by admin, then submit the amount and your payment reference (UTR). Your balance is credited after the admin verifies it.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account below, then enter the amount and your UTR, and/or upload the payment screenshot. Balance is credited after the admin verifies it.</p>'+
+        '<div id="pay-info" style="background:#0d0a1c;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--sub)">Loading payment details…</div>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
         '<div class="field"><label>Payment method</label><div class="input" style="padding:0 6px 0 14px"><select id="sheet-method" style="flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:inherit;font-size:14px;height:100%"><option>UPI</option><option>Bank Transfer</option></select></div></div>'+
         '<div class="field"><label>Transaction / UTR number</label><div class="input"><input id="sheet-ref" type="text" placeholder="e.g. 4051XXXXXXXX"></div></div>'+
+        '<div class="field"><label>Payment screenshot (optional)</label><input type="file" id="sheet-proof" accept="image/*" style="width:100%;font-size:12.5px;color:var(--sub)"></div>'+
         '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doDeposit()">Submit deposit request</button>';
+      loadPayInfo();
     }else if(kind==='withdraw'){
       s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Enter the amount you want to withdraw. The admin will review and pay out to your account.</p>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
         '<button class="btn-grad big-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>';
     }else{
-      s.innerHTML='<div class="grab"></div><h4>Forgot password?</h4><p>Enter your registered mobile number. The admin will reset your password and contact you.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>Forgot password?</h4><p>Enter your registered mobile number and we will send you an OTP to reset your password.</p>'+
         '<div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="sheet-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>'+
-        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doForgot()">Send reset request</button>';
+        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doForgot()">Send OTP</button>';
     }
     document.getElementById('overlay').classList.add('show');
     setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('sheet-phone'); if(a)a.focus(); },200);
   }
   function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
+  async function loadPayInfo(){
+    try{
+      const d=await api('/wallet/payment-info'); const box=document.getElementById('pay-info'); if(!box)return;
+      if(!d.upiId && !d.bankDetails && !d.qrImage){ box.innerHTML='Ask the admin for payment details, then enter your UTR below.'; return; }
+      let h='';
+      if(d.qrImage) h+='<img src="'+d.qrImage+'" alt="Pay QR" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;display:block;margin:0 auto 10px">';
+      window._upi=d.upiId||'';
+      if(d.upiId) h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>UPI: <b style="color:var(--ink)">'+d.upiId+'</b>'+(d.upiName?' ('+d.upiName+')':'')+'</span><button class="chipsel" style="padding:5px 10px;color:var(--ink)" onclick="copyUpi()">Copy</button></div>';
+      if(d.bankDetails) h+='<div style="margin-top:8px;white-space:pre-wrap;color:var(--ink)">'+d.bankDetails+'</div>';
+      box.innerHTML=h;
+    }catch(e){ const box=document.getElementById('pay-info'); if(box)box.textContent='Could not load payment details.'; }
+  }
+  function copyUpi(){ try{ navigator.clipboard.writeText(window._upi||''); toast('UPI copied'); }catch(e){ toast('Copy not supported'); } }
+  function fileToDataUrl(file){ return new Promise((res,rej)=>{ if(!file){res(null);return;} const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('Could not read file')); r.readAsDataURL(file); }); }
   async function doDeposit(){
     const a=+document.getElementById('sheet-amt').value;
     const method=document.getElementById('sheet-method').value;
     const reference=(document.getElementById('sheet-ref').value||'').trim();
+    const file=document.getElementById('sheet-proof').files[0];
     if(a<=0){ toast('Enter a valid amount'); return; }
-    if(!reference){ toast('Enter your payment reference / UTR'); return; }
-    try{ const d=await api('/wallet/deposit',{method:'POST',body:JSON.stringify({amount:a,method,reference})}); closeSheet(); toast(d.message||'Deposit request submitted'); }catch(e){ toast(e.message); }
+    if(file && file.size>2*1024*1024){ toast('Screenshot must be under 2MB'); return; }
+    if(!reference && !file){ toast('Enter your UTR or upload the screenshot'); return; }
+    try{ const proof=await fileToDataUrl(file);
+      const d=await api('/wallet/deposit',{method:'POST',body:JSON.stringify({amount:a,method,reference,proof})}); closeSheet(); toast(d.message||'Deposit request submitted'); }catch(e){ toast(e.message); }
   }
   async function doForgot(){
     const phone=(document.getElementById('sheet-phone').value||'').replace(/\D/g,'');
     if(phone.length<10){ toast('Enter a valid mobile number'); return; }
-    try{ const d=await api('/auth/forgot',{method:'POST',body:JSON.stringify({phone})}); closeSheet(); toast(d.message||'Reset request sent'); }catch(e){ toast(e.message); }
+    try{ const d=await api('/auth/forgot',{method:'POST',body:JSON.stringify({phone})}); window._rphone=phone; renderResetStep(d.message); }catch(e){ toast(e.message); }
+  }
+  function renderResetStep(msg){
+    document.getElementById('sheet').innerHTML='<div class="grab"></div><h4>Enter OTP</h4><p>'+(msg||'Enter the OTP sent to your mobile and set a new password.')+'</p>'+
+      '<div class="field"><label>OTP</label><div class="input"><input id="sheet-otp" type="tel" inputmode="numeric" maxlength="6" placeholder="6-digit code"></div></div>'+
+      '<div class="field"><label>New password</label><div class="input"><input id="sheet-newpass" type="password" placeholder="Create a new password"></div></div>'+
+      '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doReset()">Reset password</button>';
+    setTimeout(()=>{ const o=document.getElementById('sheet-otp'); if(o)o.focus(); },100);
+  }
+  async function doReset(){
+    const otp=(document.getElementById('sheet-otp').value||'').trim();
+    const password=document.getElementById('sheet-newpass').value||'';
+    if(otp.length<4){ toast('Enter the OTP'); return; }
+    if(password.length<4){ toast('Password must be at least 4 characters'); return; }
+    try{ const d=await api('/auth/reset',{method:'POST',body:JSON.stringify({phone:window._rphone,otp,password})}); closeSheet(); go('login'); toast(d.message||'Password updated'); }catch(e){ toast(e.message); }
   }
   async function doWithdraw(){
     const a=+document.getElementById('sheet-amt').value;
