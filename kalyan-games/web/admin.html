@@ -1,15 +1,15 @@
 <title>Kalyan Games Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   :root{
     --bg:#05050c; --panel:#0b0a16; --panel2:#100e1f; --card:#120f22;
     --line:#211b33; --line-soft:#181327;
     --ink:#f4f1fb; --sub:#9a94ac; --muted:#6b6580;
-    --grad:linear-gradient(100deg,#7a2bff 0%,#a021e8 55%,#c21fd6 100%);
-    --grad-border:linear-gradient(140deg,#8b3bff,#c21fd6 72%,#6d28d9);
+    --grad:linear-gradient(91.26deg,#672DFF 6.28%,#932DFF 66.02%,#E522FF 117.64%);
+    --grad-border:linear-gradient(140deg,#682DFF,#C027FF 72%,#672DFF);
     --violet:#8b3bff; --green:#3fcf7f; --green-bg:rgba(63,207,127,.13);
     --red:#f0556b; --red-bg:rgba(240,85,107,.13); --amber:#f5b544; --amber-bg:rgba(245,181,68,.13);
     color-scheme:dark;
@@ -22,7 +22,7 @@
       radial-gradient(760px 620px at 108% 12%, #240b34 0%, transparent 52%),
       var(--bg);
     color:var(--ink);
-    font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    font-family:"Urbanist",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     min-height:100dvh;
   }
   button{font-family:inherit;cursor:pointer}
@@ -143,9 +143,10 @@
 </style>
 
 <!-- ================= LOGIN ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="kglogograd" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient><symbol id="kglogo" viewBox="0 0 61 40"><path d="M12.2635 39.9962C10.5754 39.9962 8.98853 39.6778 7.50036 39.0411C6.01218 38.4044 4.71256 37.5377 3.60022 36.4385C2.48789 35.3406 1.60966 34.0545 0.965543 32.5814C0.321426 31.1096 0 29.5291 0 27.845C0 26.4477 0.244233 25.0832 0.731433 23.7542C1.21863 22.4251 1.91337 21.2236 2.81311 20.1497L2.88777 19.9817L2.81311 19.8692C1.91337 18.7954 1.21863 17.5939 0.731433 16.2648C0.244233 14.9357 0 13.5725 0 12.174C0 10.4772 0.321426 8.89422 0.965543 7.42743C1.60966 5.96064 2.48789 4.67831 3.60022 3.58043C4.71256 2.48255 6.01345 1.61208 7.50036 0.969013C8.98853 0.325951 10.5754 0.00505076 12.2635 0.00505076H27.2288V8.59859H12.2635C11.2638 8.59859 10.4096 8.94476 9.70351 9.63835C8.99739 10.3307 8.64432 11.1772 8.64432 12.1752C8.64432 12.6503 8.74177 13.1051 8.93538 13.5422C9.129 13.9793 9.38588 14.3571 9.70478 14.6755C10.0237 14.9938 10.402 15.244 10.8399 15.4247C11.2777 15.6066 11.7523 15.6963 12.2648 15.6963H27.2301V24.2898H12.2648C11.7523 24.2898 11.2777 24.3833 10.8399 24.5703C10.402 24.7573 10.0237 25.0137 9.70478 25.3384C9.38588 25.6631 9.13026 26.0409 8.93538 26.4717C8.74177 26.9025 8.64432 27.3611 8.64432 27.8475C8.64432 28.3339 8.74177 28.7963 8.93538 29.2334C9.129 29.6706 9.38588 30.0483 9.70478 30.3667C10.0237 30.6851 10.402 30.9403 10.8399 31.1348C11.2777 31.3281 11.7523 31.4254 12.2648 31.4254H27.2301V40H12.2648L12.2635 39.9962ZM48.7365 0.00379C50.4246 0.00379 52.0115 0.322162 53.4997 0.958908C54.9878 1.59565 56.2874 2.46234 57.3998 3.56148C58.5121 4.65936 59.3903 5.94549 60.0345 7.41859C60.6786 8.89043 61 10.4709 61 12.155C61 13.5523 60.7558 14.9168 60.2686 16.2459C59.7814 17.5749 59.0866 18.7764 58.1869 19.8503L58.1122 20.0183L58.1869 20.1308C59.0866 21.2046 59.7814 22.4061 60.2686 23.7352C60.7558 25.0643 61 26.4275 61 27.826C61 29.5228 60.6786 31.1058 60.0345 32.5726C59.3903 34.0394 58.5121 35.3217 57.3998 36.4196C56.2874 37.5175 54.9866 38.3879 53.4997 39.031C52.0115 39.674 50.4246 39.9949 48.7365 39.9949H33.7712V31.4014H48.7365C49.7362 31.4014 50.5904 31.0552 51.2965 30.3616C52.0026 29.6693 52.3557 28.8228 52.3557 27.8248C52.3557 27.3497 52.2582 26.8949 52.0646 26.4578C51.871 26.0207 51.6141 25.6429 51.2952 25.3245C50.9763 25.0062 50.598 24.756 50.1601 24.5753C49.7223 24.3934 49.2477 24.3037 48.7352 24.3037H33.7699V15.7102H48.7352C49.2477 15.7102 49.7223 15.6167 50.1601 15.4297C50.598 15.2427 50.9763 14.9863 51.2952 14.6616C51.6141 14.3369 51.8697 13.9591 52.0646 13.5283C52.2582 13.0975 52.3557 12.6389 52.3557 12.1525C52.3557 11.6661 52.2582 11.2037 52.0646 10.7666C51.871 10.3294 51.6141 9.95168 51.2952 9.6333C50.9763 9.31493 50.598 9.05972 50.1601 8.86516C49.7223 8.67187 49.2477 8.57459 48.7352 8.57459H33.7699V0H48.7352L48.7365 0.00379Z" fill="url(#kglogograd)"/></symbol></defs></svg>
 <div id="login">
   <div class="login-card">
-    <div class="brand"><span class="logo">KG</span><div><b>Kalyan Games</b><small>ADMIN PANEL</small></div></div>
+    <div class="brand"><svg class="brand-svg" style="width:46px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN PANEL</small></div></div>
 
     <!-- step 1: password -->
     <div id="step-pw">
@@ -181,7 +182,7 @@
 <!-- ================= APP ================= -->
 <div id="app">
   <aside class="side">
-    <div class="brand"><span class="logo">KG</span><div><b>Kalyan Games</b><small>ADMIN</small></div></div>
+    <div class="brand"><svg class="brand-svg" style="width:40px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN</small></div></div>
     <nav class="nav" id="nav"></nav>
     <div class="foot">
       <span class="av">A</span>
@@ -402,3 +403,5 @@ let tT; function toast(m){const t=document.getElementById('toast');t.textContent
 
 buildNav();
 </script>
+
+<style>.brand-svg{display:block;flex:0 0 auto}</style>
