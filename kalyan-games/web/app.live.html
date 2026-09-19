@@ -258,7 +258,7 @@
       <p class="lead">Log in to play and win real rewards.</p>
       <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="lg-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>
       <div class="field"><label>Password</label><div class="input"><input id="lg-pass" type="password" placeholder="Enter password"></div></div>
-      <div class="fp" onclick="openSheet('forgot')" style="cursor:pointer">Forgot password?</div>
+      <div class="fp" style="color:var(--muted);cursor:default">Change your password after login, from your profile.</div>
       <button class="btn-grad big-btn" onclick="doLogin()">Log In</button>
       
       <div class="alt">New here? <b onclick="go('signup')" style="cursor:pointer">Create account</b></div>
@@ -281,7 +281,7 @@
           <div class="brand"><svg class="brand-svg" style="width:48px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
           <div style="display:flex;gap:10px;align-items:center">
             <button class="icon-btn" onclick="toast('No new notifications')"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
-            <div class="avatar">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
+            <div class="avatar" onclick="openSheet('account')" title="Account &amp; password" style="cursor:pointer">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
           </div>
         </div>
         <div class="greet"><h3>Welcome!</h3><p>Start playing and win real rewards</p></div>
@@ -511,7 +511,7 @@
   function openSheet(kind){
     const s=document.getElementById('sheet');
     if(kind==='add'){
-      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account below, then enter the amount and your UTR, and/or upload the payment screenshot. Balance is credited after the admin verifies it.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account/UPI below, then enter the amount and your UTR, and/or upload the payment screenshot. Your deposit will be added within 24 hours after the admin verifies your payment.</p>'+
         '<div id="pay-info" style="background:#0d0a1c;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--sub)">Loading payment details…</div>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
         '<div class="field"><label>Payment method</label><div class="input" style="padding:0 6px 0 14px"><select id="sheet-method" style="flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:inherit;font-size:14px;height:100%"><option>UPI</option><option>Bank Transfer</option></select></div></div>'+
@@ -524,12 +524,14 @@
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
         '<button class="btn-grad big-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>';
     }else{
-      s.innerHTML='<div class="grab"></div><h4>Forgot password?</h4><p>Enter your registered mobile number and we will send you an OTP to reset your password.</p>'+
-        '<div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="sheet-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>'+
-        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doForgot()">Send OTP</button>';
+      s.innerHTML='<div class="grab"></div><h4>Change Password</h4><p>Enter your current password and choose a new one.</p>'+
+        '<div class="field"><label>Current password</label><div class="input"><input id="sheet-oldpass" type="password" placeholder="Current password"></div></div>'+
+        '<div class="field"><label>New password</label><div class="input"><input id="sheet-newpass" type="password" placeholder="Create a new password"></div></div>'+
+        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doChangePass()">Update password</button>'+
+        '<button class="chipsel" style="width:100%;justify-content:center;margin-top:12px;color:var(--ink)" onclick="logout()">Log out</button>';
     }
     document.getElementById('overlay').classList.add('show');
-    setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('sheet-phone'); if(a)a.focus(); },200);
+    setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('sheet-oldpass'); if(a)a.focus(); },200);
   }
   function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
   async function loadPayInfo(){
@@ -555,26 +557,14 @@
     if(file && file.size>2*1024*1024){ toast('Screenshot must be under 2MB'); return; }
     if(!reference && !file){ toast('Enter your UTR or upload the screenshot'); return; }
     try{ const proof=await fileToDataUrl(file);
-      const d=await api('/wallet/deposit',{method:'POST',body:JSON.stringify({amount:a,method,reference,proof})}); closeSheet(); toast(d.message||'Deposit request submitted'); }catch(e){ toast(e.message); }
+      await api('/wallet/deposit',{method:'POST',body:JSON.stringify({amount:a,method,reference,proof})}); closeSheet(); toast('Deposit submitted — it will be added within 24 hours after verification.'); }catch(e){ toast(e.message); }
   }
-  async function doForgot(){
-    const phone=(document.getElementById('sheet-phone').value||'').replace(/\D/g,'');
-    if(phone.length<10){ toast('Enter a valid mobile number'); return; }
-    try{ const d=await api('/auth/forgot',{method:'POST',body:JSON.stringify({phone})}); window._rphone=phone; renderResetStep(d.message); }catch(e){ toast(e.message); }
-  }
-  function renderResetStep(msg){
-    document.getElementById('sheet').innerHTML='<div class="grab"></div><h4>Enter OTP</h4><p>'+(msg||'Enter the OTP sent to your mobile and set a new password.')+'</p>'+
-      '<div class="field"><label>OTP</label><div class="input"><input id="sheet-otp" type="tel" inputmode="numeric" maxlength="6" placeholder="6-digit code"></div></div>'+
-      '<div class="field"><label>New password</label><div class="input"><input id="sheet-newpass" type="password" placeholder="Create a new password"></div></div>'+
-      '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doReset()">Reset password</button>';
-    setTimeout(()=>{ const o=document.getElementById('sheet-otp'); if(o)o.focus(); },100);
-  }
-  async function doReset(){
-    const otp=(document.getElementById('sheet-otp').value||'').trim();
-    const password=document.getElementById('sheet-newpass').value||'';
-    if(otp.length<4){ toast('Enter the OTP'); return; }
-    if(password.length<4){ toast('Password must be at least 4 characters'); return; }
-    try{ const d=await api('/auth/reset',{method:'POST',body:JSON.stringify({phone:window._rphone,otp,password})}); closeSheet(); go('login'); toast(d.message||'Password updated'); }catch(e){ toast(e.message); }
+  async function doChangePass(){
+    const oldPassword=document.getElementById('sheet-oldpass').value||'';
+    const newPassword=document.getElementById('sheet-newpass').value||'';
+    if(!oldPassword||!newPassword){ toast('Enter your current and new password'); return; }
+    if(newPassword.length<4){ toast('New password must be at least 4 characters'); return; }
+    try{ const d=await api('/auth/change-password',{method:'POST',body:JSON.stringify({oldPassword,newPassword})}); closeSheet(); toast(d.message||'Password updated'); }catch(e){ toast(e.message); }
   }
   async function doWithdraw(){
     const a=+document.getElementById('sheet-amt').value;
