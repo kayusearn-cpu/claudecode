@@ -24,6 +24,23 @@ router.get('/payment-info', async (_req, res) => {
   });
 });
 
+// GET /wallet/social  (public) -> the platform's social media links
+router.get('/social', async (_req, res) => {
+  const s = await prisma.setting.findUnique({ where: { id: 'payment' } });
+  res.json({
+    instagram: s?.igUrl || '', facebook: s?.fbUrl || '', youtube: s?.ytUrl || '',
+    whatsapp: s?.waUrl || '', telegram: s?.tgUrl || '',
+  });
+});
+
+// GET /wallet/passbook  -> full transaction history
+router.get('/passbook', userAuth, async (req, res) => {
+  const txns = await prisma.transaction.findMany({
+    where: { userId: req.userId }, orderBy: { createdAt: 'desc' }, take: 200,
+  });
+  res.json({ transactions: txns });
+});
+
 // POST /wallet/deposit  { amount, method, reference, proof? }
 // Creates a PENDING deposit request. Balance is only credited after an admin
 // verifies the real payment and approves it. No money is added automatically.

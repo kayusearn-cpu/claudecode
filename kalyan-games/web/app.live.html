@@ -241,7 +241,15 @@
   <symbol id="i-info" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10 18.33A8.33 8.33 0 1 0 10 1.67a8.33 8.33 0 0 0 0 16.66Z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10 6.67v4.16"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.995 13.33h.008"/></symbol>
   <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></symbol>
   <symbol id="i-q" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.3" fill="none" stroke="currentColor"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M7.7 7.6a2.35 2.35 0 1 1 3.4 2.1c-.75.4-1.1.9-1.1 1.8"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.99 14h.02"/></symbol>
-<symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol></defs></svg>
+<symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M8 13h8M8 17h6"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M18 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM6 15a3 3 0 1 0 0-.01M18 22a3 3 0 1 0 0-.01M8.6 13.5l6.8 3.9M15.4 6.6l-6.8 3.9"/></symbol>
+  <symbol id="i-globe2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 0 1-11.9 7.6L3 21l1.9-6.1A8.5 8.5 0 1 1 21 11.5z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol></defs></svg>
 
 
 
@@ -278,7 +286,7 @@
     <div class="view" id="home">
       <div class="scroll">
         <div class="home-top">
-          <div class="brand"><svg class="brand-svg" style="width:48px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
+          <div class="brand" style="gap:12px"><button class="icon-btn" onclick="openDrawer()" title="Menu"><svg width="20" height="20"><use href="#i-menu"/></svg></button><svg class="brand-svg" style="width:44px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
           <div style="display:flex;gap:10px;align-items:center">
             <button class="icon-btn" onclick="openNotif()"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
             <div class="avatar" onclick="openSheet('account')" title="Account &amp; password" style="cursor:pointer">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
@@ -287,7 +295,7 @@
         <div class="greet"><h3>Welcome!</h3><p>Start playing and win real rewards</p></div>
         <div class="balance"><div class="glow"></div>
           <div class="lbl"><span>Your Balance</span><button class="addfund" onclick="openSheet('add')"><span class="plus">+</span> Add Fund</button></div>
-          <div class="amt">₹<span id="home-bal">2,000.00</span></div>
+          <div class="amt">₹<span id="home-bal">0.00</span></div>
         </div>
         <div style="height:8px"></div>
         <div id="market-list"></div>
@@ -301,7 +309,7 @@
         <div class="sub-head">
           <button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
           <div class="htitle" id="games-title">Milan Day</div>
-          <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹2,000</span>
+          <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
           <button class="help" onclick="toast('Pick a game type to start')"><svg width="18" height="18"><use href="#i-q"/></svg></button>
         </div>
         <div class="games-grid" id="games-grid"></div>
@@ -314,7 +322,7 @@
       <div class="sub-head" style="padding-top:8px">
         <button class="back" onclick="go('games')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
         <div class="htitle" id="bet-title">Milan Day - Single Digit</div>
-        <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹2,000</span>
+        <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
       </div>
       <div class="bet-sub">
         <span class="chipsel"><svg width="15" height="15"><use href="#i-clock"/></svg> Oct 14, 2025</span>
@@ -334,7 +342,7 @@
         <div class="wallet-hero">
           <svg class="planet" width="118" height="118" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="55" r="30" stroke="#3a2f55" stroke-width="1.5"/><ellipse cx="60" cy="55" rx="52" ry="16" stroke="#3a2f55" stroke-width="1.5" transform="rotate(-18 60 55)"/><circle cx="92" cy="30" r="2" fill="#5a4d7a"/><circle cx="30" cy="80" r="1.6" fill="#5a4d7a"/></svg>
           <div class="wl">Your Balance</div>
-          <div class="wa">₹<span id="wallet-bal">2,000.00</span></div>
+          <div class="wa">₹<span id="wallet-bal">0.00</span></div>
           <div class="wallet-actions">
             <button class="wa-btn" onclick="openSheet('add')"><span class="ci"><svg width="18" height="18"><use href="#i-up"/></svg></span><span>Add Fund</span></button>
             <button class="wa-btn" onclick="openSheet('withdraw')"><span class="ci"><svg width="18" height="18"><use href="#i-down"/></svg></span><span>Withdraw</span></button>
@@ -361,6 +369,42 @@
         <div id="notif-list" style="padding:8px 20px 130px"></div>
       </div>
     </div>
+
+    <div class="view" id="mybids"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">My Bids</div></div>
+      <div id="mybids-list" style="padding:8px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="passbook"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Passbook</div></div>
+      <div id="passbook-list" style="padding:8px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="chart"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Game Chart</div></div>
+      <div id="chart-list" style="padding:6px 0 130px"></div>
+    </div></div>
+    <div class="view" id="chartd"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('chart')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle" id="chartd-title">Chart</div></div>
+      <div id="chartd-list" style="padding:6px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="contact"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Contact With Us</div></div>
+      <p style="color:var(--sub);font-size:13px;margin:6px 20px 4px">Stay informed with our latest updates.</p>
+      <div id="contact-list" class="social-grid"></div>
+    </div></div>
+
+    <div class="drawer-ov" id="drawer-ov" onclick="if(event.target===this)closeDrawer()"><aside class="drawer" id="drawer">
+      <div class="dr-user"><span class="avatar" id="dr-av">MA</span><div style="min-width:0"><b id="dr-name">Player</b><span id="dr-phone">+91</span></div></div>
+      <div class="dr-nav">
+        <a onclick="closeDrawer();go('home')"><svg width="20" height="20"><use href="#i-home"/></svg>Home</a>
+        <a onclick="closeDrawer();openMyBids()"><svg width="20" height="20"><use href="#i-games"/></svg>My Bids</a>
+        <a onclick="closeDrawer();go('wallet');loadWallet()"><svg width="20" height="20"><use href="#i-wallet"/></svg>Wallet</a>
+        <a onclick="closeDrawer();openPassbook()"><svg width="20" height="20"><use href="#i-doc"/></svg>Passbook</a>
+        <a onclick="closeDrawer();openChart()"><svg width="20" height="20"><use href="#i-chart"/></svg>Chart</a>
+        <a onclick="closeDrawer();openContact()"><svg width="20" height="20"><use href="#i-globe2"/></svg>Contact with us</a>
+        <a onclick="shareApp()"><svg width="20" height="20"><use href="#i-share"/></svg>Share app</a>
+      </div>
+      <button class="dr-logout" onclick="logout()"><svg width="20" height="20"><use href="#i-logout"/></svg>Logout</button>
+    </aside></div>
 
     <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
     <div class="center-modal" id="success"><div class="card">
@@ -408,6 +452,7 @@
     try{
       const d=await api('/auth/login',{method:'POST',body:JSON.stringify({phone,password})});
       TOKEN=d.token; store.set('kg_token',TOKEN);
+      window.USER=d.user; setDrawerUser();
       balance=d.user.balance; syncBalance();
       await loadMarkets(); go('home');
     }catch(e){ toast(e.message||'Login failed'); }
@@ -421,7 +466,9 @@
     if(phone.length<10){ toast('Enter a valid mobile number'); return; }
     try{
       const d=await api('/auth/register',{method:'POST',body:JSON.stringify({name,phone,password})});
-      TOKEN=d.token; store.set('kg_token',TOKEN); balance=d.user.balance; syncBalance();
+      TOKEN=d.token; store.set('kg_token',TOKEN);
+      window.USER=d.user; setDrawerUser();
+      balance=d.user.balance; syncBalance();
       await loadMarkets(); go('home');
     }catch(e){ toast(e.message||'Sign up failed'); }
   }
@@ -655,6 +702,67 @@
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function showSuccess(title,msg){ document.getElementById('success-title').textContent=title; document.getElementById('success-msg').textContent=msg; const r=document.getElementById('receipt'); if(r)r.style.display='none'; document.getElementById('success').classList.add('show'); }
+  function setDrawerUser(){
+    const u=window.USER; if(!u)return;
+    const init=(u.name||'P').trim().split(/\s+/).map(w=>w[0]||'').slice(0,2).join('').toUpperCase()||'P';
+    const nm=document.getElementById('dr-name'), ph=document.getElementById('dr-phone'), av=document.getElementById('dr-av'), hav=document.querySelector('.home-top .avatar');
+    if(nm)nm.textContent=u.name||'Player'; if(ph)ph.textContent='+91 '+(u.phone||''); if(av)av.textContent=init; if(hav)hav.textContent=init;
+  }
+  function openDrawer(){ document.getElementById('drawer-ov').classList.add('show'); }
+  function closeDrawer(){ document.getElementById('drawer-ov').classList.remove('show'); }
+  function shareApp(){ closeDrawer(); const url=location.href; if(navigator.share){ navigator.share({title:'Kalyan Games',text:'Play Kalyan Games',url}).catch(function(){}); } else { try{ navigator.clipboard.writeText(url); toast('App link copied'); }catch(e){ toast('Share: '+url); } } }
+  function openMyBids(){ go('mybids'); loadMyBids(); }
+  async function loadMyBids(){
+    const el=document.getElementById('mybids-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/bids/history'); const bs=d.bids||[];
+      if(!bs.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids yet.</div>'; return; }
+      el.innerHTML=bs.map(function(b){ const dt=new Date(b.createdAt); const nums=Object.keys(b.selections||{}).join(', ');
+        return '<div class="tx"><span class="ti"style="background:rgba(139,59,255,.14);color:var(--violet)"><svg width="18" height="18"><use href="#i-games"/></svg></span>'+
+          '<div class="tmid"><div class="tt">'+b.gameType+' · '+(b.market?b.market.name:'')+'</div><div class="ts">'+nums+'</div></div>'+
+          '<div style="text-align:right"><div class="tv">'+inr(b.total)+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+    }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function openPassbook(){ go('passbook'); loadPassbook(); }
+  async function loadPassbook(){
+    const el=document.getElementById('passbook-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/wallet/passbook'); const ts=d.transactions||[];
+      if(!ts.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No transactions yet.</div>'; return; }
+      const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'You won',loss:'Bid lost'};
+      el.innerHTML=ts.map(function(t){ const pos=t.amount>0,io=pos?'in':'out'; const dt=new Date(t.createdAt);
+        return '<div class="tx"><span class="ti '+io+'"><svg width="18" height="18"><use href="#i-'+(pos?'up':'down')+'"/></svg></span>'+
+          '<div class="tmid"><div class="tt">'+(map[t.type]||t.type)+'</div><div class="ts">'+(t.note||'')+'</div></div>'+
+          '<div style="text-align:right"><div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(t.amount))+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+    }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function openChart(){ go('chart'); loadChart(); }
+  async function loadChart(){
+    const el=document.getElementById('chart-list'); el.innerHTML='<div style="padding:24px 20px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/markets'); const ms=d.markets||[];
+      if(!ms.length){ el.innerHTML='<div style="padding:40px 20px;color:var(--muted);font-size:13px;text-align:center">No markets yet.</div>'; return; }
+      el.innerHTML=ms.map(function(m){ const nm=(m.name||'').replace(/'/g,'');
+        return '<div class="chart-row"><div><div class="cn">'+m.name+'</div>'+(m.latestResult?'<div class="cv">'+m.latestResult+'</div>':'<div class="cv" style="color:var(--muted)">No result yet</div>')+'</div><button class="btn-grad" style="padding:9px 22px;font-size:13px" onclick="openChartDetail(\''+m.id+'\',\''+nm+'\')">View</button></div>'; }).join('');
+    }catch(e){ el.innerHTML='<div style="padding:24px 20px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function openChartDetail(id,name){ document.getElementById('chartd-title').textContent=name+' Chart'; go('chartd'); loadChartDetail(id); }
+  async function loadChartDetail(id){
+    const el=document.getElementById('chartd-list'); el.innerHTML='<div style="padding:24px 0;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/markets/'+id+'/results'); const rs=d.results||[];
+      if(!rs.length){ el.innerHTML='<div style="padding:40px 0;color:var(--muted);font-size:13px;text-align:center">No results declared yet.</div>'; return; }
+      el.innerHTML='<table class="ctable"><thead><tr><th>Date</th><th style="text-align:right">Result</th></tr></thead><tbody>'+
+        rs.map(function(r){ return '<tr><td>'+new Date(r.declaredAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td><td class="v">'+r.value+'</td></tr>'; }).join('')+'</tbody></table>';
+    }catch(e){ el.innerHTML='<div style="padding:24px 0;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function openContact(){ go('contact'); loadContact(); }
+  async function loadContact(){
+    const el=document.getElementById('contact-list'); el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/wallet/social');
+      const items=[['instagram','Instagram','i-cam'],['facebook','Facebook','i-globe2'],['youtube','YouTube','i-play'],['whatsapp','WhatsApp','i-chat'],['telegram','Telegram','i-send']];
+      let h='';
+      for(const it of items){ const url=d[it[0]]; if(!url)continue;
+        h+='<a class="social-card" href="'+url+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="sc-ic"><svg width="24" height="24"><use href="#'+it[2]+'"/></svg></span><b>'+it[1]+'</b><span>Tap to open</span></a>'; }
+      el.innerHTML=h||'<div style="grid-column:1/-1;padding:40px 0;color:var(--muted);font-size:13px;text-align:center">No links added yet.</div>';
+    }catch(e){ el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
   function syncBalance(){
     const b=Number(balance||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
     const hb=document.getElementById('home-bal'); if(hb)hb.textContent=b;
@@ -666,6 +774,46 @@
   buildNav();
 
 </script>
+
+
+<style>.brand-svg{display:block;flex:0 0 auto}</style>
+
+<style>
+#signup .pad{padding:26px 26px;display:flex;flex-direction:column;justify-content:center;height:100%;overflow-y:auto}
+#signup .login-logo{width:80px;margin-bottom:16px}
+#signup h2{font-weight:800;font-size:26px;margin:2px 0 0;letter-spacing:-.5px;line-height:1.12}
+#signup h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+#signup .lead{color:var(--sub);font-size:13.5px;margin:8px 0 22px;font-weight:400}
+</style>
+<style>
+  .drawer-ov{position:absolute;inset:0;background:rgba(3,3,10,.55);opacity:0;visibility:hidden;transition:.28s;z-index:80}
+  .drawer-ov.show{opacity:1;visibility:visible}
+  .drawer{position:absolute;top:0;left:0;bottom:0;width:84%;max-width:300px;background:linear-gradient(180deg,#11101d,#0a0912);border-right:1px solid var(--line);transform:translateX(-100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;padding:calc(22px + env(safe-area-inset-top)) 0 calc(14px + env(safe-area-inset-bottom))}
+  .drawer-ov.show .drawer{transform:none}
+  .dr-user{display:flex;align-items:center;gap:12px;padding:2px 20px 18px;border-bottom:1px solid var(--line-soft)}
+  .dr-user .avatar{width:52px;height:52px;font-size:18px}
+  .dr-user b{font-weight:700;font-size:16px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dr-user span{color:var(--sub);font-size:12.5px}
+  .dr-nav{flex:1;overflow-y:auto;padding:12px}
+  .dr-nav a{display:flex;align-items:center;gap:14px;padding:12px;border-radius:12px;color:var(--ink);font-size:14.5px;font-weight:500;cursor:pointer}
+  .dr-nav a:hover{background:#171327}
+  .dr-nav a svg{color:var(--sub);flex:0 0 auto}
+  .dr-logout{margin:0 12px;display:flex;align-items:center;gap:14px;background:none;border:none;color:var(--red);font-size:14.5px;font-weight:600;padding:14px 12px;border-top:1px solid var(--line-soft);cursor:pointer}
+  .chart-row{display:flex;align-items:center;justify-content:space-between;margin:12px 20px 0;background:linear-gradient(160deg,var(--card-dark2),var(--card-dark));border-radius:14px;padding:15px 18px;position:relative}
+  .chart-row::before{content:"";position:absolute;inset:0;border-radius:14px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .chart-row .cn{font-weight:600;font-size:15px}
+  .chart-row .cv{font-weight:700;color:var(--violet);letter-spacing:.05em;font-size:13px;margin-top:3px}
+  .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 20px 130px}
+  .social-card{position:relative;border-radius:16px;padding:18px 12px;background:linear-gradient(160deg,var(--card-dark2),var(--card-dark));display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;text-align:center}
+  .social-card::before{content:"";position:absolute;inset:0;border-radius:16px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .social-card .sc-ic{width:46px;height:46px;border-radius:13px;background:#1a1433;display:grid;place-items:center;color:var(--ink)}
+  .social-card b{font-weight:600;font-size:14px}
+  .social-card span{color:var(--sub);font-size:11px;word-break:break-all}
+  .ctable{width:calc(100% - 40px);margin:6px 20px 0;border-collapse:collapse}
+  .ctable th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;font-weight:600}
+  .ctable td{padding:12px 0;border-top:1px solid var(--line-soft);font-size:13.5px}
+  .ctable td.v{font-weight:700;color:var(--violet);letter-spacing:.05em;text-align:right}
+</style>
 
 </body>
 </html>

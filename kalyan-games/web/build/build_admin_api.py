@@ -1,217 +1,9 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#05050c">
-</head>
-<body>
-<title>Kalyan Games Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<style>
-  :root{
-    --bg:#05050c; --panel:#0b0a16; --panel2:#100e1f; --card:#120f22;
-    --line:#211b33; --line-soft:#181327;
-    --ink:#f4f1fb; --sub:#9a94ac; --muted:#6b6580;
-    --grad:linear-gradient(91.26deg,#672DFF 6.28%,#932DFF 66.02%,#E522FF 117.64%);
-    --grad-border:linear-gradient(140deg,#682DFF,#C027FF 72%,#672DFF);
-    --violet:#8b3bff; --green:#3fcf7f; --green-bg:rgba(63,207,127,.13);
-    --red:#f0556b; --red-bg:rgba(240,85,107,.13); --amber:#f5b544; --amber-bg:rgba(245,181,68,.13);
-    color-scheme:dark;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{
-    background:
-      radial-gradient(900px 500px at 12% -8%, #150c30 0%, transparent 55%),
-      radial-gradient(760px 620px at 108% 12%, #240b34 0%, transparent 52%),
-      var(--bg);
-    color:var(--ink);
-    font-family:"Urbanist",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    min-height:100dvh;
-  }
-  button{font-family:inherit;cursor:pointer}
-  .logo{border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#fff;font-weight:800;flex:0 0 auto;box-shadow:0 6px 18px -6px rgba(140,50,230,.7)}
-  .btn{border:none;border-radius:11px;font-weight:600;font-size:13.5px;padding:11px 18px;color:#fff;background:var(--grad);box-shadow:0 10px 24px -12px rgba(150,40,220,.9)}
-  .btn:active{transform:translateY(1px)}
-  .btn.ghost{background:#161127;border:1px solid var(--line);color:var(--ink);box-shadow:none}
-  .btn.sm{padding:8px 13px;font-size:12.5px;border-radius:9px}
-  .btn.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,207,127,.35);box-shadow:none}
-  .btn.no{background:var(--red-bg);color:var(--red);border:1px solid rgba(240,85,107,.35);box-shadow:none}
-  input,select{font-family:inherit}
-  .in{background:#0c0917;border:1px solid var(--line);border-radius:11px;height:46px;padding:0 14px;color:var(--ink);font-size:14px;outline:none;width:100%}
-  .in:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,59,255,.14)}
-  .pill{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:11.5px;padding:5px 11px;border-radius:100px;white-space:nowrap}
-  .pill.on{color:var(--green);background:var(--green-bg);border:1px solid rgba(63,207,127,.35)}
-  .pill.off{color:var(--red);background:var(--red-bg);border:1px solid rgba(240,85,107,.35)}
-  .pill.pend{color:var(--amber);background:var(--amber-bg);border:1px solid rgba(245,181,68,.35)}
+import re
 
-  /* ---------------- LOGIN ---------------- */
-  #login{position:fixed;inset:0;display:grid;place-items:center;padding:24px;z-index:100}
-  .login-card{width:100%;max-width:400px;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:34px 30px;box-shadow:0 40px 90px -30px rgba(0,0,0,.8)}
-  .login-card .brand{display:flex;align-items:center;gap:11px;margin-bottom:22px}
-  .login-card .brand .logo{width:44px;height:44px;font-size:17px;border-radius:13px}
-  .login-card .brand b{font-weight:800;font-size:17px;display:block;line-height:1.1}
-  .login-card .brand small{color:var(--violet);font-size:9.5px;letter-spacing:.2em;font-weight:600}
-  .login-card h2{font-weight:700;font-size:21px;margin:2px 0 4px}
-  .login-card .lead{color:var(--sub);font-size:13px;margin:0 0 22px}
-  .lbl{display:block;font-weight:500;font-size:12.5px;color:var(--sub);margin:0 0 7px}
-  .step{margin-bottom:15px}
-  .err{color:var(--red);font-size:12.5px;margin:4px 0 0;min-height:16px}
-  .hint{color:var(--muted);font-size:11.5px;margin-top:14px;text-align:center;line-height:1.6}
-  .totp-badge{display:flex;align-items:center;gap:11px;background:#0d0a1c;border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:18px}
-  .totp-badge .ic{width:38px;height:38px;border-radius:10px;background:var(--grad);display:grid;place-items:center;flex:0 0 auto}
-  .totp-badge div b{font-size:13.5px;font-weight:600;display:block}
-  .totp-badge div span{font-size:11.5px;color:var(--sub)}
-  .otp{display:flex;gap:9px;justify-content:space-between}
-  .otp input{width:100%;height:56px;text-align:center;font-size:22px;font-weight:700;background:#0c0917;border:1px solid var(--line);border-radius:12px;color:var(--ink);outline:none}
-  .otp input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,59,255,.14)}
-  .back-link{background:none;border:none;color:var(--sub);font-size:12.5px;margin-top:16px;padding:0}
+API = 'https://satta-matka-app-production.up.railway.app'
 
-  /* ---------------- APP SHELL ---------------- */
-  #app{display:none;min-height:100dvh;grid-template-columns:248px 1fr}
-  .side{background:linear-gradient(180deg,var(--panel),#08070f);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100dvh}
-  .side .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
-  .side .brand .logo{width:38px;height:38px;font-size:15px}
-  .side .brand b{font-weight:700;font-size:15px;line-height:1}
-  .side .brand small{color:var(--violet);font-size:8.5px;letter-spacing:.18em;font-weight:600;display:block;margin-top:3px}
-  .nav{display:flex;flex-direction:column;gap:3px;flex:1}
-  .nav a{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;color:var(--sub);font-size:13.5px;font-weight:500;cursor:pointer;transition:.15s}
-  .nav a:hover{background:#141026;color:var(--ink)}
-  .nav a.active{background:var(--grad);color:#fff;box-shadow:0 10px 22px -12px rgba(150,40,220,.9)}
-  .nav a .badge{margin-left:auto;background:var(--amber);color:#2a1c00;font-size:10.5px;font-weight:700;border-radius:100px;padding:1px 7px}
-  .nav a.active .badge{background:#fff;color:var(--violet)}
-  .side .foot{border-top:1px solid var(--line-soft);padding-top:14px;display:flex;align-items:center;gap:11px}
-  .side .foot .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(150deg,#f4d58d,#e8b34e);color:#3a2b06;display:grid;place-items:center;font-weight:700;font-size:13px}
-  .side .foot .who{flex:1;min-width:0}
-  .side .foot .who b{font-size:13px;font-weight:600;display:block}
-  .side .foot .who span{font-size:10.5px;color:var(--green);display:flex;align-items:center;gap:4px}
-  .side .foot button{background:none;border:none;color:var(--muted);padding:6px;border-radius:8px}
-  .side .foot button:hover{color:var(--red);background:var(--red-bg)}
-
-  .main{padding:26px 30px 60px;min-width:0}
-  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:16px}
-  .top h1{font-weight:700;font-size:23px;margin:0}
-  .top p{color:var(--sub);font-size:13px;margin:4px 0 0}
-  .top .r{display:flex;align-items:center;gap:12px}
-
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
-  .tile .tl{color:var(--sub);font-size:12.5px;display:flex;align-items:center;gap:8px}
-  .tile .tl .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#191330;color:var(--violet)}
-  .tile .tv{font-weight:700;font-size:27px;margin-top:12px;font-variant-numeric:tabular-nums}
-  .tile .td{font-size:11.5px;margin-top:3px;color:var(--green)}
-  .tile .td.down{color:var(--red)}
-
-  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
-  .panel h3{font-weight:600;font-size:15px;margin:0 0 4px}
-  .panel .sub{color:var(--sub);font-size:12px;margin:0 0 16px}
-  .panel .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .panel .head h3{margin:0}
-
-  .chart{display:flex;align-items:flex-end;gap:12px;height:170px;padding-top:10px}
-  .chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
-  .chart .bar{width:100%;max-width:34px;border-radius:7px 7px 3px 3px;background:var(--grad);opacity:.9}
-  .chart .cl{font-size:11px;color:var(--muted)}
-
-  table{width:100%;border-collapse:collapse}
-  th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 12px 12px}
-  td{padding:13px 12px;border-top:1px solid var(--line-soft);font-size:13px;vertical-align:middle}
-  tr:hover td{background:#0e0b1c}
-  .u-name{font-weight:600} .u-sub{color:var(--muted);font-size:11.5px}
-  .amt{font-weight:600;font-variant-numeric:tabular-nums}
-  .row-actions{display:flex;gap:8px;justify-content:flex-end}
-  .table-wrap{overflow-x:auto}
-
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-  .toolbar .in{width:auto;min-width:130px;flex:1}
-  .switch{position:relative;width:44px;height:25px;border-radius:100px;background:#2a2440;border:none;transition:.2s;flex:0 0 auto}
-  .switch.on{background:var(--green)}
-  .switch::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}
-  .switch.on::after{left:22px}
-
-  .twofa{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:start}
-  #qrbox{width:180px;height:180px;background:#fff;border-radius:12px;padding:10px;display:grid;place-items:center}
-  #qrbox img,#qrbox canvas{width:100%;height:100%}
-  .secret{font-family:ui-monospace,Menlo,monospace;background:#0c0917;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13px;letter-spacing:.12em;color:var(--violet);display:inline-block;margin:8px 0 0}
-  .steps{counter-reset:s;display:grid;gap:14px;margin:0 0 20px;padding:0;list-style:none}
-  .steps li{display:flex;gap:12px;font-size:13.5px;color:var(--sub)}
-  .steps li::before{counter-increment:s;content:counter(s);flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:#191330;color:var(--violet);display:grid;place-items:center;font-size:12px;font-weight:700}
-
-  .toast{position:fixed;right:24px;bottom:24px;background:#1b1533;border:1px solid var(--line);color:var(--ink);font-size:13px;padding:12px 18px;border-radius:12px;opacity:0;transform:translateY(12px);transition:.3s;z-index:200;font-weight:500;pointer-events:none}
-  .toast.show{opacity:1;transform:none}
-  svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  @media (max-width:900px){#app{grid-template-columns:1fr}.side{display:none}.tiles{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.twofa{grid-template-columns:1fr}}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  :focus-visible{outline:2px solid var(--violet);outline-offset:2px}
-</style>
-
-<!-- ================= LOGIN ================= -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="kglogograd" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient><symbol id="kglogo" viewBox="0 0 61 40"><path d="M12.2635 39.9962C10.5754 39.9962 8.98853 39.6778 7.50036 39.0411C6.01218 38.4044 4.71256 37.5377 3.60022 36.4385C2.48789 35.3406 1.60966 34.0545 0.965543 32.5814C0.321426 31.1096 0 29.5291 0 27.845C0 26.4477 0.244233 25.0832 0.731433 23.7542C1.21863 22.4251 1.91337 21.2236 2.81311 20.1497L2.88777 19.9817L2.81311 19.8692C1.91337 18.7954 1.21863 17.5939 0.731433 16.2648C0.244233 14.9357 0 13.5725 0 12.174C0 10.4772 0.321426 8.89422 0.965543 7.42743C1.60966 5.96064 2.48789 4.67831 3.60022 3.58043C4.71256 2.48255 6.01345 1.61208 7.50036 0.969013C8.98853 0.325951 10.5754 0.00505076 12.2635 0.00505076H27.2288V8.59859H12.2635C11.2638 8.59859 10.4096 8.94476 9.70351 9.63835C8.99739 10.3307 8.64432 11.1772 8.64432 12.1752C8.64432 12.6503 8.74177 13.1051 8.93538 13.5422C9.129 13.9793 9.38588 14.3571 9.70478 14.6755C10.0237 14.9938 10.402 15.244 10.8399 15.4247C11.2777 15.6066 11.7523 15.6963 12.2648 15.6963H27.2301V24.2898H12.2648C11.7523 24.2898 11.2777 24.3833 10.8399 24.5703C10.402 24.7573 10.0237 25.0137 9.70478 25.3384C9.38588 25.6631 9.13026 26.0409 8.93538 26.4717C8.74177 26.9025 8.64432 27.3611 8.64432 27.8475C8.64432 28.3339 8.74177 28.7963 8.93538 29.2334C9.129 29.6706 9.38588 30.0483 9.70478 30.3667C10.0237 30.6851 10.402 30.9403 10.8399 31.1348C11.2777 31.3281 11.7523 31.4254 12.2648 31.4254H27.2301V40H12.2648L12.2635 39.9962ZM48.7365 0.00379C50.4246 0.00379 52.0115 0.322162 53.4997 0.958908C54.9878 1.59565 56.2874 2.46234 57.3998 3.56148C58.5121 4.65936 59.3903 5.94549 60.0345 7.41859C60.6786 8.89043 61 10.4709 61 12.155C61 13.5523 60.7558 14.9168 60.2686 16.2459C59.7814 17.5749 59.0866 18.7764 58.1869 19.8503L58.1122 20.0183L58.1869 20.1308C59.0866 21.2046 59.7814 22.4061 60.2686 23.7352C60.7558 25.0643 61 26.4275 61 27.826C61 29.5228 60.6786 31.1058 60.0345 32.5726C59.3903 34.0394 58.5121 35.3217 57.3998 36.4196C56.2874 37.5175 54.9866 38.3879 53.4997 39.031C52.0115 39.674 50.4246 39.9949 48.7365 39.9949H33.7712V31.4014H48.7365C49.7362 31.4014 50.5904 31.0552 51.2965 30.3616C52.0026 29.6693 52.3557 28.8228 52.3557 27.8248C52.3557 27.3497 52.2582 26.8949 52.0646 26.4578C51.871 26.0207 51.6141 25.6429 51.2952 25.3245C50.9763 25.0062 50.598 24.756 50.1601 24.5753C49.7223 24.3934 49.2477 24.3037 48.7352 24.3037H33.7699V15.7102H48.7352C49.2477 15.7102 49.7223 15.6167 50.1601 15.4297C50.598 15.2427 50.9763 14.9863 51.2952 14.6616C51.6141 14.3369 51.8697 13.9591 52.0646 13.5283C52.2582 13.0975 52.3557 12.6389 52.3557 12.1525C52.3557 11.6661 52.2582 11.2037 52.0646 10.7666C51.871 10.3294 51.6141 9.95168 51.2952 9.6333C50.9763 9.31493 50.598 9.05972 50.1601 8.86516C49.7223 8.67187 49.2477 8.57459 48.7352 8.57459H33.7699V0H48.7352L48.7365 0.00379Z" fill="url(#kglogograd)"/></symbol></defs></svg>
-<div id="login">
-  <div class="login-card">
-    <div class="brand"><svg class="brand-svg" style="width:46px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN PANEL</small></div></div>
-
-    <!-- step 1: password -->
-    <div id="step-pw">
-      <h2>Sign in</h2>
-      <p class="lead">Enter your admin credentials to continue.</p>
-      <div class="step"><label class="lbl">Username</label><input class="in" id="a-user" value="admin" autocomplete="username"></div>
-      <div class="step"><label class="lbl">Password</label><input class="in" id="a-pass" type="password" placeholder="Enter password" autocomplete="current-password"></div>
-      <p class="err" id="pw-err"></p>
-      <button class="btn" style="width:100%;height:48px" onclick="submitPw()">Continue</button>
-      <p class="hint">Sign in with your admin username &amp; password.</p>
-    </div>
-
-    <!-- step 2: google authenticator -->
-    <div id="step-otp" hidden>
-      <h2>Two-step verification</h2>
-      <p class="lead">Enter the 6-digit code from Google Authenticator.</p>
-      <div class="totp-badge">
-        <span class="ic"><svg class="i" viewBox="0 0 24 24" style="stroke:#fff"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-        <div><b>Google Authenticator</b><span>Code refreshes every 30 seconds</span></div>
-      </div>
-      <div class="otp" id="otp">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-      </div>
-      <p class="err" id="otp-err"></p>
-      <button class="btn" style="width:100%;height:48px;margin-top:6px" onclick="submitOtp()">Verify &amp; sign in</button>
-      <button class="back-link" onclick="toStep('pw')">&larr; Back</button>
-      <p class="hint">Open Google Authenticator and enter the current 6-digit code.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ================= APP ================= -->
-<div id="app">
-  <aside class="side">
-    <div class="brand"><svg class="brand-svg" style="width:40px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN</small></div></div>
-    <nav class="nav" id="nav"></nav>
-    <div class="foot">
-      <span class="av">A</span>
-      <div class="who"><b>Admin</b><span><svg class="i" style="width:12px;height:12px;stroke:var(--green)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> 2FA on</span></div>
-      <button title="Log out" onclick="logout()"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
-    </div>
-  </aside>
-  <main class="main">
-    <div class="top">
-      <div><h1 id="pg-title">Dashboard</h1><p id="pg-sub">Overview of your platform</p></div>
-      <div class="r"><span class="pill on"><svg class="i" style="width:13px;height:13px" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Secured with 2FA</span></div>
-    </div>
-    <div id="view"></div>
-  </main>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script>
-
-const API='https://satta-matka-app-production.up.railway.app';
+NEWJS = r'''
+const API='__API__';
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 let TOKEN=store.get('kg_admin_token')||'';
 let creds={};
@@ -391,8 +183,24 @@ async function enableTotp(){ const code=v('totp-code'); if(code.length!==6){ toa
 
 /* ---- boot ---- */
 (async function(){ if(TOKEN){ try{ await api('/admin/me'); enterApp(); }catch(e){ TOKEN=''; store.del('kg_admin_token'); } } })();
+'''.replace('__API__', API)
 
-</script>
-
-</body>
-</html>
+html = open('/home/user/claudecode/kalyan-games/web/admin.html').read()
+# login: blank the prefilled password, make hints real
+html = html.replace('<input class="in" id="a-pass" type="password" value="admin123" autocomplete="current-password">',
+                    '<input class="in" id="a-pass" type="password" placeholder="Enter password" autocomplete="current-password">')
+html = html.replace('<p class="hint">Demo login — <b>admin / admin123</b></p>',
+                    '<p class="hint">Sign in with your admin username &amp; password.</p>')
+html = html.replace('<p class="hint">Demo — enter any 6 digits to continue.</p>',
+                    '<p class="hint">Open Google Authenticator and enter the current 6-digit code.</p>')
+# replace the inline logic <script> (the last one) with the API-wired script
+idx = html.rfind('<script>')
+html = html[:idx] + '<script>\n' + NEWJS + '\n</script>\n'
+# wrap as a full mobile-friendly document for Netlify
+head = ('<!doctype html>\n<html lang="en">\n<head>\n'
+        '<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+        '<meta name="theme-color" content="#05050c">\n'
+        '</head>\n<body>\n')
+open('admin.api.html', 'w').write(head + html + '\n</body>\n</html>\n')
+print('written admin.api.html', round(len(head + html) / 1024), 'KB  API=', API)

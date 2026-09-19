@@ -56,6 +56,11 @@ model Setting {
   upiName     String?
   bankDetails String?
   qrImage     String? // base64 data URL of the payment QR
+  igUrl       String?
+  fbUrl       String?
+  ytUrl       String?
+  waUrl       String?
+  tgUrl       String?
   updatedAt   DateTime @updatedAt
 }
 

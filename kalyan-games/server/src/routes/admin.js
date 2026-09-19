@@ -192,13 +192,15 @@ router.get('/settings', adminAuth, async (_req, res) => {
 
 // PUT /admin/settings  { upiId, upiName, bankDetails, qrImage }
 router.put('/settings', adminAuth, async (req, res) => {
-  const { upiId, upiName, bankDetails, qrImage } = req.body || {};
+  const { upiId, upiName, bankDetails, qrImage, igUrl, fbUrl, ytUrl, waUrl, tgUrl } = req.body || {};
   if (qrImage && String(qrImage).length > 3_000_000) return res.status(413).json({ error: 'QR image too large (max ~2MB)' });
+  const link = (v) => String(v || '').trim().slice(0, 300);
   const data = {
     upiId: (upiId || '').slice(0, 120),
     upiName: (upiName || '').slice(0, 120),
     bankDetails: (bankDetails || '').slice(0, 1000),
     qrImage: qrImage ? String(qrImage) : null,
+    igUrl: link(igUrl), fbUrl: link(fbUrl), ytUrl: link(ytUrl), waUrl: link(waUrl), tgUrl: link(tgUrl),
   };
   const s = await prisma.setting.upsert({ where: { id: 'payment' }, update: data, create: { id: 'payment', ...data } });
   res.json({ settings: s });

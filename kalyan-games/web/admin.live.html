@@ -345,7 +345,13 @@ const loaders={
     `<div class="step"><label class="lbl">Account name</label><input class="in" id="set-name" value="${(s.upiName||'').replace(/"/g,'&quot;')}" placeholder="Account holder name"></div>`+
     `<div class="step"><label class="lbl">Bank details (optional)</label><textarea class="in" id="set-bank" style="height:90px;padding:10px 14px;resize:vertical" placeholder="Bank name, A/C no, IFSC">${(s.bankDetails||'').replace(/</g,'&lt;')}</textarea></div>`+
     `<div class="step"><label class="lbl">Payment QR image</label>${s.qrImage?`<img id="set-qr-prev" src="${s.qrImage}" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;display:block;margin-bottom:8px">`:'<div id="set-qr-prev" class="u-sub" style="margin-bottom:8px">No QR uploaded</div>'}<input type="file" id="set-qr" accept="image/*" style="font-size:12.5px;color:var(--sub)"></div>`+
-    `<div style="margin-top:12px"><button class="btn" onclick="saveSettings()">Save payment details</button></div></div>`;
+    `<h3 style="margin-top:26px">Social media links</h3><p class="sub">Paste the full link (https://…). Only the ones you fill in appear on the app's Contact with us screen.</p>`+
+    `<div class="step"><label class="lbl">Instagram</label><input class="in" id="set-ig" value="${(s.igUrl||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/yourpage"></div>`+
+    `<div class="step"><label class="lbl">Facebook</label><input class="in" id="set-fb" value="${(s.fbUrl||'').replace(/"/g,'&quot;')}" placeholder="https://facebook.com/yourpage"></div>`+
+    `<div class="step"><label class="lbl">YouTube</label><input class="in" id="set-yt" value="${(s.ytUrl||'').replace(/"/g,'&quot;')}" placeholder="https://youtube.com/@yourchannel"></div>`+
+    `<div class="step"><label class="lbl">WhatsApp</label><input class="in" id="set-wa" value="${(s.waUrl||'').replace(/"/g,'&quot;')}" placeholder="https://wa.me/91XXXXXXXXXX"></div>`+
+    `<div class="step"><label class="lbl">Telegram</label><input class="in" id="set-tg" value="${(s.tgUrl||'').replace(/"/g,'&quot;')}" placeholder="https://t.me/yourchannel"></div>`+
+    `<div style="margin-top:12px"><button class="btn" onclick="saveSettings()">Save all settings</button></div></div>`;
     window._qrData = s.qrImage || null;
     const qi=document.getElementById('set-qr');
     if(qi) qi.addEventListener('change',()=>{ const f=qi.files[0]; if(!f)return; if(f.size>2*1024*1024){ toast('QR image must be under 2MB'); qi.value=''; return; } const r=new FileReader(); r.onload=()=>{ window._qrData=r.result; const p=document.getElementById('set-qr-prev'); if(p&&p.tagName==='IMG'){p.src=r.result;} }; r.readAsDataURL(f); });
@@ -368,7 +374,8 @@ async function approveDep(id,amt){ const a=prompt('Amount to credit (adjust if n
 async function resetPw(id,name){ const pw=prompt('Set a new password for '+name+':'); if(pw===null)return; if(pw.length<4){ toast('Password must be at least 4 characters'); return; } try{ await api('/admin/users/'+id+'/reset-password',{method:'POST',body:JSON.stringify({password:pw})}); toast('Password reset for '+name); go('users'); }catch(e){ toast(e.message); } }
 async function saveSettings(){
   const upiId=v('set-upi'), upiName=v('set-name'), bankDetails=document.getElementById('set-bank').value.trim(), qrImage=window._qrData||null;
-  try{ await api('/admin/settings',{method:'PUT',body:JSON.stringify({upiId,upiName,bankDetails,qrImage})}); toast('Payment details saved'); }catch(e){ toast(e.message); }
+  const igUrl=v('set-ig'), fbUrl=v('set-fb'), ytUrl=v('set-yt'), waUrl=v('set-wa'), tgUrl=v('set-tg');
+  try{ await api('/admin/settings',{method:'PUT',body:JSON.stringify({upiId,upiName,bankDetails,qrImage,igUrl,fbUrl,ytUrl,waUrl,tgUrl})}); toast('Settings saved'); }catch(e){ toast(e.message); }
 }
 function lightbox(src){
   let o=document.getElementById('lightbox');
