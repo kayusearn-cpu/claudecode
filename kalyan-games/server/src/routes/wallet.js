@@ -45,16 +45,63 @@ router.post('/deposit', userAuth, createDeposit);
 // Back-compat: /add-fund now also creates a request (never credits directly)
 router.post('/add-fund', userAuth, createDeposit);
 
+const BANK_LOCK_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function bankView(u) {
+  const has = !!(u.bankAccount && u.bankIfsc);
+  let canChange = true, nextChangeAt = null;
+  if (u.bankUpdatedAt) {
+    const next = new Date(u.bankUpdatedAt.getTime() + BANK_LOCK_MS);
+    if (next > new Date()) { canChange = false; nextChangeAt = next; }
+  }
+  return {
+    hasBank: has,
+    holder: u.bankHolder || '', account: u.bankAccount || '', ifsc: u.bankIfsc || '',
+    bankName: u.bankName || '', upi: u.bankUpi || '',
+    updatedAt: u.bankUpdatedAt, canChange, nextChangeAt,
+  };
+}
+
+// GET /wallet/bank  -> the user's saved withdrawal bank + whether it can change
+router.get('/bank', userAuth, async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  res.json(bankView(user));
+});
+
+// POST /wallet/bank  { holder, account, ifsc, bankName, upi }  (once per 30 days)
+router.post('/bank', userAuth, async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (user.bankUpdatedAt && new Date(user.bankUpdatedAt.getTime() + BANK_LOCK_MS) > new Date()) {
+    const next = new Date(user.bankUpdatedAt.getTime() + BANK_LOCK_MS);
+    return res.status(403).json({ error: 'Bank details can only be changed once every 30 days. Next change on ' + next.toLocaleDateString('en-IN') + '.' });
+  }
+  const holder = String(req.body?.holder || '').trim().slice(0, 80);
+  const account = String(req.body?.account || '').replace(/\s/g, '').slice(0, 30);
+  const ifsc = String(req.body?.ifsc || '').trim().toUpperCase().slice(0, 20);
+  const bankName = String(req.body?.bankName || '').trim().slice(0, 80);
+  const upi = String(req.body?.upi || '').trim().slice(0, 80);
+  if (!holder || !account || !ifsc) return res.status(400).json({ error: 'Enter account holder, account number and IFSC' });
+
+  const updated = await prisma.user.update({
+    where: { id: req.userId },
+    data: { bankHolder: holder, bankAccount: account, bankIfsc: ifsc, bankName, bankUpi: upi, bankUpdatedAt: new Date() },
+  });
+  res.json({ ok: true, message: 'Bank details saved', bank: bankView(updated) });
+});
+
 // POST /wallet/withdraw  { amount }  -> creates a pending WithdrawRequest
 router.post('/withdraw', userAuth, async (req, res) => {
   const amount = Math.floor(Number(req.body?.amount));
   if (!amount || amount <= 0) return res.status(400).json({ error: 'Enter a valid amount' });
 
   const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (!user.bankAccount || !user.bankIfsc) return res.status(400).json({ error: 'Add your bank account first, then request a withdrawal.' });
   if (amount > user.balance) return res.status(400).json({ error: 'Insufficient balance' });
 
+  const bankInfo = [user.bankHolder, 'A/C ' + user.bankAccount, 'IFSC ' + user.bankIfsc, user.bankName, user.bankUpi]
+    .filter(Boolean).join(' | ');
   const request = await prisma.withdrawRequest.create({
-    data: { userId: req.userId, amount, status: 'pending' },
+    data: { userId: req.userId, amount, bankInfo, status: 'pending' },
   });
   res.json({ request, message: 'Withdrawal request submitted for approval' });
 });

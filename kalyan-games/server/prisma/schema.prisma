@@ -14,6 +14,12 @@ model User {
   password    String
   balance     Int               @default(0) // rupees
   createdAt   DateTime          @default(now())
+  bankHolder    String?
+  bankAccount   String?
+  bankIfsc      String?
+  bankName      String?
+  bankUpi       String?
+  bankUpdatedAt DateTime?
   bids        Bid[]
   txns        Transaction[]
   withdrawals WithdrawRequest[]
@@ -99,6 +105,7 @@ model WithdrawRequest {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   amount    Int
+  bankInfo  String? // snapshot of the user's bank details at request time
   status    String   @default("pending") // pending | approved | rejected
   createdAt DateTime @default(now())
 }

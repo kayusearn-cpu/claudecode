@@ -520,18 +520,31 @@
         '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doDeposit()">Submit deposit request</button>';
       loadPayInfo();
     }else if(kind==='withdraw'){
-      s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Enter the amount you want to withdraw. The admin will review and pay out to your account.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Amount will be paid to your saved bank account after admin review.</p>'+
+        '<div id="wd-bank" style="background:#0d0a1c;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--sub)">Loading your bank account…</div>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
-        '<button class="btn-grad big-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>';
+        '<button class="btn-grad big-btn" id="wd-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>';
+      loadWithdrawBank();
+    }else if(kind==='bank'){
+      s.innerHTML='<div class="grab"></div><h4>Bank account</h4><p id="bank-note">Loading…</p>'+
+        '<div class="field"><label>Account holder name</label><div class="input"><input id="bk-holder" type="text" placeholder="Full name"></div></div>'+
+        '<div class="field"><label>Account number</label><div class="input"><input id="bk-acc" type="text" inputmode="numeric" placeholder="Bank account number"></div></div>'+
+        '<div class="field"><label>IFSC code</label><div class="input"><input id="bk-ifsc" type="text" placeholder="e.g. HDFC0001234"></div></div>'+
+        '<div class="field"><label>Bank name (optional)</label><div class="input"><input id="bk-name" type="text" placeholder="Bank name"></div></div>'+
+        '<div class="field"><label>UPI ID (optional)</label><div class="input"><input id="bk-upi" type="text" placeholder="yourname@bank"></div></div>'+
+        '<button class="btn-grad big-btn" id="bk-btn" style="margin-top:6px" onclick="doSaveBank()">Save bank details</button>';
+      loadBank();
     }else{
-      s.innerHTML='<div class="grab"></div><h4>Change Password</h4><p>Enter your current password and choose a new one.</p>'+
+      s.innerHTML='<div class="grab"></div><h4>My Account</h4>'+
+        '<button class="chipsel" style="width:100%;justify-content:center;color:var(--ink);margin-bottom:18px" onclick="openSheet(\'bank\')">Bank account (for withdrawal)</button>'+
+        '<h4 style="font-size:16px">Change password</h4><p>Enter your current password and choose a new one.</p>'+
         '<div class="field"><label>Current password</label><div class="input"><input id="sheet-oldpass" type="password" placeholder="Current password"></div></div>'+
         '<div class="field"><label>New password</label><div class="input"><input id="sheet-newpass" type="password" placeholder="Create a new password"></div></div>'+
         '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doChangePass()">Update password</button>'+
         '<button class="chipsel" style="width:100%;justify-content:center;margin-top:12px;color:var(--ink)" onclick="logout()">Log out</button>';
     }
     document.getElementById('overlay').classList.add('show');
-    setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('sheet-oldpass'); if(a)a.focus(); },200);
+    setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('bk-holder')||document.getElementById('sheet-oldpass'); if(a)a.focus(); },200);
   }
   function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
   async function loadPayInfo(){
@@ -570,6 +583,34 @@
     const a=+document.getElementById('sheet-amt').value;
     if(a<=0){ toast('Enter a valid amount'); return; }
     try{ await api('/wallet/withdraw',{method:'POST',body:JSON.stringify({amount:a})}); closeSheet(); toast('Withdrawal request sent for '+inr(a)); }catch(e){ toast(e.message); }
+  }
+  async function loadWithdrawBank(){
+    const box=document.getElementById('wd-bank'); const btn=document.getElementById('wd-btn');
+    try{ const b=await api('/wallet/bank');
+      if(b.hasBank){ box.innerHTML='Pay to: <b style="color:var(--ink)">'+b.holder+'</b><br>A/C '+mask(b.account)+' &middot; '+b.ifsc+(b.bankName?' &middot; '+b.bankName:'')+'<div style="margin-top:6px"><span onclick="openSheet(\'bank\')" style="color:var(--violet);cursor:pointer">Change bank account</span></div>'; }
+      else { box.innerHTML='No bank account saved. <span onclick="openSheet(\'bank\')" style="color:var(--violet);cursor:pointer">Add your bank account</span> to withdraw.'; if(btn){ btn.style.opacity='.5'; btn.style.pointerEvents='none'; } }
+    }catch(e){ box.textContent='Could not load your bank account.'; }
+  }
+  function mask(a){ a=String(a||''); return a.length>4? a.slice(0,2)+'****'+a.slice(-4): a; }
+  async function loadBank(){
+    try{ const b=await api('/wallet/bank'); const note=document.getElementById('bank-note');
+      document.getElementById('bk-holder').value=b.holder||''; document.getElementById('bk-acc').value=b.account||'';
+      document.getElementById('bk-ifsc').value=b.ifsc||''; document.getElementById('bk-name').value=b.bankName||''; document.getElementById('bk-upi').value=b.upi||'';
+      if(!b.canChange){
+        note.innerHTML='Bank details can be changed only once every 30 days. Next change on <b style="color:var(--ink)">'+new Date(b.nextChangeAt).toLocaleDateString('en-IN')+'</b>.';
+        ['bk-holder','bk-acc','bk-ifsc','bk-name','bk-upi'].forEach(id=>document.getElementById(id).disabled=true);
+        const btn=document.getElementById('bk-btn'); btn.style.opacity='.5'; btn.style.pointerEvents='none';
+      } else { note.textContent='Add the bank account where you want withdrawals paid. You can change this only once every 30 days.'; }
+    }catch(e){ const note=document.getElementById('bank-note'); if(note)note.textContent='Could not load bank details.'; }
+  }
+  async function doSaveBank(){
+    const holder=document.getElementById('bk-holder').value.trim();
+    const account=document.getElementById('bk-acc').value.replace(/\s/g,'');
+    const ifsc=document.getElementById('bk-ifsc').value.trim();
+    const bankName=document.getElementById('bk-name').value.trim();
+    const upi=document.getElementById('bk-upi').value.trim();
+    if(!holder||!account||!ifsc){ toast('Enter holder name, account number and IFSC'); return; }
+    try{ const d=await api('/wallet/bank',{method:'POST',body:JSON.stringify({holder,account,ifsc,bankName,upi})}); closeSheet(); toast(d.message||'Bank details saved'); }catch(e){ toast(e.message); }
   }
   function syncBalance(){
     const b=Number(balance||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
