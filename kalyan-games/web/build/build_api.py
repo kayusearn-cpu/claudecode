@@ -126,14 +126,14 @@ NEWJS = r'''
       document.getElementById('results-list').innerHTML=rows||'<div style="padding:22px 20px;color:var(--muted);font-size:13px">No results declared yet.</div>';
     }catch(e){ toast(e.message); }
   }
-  const navItems=[['home','i-home'],['wallet','i-wallet'],['games','i-games'],['results','i-chart']];
+  const navItems=[['home','i-home'],['mybids','i-games'],['wallet','i-wallet'],['results','i-chart']];
   function buildNav(){
     document.querySelectorAll('.nav').forEach(nav=>{ const cur=nav.dataset.nav;
       nav.innerHTML=navItems.map(a=>'<button class="'+(cur===a[0]?'active':'')+'" onclick="navGo(\''+a[0]+'\')"><svg width="24" height="24"><use href="#'+a[1]+'"/></svg></button>').join('');
     });
   }
   function navGo(v){
-    if(v==='games'){ if(currentMarketId) openMarket(currentMarketId,currentMarket); else { go('home'); toast('Pick a market first'); } }
+    if(v==='mybids'){ openMyBids(); }
     else if(v==='wallet'){ go('wallet'); loadWallet(); }
     else if(v==='results'){ go('results'); loadResults(); }
     else go(v);
@@ -320,10 +320,15 @@ NEWJS = r'''
     const el=document.getElementById('mybids-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/bids/history'); const bs=d.bids||[];
       if(!bs.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids yet.</div>'; return; }
-      el.innerHTML=bs.map(function(b){ const dt=new Date(b.createdAt); const nums=Object.keys(b.selections||{}).join(', ');
-        return '<div class="tx"><span class="ti"style="background:rgba(139,59,255,.14);color:var(--violet)"><svg width="18" height="18"><use href="#i-games"/></svg></span>'+
-          '<div class="tmid"><div class="tt">'+b.gameType+' · '+(b.market?b.market.name:'')+'</div><div class="ts">'+nums+'</div></div>'+
-          '<div style="text-align:right"><div class="tv">'+inr(b.total)+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+      el.innerHTML='<div style="height:8px"></div>'+bs.map(function(b){ const dt=new Date(b.createdAt);
+        const nums=Object.keys(b.selections||{}).join(', ')||'-';
+        const st=(b.session||'').toLowerCase()==='close'?'close':'open';
+        return '<div class="bid-card"><div class="bh"><div class="bn">'+(b.market?b.market.name:'Market')+'</div>'+
+          '<span class="bstatus '+st+'">'+(st==='close'?'Close':'Open')+'</span></div>'+
+          '<div class="bd"><div><div class="bl">Game Type</div><div class="bv">'+b.gameType+'</div></div>'+
+          '<div><div class="bl">Digits</div><div class="bv">'+nums+'</div></div>'+
+          '<div><div class="bl">Points</div><div class="bv">'+inr(b.total)+'</div></div></div>'+
+          '<div class="bf"><span class="bm">Best of luck</span><span class="bdt">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+', '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'; }).join('');
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function openPassbook(){ go('passbook'); loadPassbook(); }
@@ -331,11 +336,14 @@ NEWJS = r'''
     const el=document.getElementById('passbook-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/wallet/passbook'); const ts=d.transactions||[];
       if(!ts.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No transactions yet.</div>'; return; }
-      const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'You won',loss:'Bid lost'};
-      el.innerHTML=ts.map(function(t){ const pos=t.amount>0,io=pos?'in':'out'; const dt=new Date(t.createdAt);
-        return '<div class="tx"><span class="ti '+io+'"><svg width="18" height="18"><use href="#i-'+(pos?'up':'down')+'"/></svg></span>'+
-          '<div class="tmid"><div class="tt">'+(map[t.type]||t.type)+'</div><div class="ts">'+(t.note||'')+'</div></div>'+
-          '<div style="text-align:right"><div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(t.amount))+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+      const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'Winning',loss:'Bid lost'};
+      const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+      const rows=ts.map(function(t){ const dt=new Date(t.createdAt);
+        const desc=t.note?esc(t.note):(map[t.type]||t.type);
+        const sign=t.amount<0?'- ':'';
+        return '<tr><td>'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td>'+
+          '<td>'+desc+'</td><td class="amt">'+sign+inr(Math.abs(t.amount))+'</td></tr>'; }).join('');
+      el.innerHTML='<div style="height:6px"></div><div class="pb-wrap"><table class="pb-table"><thead><tr><th style="width:95px">Date</th><th>Description</th><th class="amt" style="width:90px">Amount</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function openChart(){ go('chart'); loadChart(); }
@@ -360,10 +368,10 @@ NEWJS = r'''
   async function loadContact(){
     const el=document.getElementById('contact-list'); el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/wallet/social');
-      const items=[['instagram','Instagram','i-cam'],['facebook','Facebook','i-globe2'],['youtube','YouTube','i-play'],['whatsapp','WhatsApp','i-chat'],['telegram','Telegram','i-send']];
+      const items=[['instagram','Instagram','i-cam','#ff005d'],['facebook','Facebook','i-globe2','#287be8'],['youtube','YouTube','i-play','#ff0033'],['whatsapp','WhatsApp','i-chat','#00d66b'],['telegram','Telegram','i-send','#29a9ea']];
       let h='';
       for(const it of items){ const url=d[it[0]]; if(!url)continue;
-        h+='<a class="social-card" href="'+url+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="sc-ic"><svg width="24" height="24"><use href="#'+it[2]+'"/></svg></span><b>'+it[1]+'</b><span>Tap to open</span></a>'; }
+        h+='<a class="social-card" href="'+url+'" target="_blank" rel="noopener" style="text-decoration:none"><span class="sc-ic" style="color:'+it[3]+'"><svg width="26" height="26"><use href="#'+it[2]+'"/></svg></span><b>'+it[1]+'</b><span>Tap to open</span></a>'; }
       el.innerHTML=h||'<div style="grid-column:1/-1;padding:40px 0;color:var(--muted);font-size:13px;text-align:center">No links added yet.</div>';
     }catch(e){ el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
@@ -375,6 +383,7 @@ NEWJS = r'''
   }
   let toastT;
   function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+  function togglePw(btn){ const inp=btn.parentNode.querySelector('input'); if(!inp)return; const show=inp.type==='password'; inp.type=show?'text':'password'; const u=btn.querySelector('use'); if(u)u.setAttribute('href',show?'#i-eye-off':'#i-eye'); }
   buildNav();
 '''.replace('__API__', API)
 

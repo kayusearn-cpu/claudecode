@@ -28,16 +28,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
 <style>
   :root{
-    --bg:#030712; --bg2:#020509; --stage:#0a0a12;
-    --cream:#fbf1e9; --cream-ink:#211c2b; --cream-sub:#7d7686; --cream-div:#e6dccd;
-    --card-dark:#0c0a17; --card-dark2:#131022;
-    --line:#211b33; --line-soft:#171327;
-    --ink:#f6f3fb; --sub:#9a94ac; --muted:#6b6580;
-    --grad:linear-gradient(91.26deg,#672DFF 6.28%,#932DFF 66.02%,#E522FF 117.64%);
+    --bg:#030711; --bg2:#020509; --stage:#05060d;
+    --cream:#fff5ee; --cream-ink:#17171a; --cream-sub:#5e5b59; --cream-div:#d2c7c0;
+    --card-dark:#0b061c; --card-dark2:#11071f;
+    --line:#343a46; --line-soft:#20242e;
+    --ink:#f5f5f7; --sub:#c4c7ce; --muted:#777b84;
+    --grad:linear-gradient(100deg,#672cff 0%,#852dff 48%,#d125ff 100%);
     --grad-border:linear-gradient(140deg,#682DFF,#C027FF 72%,#672DFF);
-    --violet:#8b3bff; --green:#3fcf7f; --green-bg:rgba(63,207,127,.12);
-    --red:#f0556b; --red-bg:rgba(240,85,107,.12);
-    --phone-w:375px;
+    --violet:#a32cff; --green:#00c95a; --green-bg:rgba(0,201,90,.12);
+    --red:#ff3939; --red-bg:rgba(255,57,57,.12);
+    --phone-w:390px;
     color-scheme:dark;
   }
   *{box-sizing:border-box}
@@ -92,15 +92,17 @@
   #login h2{font-weight:800;font-size:29px;margin:0;letter-spacing:-.5px;line-height:1.12}
   #login h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
   #login .lead{color:var(--sub);font-size:13.5px;margin:9px 0 30px;font-weight:400}
-  .field{margin-bottom:15px}
-  .field label{display:block;font-weight:500;font-size:14px;color:#D1D5DB;margin-bottom:8px}
-  .input{display:flex;align-items:center;gap:10px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:0 20px;height:46px;transition:border-color .2s}
-  .input:focus-within{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,59,255,.14)}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-weight:400;font-size:13.5px;color:#d2d5da;margin-bottom:9px}
+  .input{display:flex;align-items:center;gap:10px;background:transparent;border:1.5px solid #363940;border-radius:14px;padding:0 18px;height:54px;transition:border-color .2s,box-shadow .2s}
+  .input:focus-within{border-color:#8140ff;box-shadow:0 0 0 3px rgba(129,64,255,.12)}
   .input .pre{color:var(--sub);font-size:14px;font-weight:600;padding-right:10px;border-right:1px solid var(--line)}
-  .input input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px;font-family:"Urbanist";font-weight:500}
-  .input input::placeholder{color:var(--muted);font-weight:400}
-  .fp{text-align:right;font-size:12.5px;color:var(--violet);margin:-2px 0 24px;font-weight:600;cursor:pointer}
-  .big-btn{height:55px;font-size:16px;width:100%}
+  .input input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px;font-family:"Urbanist";font-weight:500;min-width:0}
+  .input input::placeholder{color:#717179;font-weight:400}
+  .input .eye{flex:0 0 auto;background:none;border:none;padding:0;margin:0;cursor:pointer;color:#85858d;display:grid;place-items:center;width:24px;height:24px}
+  .fp{text-align:right;font-size:13px;color:#f5f5f7;margin:-4px 0 22px;font-weight:400;cursor:pointer}
+  .fp:hover{color:var(--violet)}
+  .big-btn{height:56px;font-size:17px;width:100%;border-radius:14px}
   #login .alt{text-align:center;color:var(--sub);font-size:13px;margin-top:24px;font-weight:400}
   #login .alt b{color:var(--ink);font-weight:600}
   .no-otp{display:flex;align-items:center;gap:7px;justify-content:center;color:var(--muted);font-size:11.5px;margin-top:15px;font-weight:400}
@@ -144,14 +146,13 @@
   .sub-head .htitle{font-weight:600;font-size:19px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .wallet-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:100px;padding:8px 13px;font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
   .help{width:41px;height:41px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--sub);cursor:pointer}
-  .games-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px 20px 130px}
-  .game{position:relative;border-radius:18px;padding:22px 14px 16px;background:linear-gradient(160deg,var(--card-dark2),var(--card-dark));display:flex;flex-direction:column;align-items:center;gap:14px;cursor:pointer;transition:transform .15s}
-  .game::before{content:"";position:absolute;inset:0;border-radius:18px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .games-grid{display:grid;grid-template-columns:1fr 1fr;gap:46px 15px;padding:58px 20px 130px}
+  .game{position:relative;height:150px;border:1px solid #7628ff;border-radius:22px;background:radial-gradient(circle at 50% 28%,rgba(111,35,255,.07),transparent 62%),var(--card-dark);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:66px;cursor:pointer;transition:transform .15s}
   .game:active{transform:translateY(2px)}
-  .game .ico{width:76px;height:76px;display:grid;place-items:center}
-  .game .ico img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5))}
-  .game .gname{font-weight:600;font-size:15px;text-align:center}
-  .game .start{width:100%;padding:10px 0;font-size:13.5px}
+  .game .ico{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:98px;height:98px;display:grid;place-items:center;filter:drop-shadow(0 9px 10px rgba(0,0,0,.45))}
+  .game .ico img{width:100%;height:100%;object-fit:contain}
+  .game .gname{font-weight:400;font-size:15px;text-align:center;color:#f3f1f4;margin-bottom:15px}
+  .game .start{width:87px;padding:9px 0;font-size:12px;border-radius:7px}
 
   /* BETTING */
   .bet-sub{display:flex;align-items:center;gap:10px;padding:10px 20px 2px}
@@ -173,24 +174,25 @@
   .submit{width:100%;height:55px;font-size:16px}
 
   /* WALLET */
-  .wallet-hero{margin:14px 20px 2px;border-radius:20px;padding:21px;position:relative;overflow:hidden;background:linear-gradient(150deg,#191030,#0c0a1c);border:1px solid var(--line)}
-  .wallet-hero .planet{position:absolute;right:-24px;top:-8px;opacity:.5}
-  .wallet-hero .wl{color:var(--sub);font-size:12.5px;font-weight:400}
-  .wallet-hero .wa{font-weight:700;font-size:35px;margin:6px 0 20px;font-variant-numeric:tabular-nums}
-  .wallet-actions{display:flex;gap:12px}
-  .wa-btn{flex:1;display:flex;align-items:center;gap:10px;background:#140e26;border:1px solid var(--line);border-radius:15px;padding:13px 15px;cursor:pointer;color:var(--ink)}
-  .wa-btn .ci{width:33px;height:33px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff}
-  .wa-btn span{font-weight:600;font-size:13.5px}
-  .tx{display:flex;align-items:center;gap:13px;padding:13px 20px;border-bottom:1px solid var(--line-soft)}
-  .tx .ti{width:39px;height:39px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto}
-  .tx .ti.in{background:var(--green-bg);color:var(--green)}
-  .tx .ti.out{background:var(--red-bg);color:var(--red)}
+  .wallet-hero{margin:14px 20px 2px;border-radius:24px;padding:18px 16px;position:relative;overflow:hidden;background:var(--cream);color:var(--cream-ink);min-height:166px}
+  .wallet-hero .planet{position:absolute;right:44px;top:-4px;opacity:.14}
+  .wallet-hero .wl{color:#454247;font-size:13px;font-weight:400}
+  .wallet-hero .wa{font-weight:600;font-size:25px;margin:10px 0 0;letter-spacing:-.4px;color:#161519;font-variant-numeric:tabular-nums}
+  .wallet-menu{position:absolute;top:11px;right:12px;width:26px;height:32px;border:none;background:none;color:#17171a;font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center;z-index:3}
+  .wallet-actions{position:absolute;left:16px;right:16px;bottom:14px;display:flex;justify-content:space-between;gap:12px}
+  .wa-btn{display:flex;align-items:center;gap:8px;padding:5px 15px 5px 6px;border:1px solid #c8beb7;border-radius:25px;background:rgba(255,255,255,.35);color:#252328;cursor:pointer;font-weight:500;font-size:13px}
+  .wa-btn .ci{width:34px;height:34px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff;flex:0 0 auto}
+  .wa-btn span{font-weight:500;font-size:13px}
+  .tx{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--line-soft)}
+  .tx .ti{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:#111722}
+  .tx .ti.in{color:#00df67}
+  .tx .ti.out{color:#ff3838}
   .tx .tmid{flex:1;min-width:0}
-  .tx .tt{font-weight:600;font-size:13.5px}
-  .tx .ts{color:var(--muted);font-size:11.5px;margin-top:2px;font-weight:400}
-  .tx .tv{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;text-align:right}
+  .tx .tt{font-weight:500;font-size:13.5px;color:#f0f1f4}
+  .tx .ts{color:#a1a4ab;font-size:11px;margin-top:2px;font-weight:400}
+  .tx .tv{font-weight:500;font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
   .tx .tv.pos{color:var(--green)} .tx .tv.neg{color:var(--red)}
-  .tx .tdate{color:var(--muted);font-size:10.5px;margin-top:2px;text-align:right;font-weight:400}
+  .tx .tdate{color:var(--muted);font-size:9.5px;margin-top:2px;text-align:right;font-weight:400}
 
   /* NAV */
   .nav{position:absolute;bottom:0;left:0;right:0;height:84px;background:linear-gradient(0deg,#08070f 78%,transparent);display:flex;align-items:flex-start;justify-content:space-around;padding:13px 22px 0;z-index:20}
@@ -249,7 +251,9 @@
   <symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></symbol>
   <symbol id="i-play" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></symbol>
   <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 0 1-11.9 7.6L3 21l1.9-6.1A8.5 8.5 0 1 1 21 11.5z"/></symbol>
-  <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol></defs></svg>
+  <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.1 6.1A13.13 13.13 0 0 0 2 12s3.5 7 10 7a9.05 9.05 0 0 0 5.9-2.1M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol></defs></svg>
 
 
 
@@ -265,7 +269,7 @@
       <h2>Welcome to<br><span>Kalyan Games</span></h2>
       <p class="lead">Log in to play and win real rewards.</p>
       <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="lg-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>
-      <div class="field"><label>Password</label><div class="input"><input id="lg-pass" type="password" placeholder="Enter password"></div></div>
+      <div class="field"><label>Password</label><div class="input"><input id="lg-pass" type="password" placeholder="Enter password"><button type="button" class="eye" onclick="togglePw(this)"><svg width="20" height="20"><use href="#i-eye"/></svg></button></div></div>
       <div class="fp" style="color:var(--muted);cursor:default">Change your password after login, from your profile.</div>
       <button class="btn-grad big-btn" onclick="doLogin()">Log In</button>
       
@@ -279,7 +283,7 @@
         <p class="lead">Join now and start playing!</p>
         <div class="field"><label>Full Name</label><div class="input"><input id="su-name" type="text" placeholder="Enter your name"></div></div>
         <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="su-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>
-        <div class="field"><label>Password</label><div class="input"><input id="su-pass" type="password" placeholder="Create a password"></div></div>
+        <div class="field"><label>Password</label><div class="input"><input id="su-pass" type="password" placeholder="Create Password"><button type="button" class="eye" onclick="togglePw(this)"><svg width="20" height="20"><use href="#i-eye"/></svg></button></div></div>
         <button class="btn-grad big-btn" style="margin-top:8px" onclick="doSignup()">Sign Up</button>
         <div class="alt">Already have an account? <b onclick="go(&#39;login&#39;)" style="cursor:pointer">Login</b></div>
       </div></div>
@@ -340,7 +344,8 @@
       <div class="scroll">
         <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Wallet</div></div>
         <div class="wallet-hero">
-          <svg class="planet" width="118" height="118" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="55" r="30" stroke="#3a2f55" stroke-width="1.5"/><ellipse cx="60" cy="55" rx="52" ry="16" stroke="#3a2f55" stroke-width="1.5" transform="rotate(-18 60 55)"/><circle cx="92" cy="30" r="2" fill="#5a4d7a"/><circle cx="30" cy="80" r="1.6" fill="#5a4d7a"/></svg>
+          <svg class="planet" width="118" height="118" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="55" r="30" stroke="#766c65" stroke-width="1.5"/><ellipse cx="60" cy="55" rx="52" ry="16" stroke="#766c65" stroke-width="1.5" transform="rotate(-18 60 55)"/><circle cx="92" cy="30" r="2" fill="#766c65"/><circle cx="30" cy="80" r="1.6" fill="#766c65"/></svg>
+          <button class="wallet-menu" onclick="openSheet('bank')" title="Bank options">&#8942;</button>
           <div class="wl">Your Balance</div>
           <div class="wa">₹<span id="wallet-bal">0.00</span></div>
           <div class="wallet-actions">
@@ -387,8 +392,12 @@
       <div id="chartd-list" style="padding:6px 20px 130px"></div>
     </div></div>
     <div class="view" id="contact"><div class="scroll">
-      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Contact With Us</div></div>
-      <p style="color:var(--sub);font-size:13px;margin:6px 20px 4px">Stay informed with our latest updates.</p>
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Connect With Us</div></div>
+      <div class="contact-hero">
+        <span class="globe-box"><svg width="28" height="28"><use href="#i-globe2"/></svg></span>
+        <h3>Connect With Us!</h3>
+        <p>Stay informed with our latest updates.</p>
+      </div>
       <div id="contact-list" class="social-grid"></div>
     </div></div>
 
@@ -522,14 +531,14 @@
       document.getElementById('results-list').innerHTML=rows||'<div style="padding:22px 20px;color:var(--muted);font-size:13px">No results declared yet.</div>';
     }catch(e){ toast(e.message); }
   }
-  const navItems=[['home','i-home'],['wallet','i-wallet'],['games','i-games'],['results','i-chart']];
+  const navItems=[['home','i-home'],['mybids','i-games'],['wallet','i-wallet'],['results','i-chart']];
   function buildNav(){
     document.querySelectorAll('.nav').forEach(nav=>{ const cur=nav.dataset.nav;
       nav.innerHTML=navItems.map(a=>'<button class="'+(cur===a[0]?'active':'')+'" onclick="navGo(\''+a[0]+'\')"><svg width="24" height="24"><use href="#'+a[1]+'"/></svg></button>').join('');
     });
   }
   function navGo(v){
-    if(v==='games'){ if(currentMarketId) openMarket(currentMarketId,currentMarket); else { go('home'); toast('Pick a market first'); } }
+    if(v==='mybids'){ openMyBids(); }
     else if(v==='wallet'){ go('wallet'); loadWallet(); }
     else if(v==='results'){ go('results'); loadResults(); }
     else go(v);
@@ -716,10 +725,15 @@
     const el=document.getElementById('mybids-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/bids/history'); const bs=d.bids||[];
       if(!bs.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids yet.</div>'; return; }
-      el.innerHTML=bs.map(function(b){ const dt=new Date(b.createdAt); const nums=Object.keys(b.selections||{}).join(', ');
-        return '<div class="tx"><span class="ti"style="background:rgba(139,59,255,.14);color:var(--violet)"><svg width="18" height="18"><use href="#i-games"/></svg></span>'+
-          '<div class="tmid"><div class="tt">'+b.gameType+' · '+(b.market?b.market.name:'')+'</div><div class="ts">'+nums+'</div></div>'+
-          '<div style="text-align:right"><div class="tv">'+inr(b.total)+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+      el.innerHTML='<div style="height:8px"></div>'+bs.map(function(b){ const dt=new Date(b.createdAt);
+        const nums=Object.keys(b.selections||{}).join(', ')||'-';
+        const st=(b.session||'').toLowerCase()==='close'?'close':'open';
+        return '<div class="bid-card"><div class="bh"><div class="bn">'+(b.market?b.market.name:'Market')+'</div>'+
+          '<span class="bstatus '+st+'">'+(st==='close'?'Close':'Open')+'</span></div>'+
+          '<div class="bd"><div><div class="bl">Game Type</div><div class="bv">'+b.gameType+'</div></div>'+
+          '<div><div class="bl">Digits</div><div class="bv">'+nums+'</div></div>'+
+          '<div><div class="bl">Points</div><div class="bv">'+inr(b.total)+'</div></div></div>'+
+          '<div class="bf"><span class="bm">Best of luck</span><span class="bdt">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+', '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'; }).join('');
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function openPassbook(){ go('passbook'); loadPassbook(); }
@@ -727,11 +741,14 @@
     const el=document.getElementById('passbook-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/wallet/passbook'); const ts=d.transactions||[];
       if(!ts.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No transactions yet.</div>'; return; }
-      const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'You won',loss:'Bid lost'};
-      el.innerHTML=ts.map(function(t){ const pos=t.amount>0,io=pos?'in':'out'; const dt=new Date(t.createdAt);
-        return '<div class="tx"><span class="ti '+io+'"><svg width="18" height="18"><use href="#i-'+(pos?'up':'down')+'"/></svg></span>'+
-          '<div class="tmid"><div class="tt">'+(map[t.type]||t.type)+'</div><div class="ts">'+(t.note||'')+'</div></div>'+
-          '<div style="text-align:right"><div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(t.amount))+'</div><div class="tdate">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+'</div></div></div>'; }).join('');
+      const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'Winning',loss:'Bid lost'};
+      const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+      const rows=ts.map(function(t){ const dt=new Date(t.createdAt);
+        const desc=t.note?esc(t.note):(map[t.type]||t.type);
+        const sign=t.amount<0?'- ':'';
+        return '<tr><td>'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td>'+
+          '<td>'+desc+'</td><td class="amt">'+sign+inr(Math.abs(t.amount))+'</td></tr>'; }).join('');
+      el.innerHTML='<div style="height:6px"></div><div class="pb-wrap"><table class="pb-table"><thead><tr><th style="width:95px">Date</th><th>Description</th><th class="amt" style="width:90px">Amount</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function openChart(){ go('chart'); loadChart(); }
@@ -756,10 +773,10 @@
   async function loadContact(){
     const el=document.getElementById('contact-list'); el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--muted);font-size:13px">Loading…</div>';
     try{ const d=await api('/wallet/social');
-      const items=[['instagram','Instagram','i-cam'],['facebook','Facebook','i-globe2'],['youtube','YouTube','i-play'],['whatsapp','WhatsApp','i-chat'],['telegram','Telegram','i-send']];
+      const items=[['instagram','Instagram','i-cam','#ff005d'],['facebook','Facebook','i-globe2','#287be8'],['youtube','YouTube','i-play','#ff0033'],['whatsapp','WhatsApp','i-chat','#00d66b'],['telegram','Telegram','i-send','#29a9ea']];
       let h='';
       for(const it of items){ const url=d[it[0]]; if(!url)continue;
-        h+='<a class="social-card" href="'+url+'" target="_blank" rel="noopener" style="text-decoration:none;color:inherit"><span class="sc-ic"><svg width="24" height="24"><use href="#'+it[2]+'"/></svg></span><b>'+it[1]+'</b><span>Tap to open</span></a>'; }
+        h+='<a class="social-card" href="'+url+'" target="_blank" rel="noopener" style="text-decoration:none"><span class="sc-ic" style="color:'+it[3]+'"><svg width="26" height="26"><use href="#'+it[2]+'"/></svg></span><b>'+it[1]+'</b><span>Tap to open</span></a>'; }
       el.innerHTML=h||'<div style="grid-column:1/-1;padding:40px 0;color:var(--muted);font-size:13px;text-align:center">No links added yet.</div>';
     }catch(e){ el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
@@ -771,6 +788,7 @@
   }
   let toastT;
   function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+  function togglePw(btn){ const inp=btn.parentNode.querySelector('input'); if(!inp)return; const show=inp.type==='password'; inp.type=show?'text':'password'; const u=btn.querySelector('use'); if(u)u.setAttribute('href',show?'#i-eye-off':'#i-eye'); }
   buildNav();
 
 </script>
@@ -803,16 +821,41 @@
   .chart-row::before{content:"";position:absolute;inset:0;border-radius:14px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
   .chart-row .cn{font-weight:600;font-size:15px}
   .chart-row .cv{font-weight:700;color:var(--violet);letter-spacing:.05em;font-size:13px;margin-top:3px}
-  .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:14px 20px 130px}
-  .social-card{position:relative;border-radius:16px;padding:18px 12px;background:linear-gradient(160deg,var(--card-dark2),var(--card-dark));display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;text-align:center}
-  .social-card::before{content:"";position:absolute;inset:0;border-radius:16px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-  .social-card .sc-ic{width:46px;height:46px;border-radius:13px;background:#1a1433;display:grid;place-items:center;color:var(--ink)}
-  .social-card b{font-weight:600;font-size:14px}
-  .social-card span{color:var(--sub);font-size:11px;word-break:break-all}
+  .contact-hero{display:flex;flex-direction:column;align-items:center;text-align:center;margin:14px 0 26px}
+  .contact-hero .globe-box{width:60px;height:60px;display:grid;place-items:center;margin-bottom:20px;border:1px solid #8a27ff;border-radius:13px;background:linear-gradient(135deg,#0c0920,#10091f);color:#fff}
+  .contact-hero h3{font-weight:400;font-size:22px;margin:0 0 10px}
+  .contact-hero p{color:var(--sub);font-size:13px;margin:0;font-weight:400}
+  .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:0 20px 130px}
+  .social-card{position:relative;border-radius:22px;padding:22px 12px 18px;background:linear-gradient(135deg,rgba(13,7,30,.98),rgba(14,7,27,.98));border:1px solid #8a27ff;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;text-align:center;transition:transform .15s}
+  .social-card:active{transform:translateY(2px)}
+  .social-card .sc-ic{width:52px;height:52px;border-radius:12px;background:#18142d;display:grid;place-items:center;margin-bottom:12px}
+  .social-card b{font-weight:400;font-size:15px;color:#f2f2f5;margin-bottom:7px}
+  .social-card span{color:#777984;font-size:10.5px;word-break:break-word}
   .ctable{width:calc(100% - 40px);margin:6px 20px 0;border-collapse:collapse}
   .ctable th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;font-weight:600}
   .ctable td{padding:12px 0;border-top:1px solid var(--line-soft);font-size:13.5px}
   .ctable td.v{font-weight:700;color:var(--violet);letter-spacing:.05em;text-align:right}
+  /* MY BIDS */
+  .bid-card{margin:0 20px 16px;background:var(--cream);color:var(--cream-ink);border-radius:20px;padding:16px 16px 13px}
+  .bid-card .bh{display:flex;align-items:center;justify-content:space-between;padding-bottom:11px;border-bottom:1px solid var(--cream-div)}
+  .bid-card .bn{font-weight:500;font-size:16px;color:#111116}
+  .bid-card .bstatus{min-width:53px;height:29px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border-radius:18px;font-size:11px}
+  .bid-card .bstatus.open{border:1px solid #00b83f;color:#00a93b}
+  .bid-card .bstatus.close{border:1px solid #ef2020;color:#e91e1e}
+  .bid-card .bd{display:grid;grid-template-columns:1.4fr 1fr .7fr;padding:12px 4px 0}
+  .bid-card .bd .bl{color:#5e5b59;font-size:10px;margin-bottom:3px}
+  .bid-card .bd .bv{color:#17161a;font-size:13px;line-height:1.2}
+  .bid-card .bf{display:flex;align-items:center;justify-content:space-between;padding-top:22px}
+  .bid-card .bf .bm{color:#88837f;font-size:9.5px}
+  .bid-card .bf .bdt{color:#85807c;font-size:9.5px;white-space:nowrap}
+  /* PASSBOOK */
+  .pb-wrap{margin:6px 20px 0;overflow-x:auto;border-radius:14px}
+  .pb-table{width:100%;min-width:300px;border-collapse:separate;border-spacing:0;background:var(--cream);color:#181619;border-radius:14px;overflow:hidden}
+  .pb-table thead th{height:32px;padding:0 14px;border-bottom:1px solid var(--cream-div);color:#161419;font-size:10px;font-weight:500;text-align:left;white-space:nowrap}
+  .pb-table thead th+th{border-left:1px solid var(--cream-div)}
+  .pb-table tbody td{padding:9px 14px;border-bottom:1px solid var(--cream-div);color:#252226;font-size:10px;vertical-align:top}
+  .pb-table tbody tr:last-child td{border-bottom:none}
+  .pb-table td.amt{text-align:right;white-space:nowrap;font-weight:500}
 </style>
 
 </body>
