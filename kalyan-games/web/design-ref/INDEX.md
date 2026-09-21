@@ -25,3 +25,6 @@ Saved here so the designs are durable and re-readable when building each screen.
 | 018 | 018.jpg | Confirm Logout sheet — "Are you sure…", Cancel(grey)/Yes, Logout(red). NOTE: market CTA reads "Play" here |
 | 019 | 019.jpg | Passbook — Search + "Last 7 days" dropdown, cream table (Date/Description/Amount), pagination Prev 1 2 3 Next |
 | 020 | 020.jpg | Passbook — date dropdown open (Last 7/14/30 days, Previous month, Last 90 days, Select date) |
+| 021 | 021.jpg | Passbook transaction DETAIL sheet — "Bid Placed- Milan day (Jodi)": Type/Name of the game/Game win/Provider name/Date/Played for/Win ratio/Bid amount/Status(Lost=red). Behind: passbook table has Balance Before / Balance After / Details(View) columns |
+| 022 | 022.jpg | Games grid ICONS (Milan Day) — real 3D art: Single Digit, Jodi Digits, Single Panna, Double Panna, Triple Panna, SP Motor, DP Motor, SP DP TP, Half Sangam, Full Sangam; purple-bordered dark cards, gradient Start |
+| 023 | 023.jpg | Half Sangam bet screen (Open Digit / Close Pana + ₹ amount + gradient Add Bid + table Game Type/Number/Amount/Remove w/ Open green Close red + trash) AND Withdrawal Completed success sheet (green check, "Got it") |
