@@ -238,6 +238,7 @@
   <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
   <symbol id="i-lang" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 5h9M8.5 3v2c0 4-2.5 7-5 8.5M6 9c0 2.5 3 5 6.5 6M13 20l4-9 4 9M14.5 17h5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M4 6h16M7 12h10M10 18h4"/></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.1 6.1A13.13 13.13 0 0 0 2 12s3.5 7 10 7a9.05 9.05 0 0 0 5.9-2.1M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol></defs></svg>
 
 <section class="pitch">
@@ -376,7 +377,7 @@
     </div>
 
     <div class="view" id="mybids"><div class="scroll">
-      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">My Bids</div></div>
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">My Bids</div><button class="help" onclick="openSheet('bidfilter')"><svg width="17" height="17"><use href="#i-filter"/></svg></button></div>
       <div id="mybids-list" style="padding:8px 20px 130px"></div>
     </div></div>
     <div class="view" id="passbook"><div class="scroll">
@@ -639,6 +640,11 @@
   .lang-row .radio::after{content:"";width:11px;height:11px;border-radius:50%;background:#7A2BFF;transform:scale(0);transition:transform .15s}
   .lang-row.sel .radio::after{transform:scale(1)}
   .lang-row .lname{font-size:16px;font-weight:500;color:var(--ink)}
+  /* FILTER CHIPS */
+  .fchips{display:flex;flex-wrap:wrap;gap:8px 12px}
+  .fchip{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border:1px solid var(--border-strong);border-radius:18px;background:transparent;color:#e9eaed;font-size:11px;cursor:pointer;font-family:"Poppins";white-space:nowrap}
+  .fchip.on{border-color:#a82cff;background:rgba(142,40,255,.07);color:#fff}
+  .fsec{color:#d2d4da;font-size:13px;font-weight:400;margin:0 0 11px}
   /* NOTIFICATIONS (pastel) */
   .nt-day{color:#d4d7dd;font-size:14px;font-weight:400;margin:22px 2px 8px}
   .nt{display:flex;align-items:flex-start;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}

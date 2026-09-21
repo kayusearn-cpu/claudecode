@@ -114,8 +114,20 @@ NEWJS = r'''
           '<div class="tmid"><div class="tt">'+cap(t.type)+'</div><div class="ts">'+(t.note||'')+'</div></div>'+
           '<div><div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(t.amount))+'</div><div class="tdate">'+ds+'</div></div></div>';
       }).join('');
-      document.getElementById('tx-list').innerHTML=rows||'<div style="padding:22px 20px;color:var(--muted);font-size:13px">No transactions yet.</div>';
+      document.getElementById('tx-list').innerHTML=rows||emptyTx();
     }catch(e){ toast(e.message); }
+  }
+  function emptyTx(){
+    return '<div style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:70px 24px 20px">'+
+      '<svg width="112" height="96" viewBox="0 0 112 96" fill="none">'+
+      '<rect x="24" y="26" width="58" height="24" rx="7" transform="rotate(-24 24 26)" fill="#a72cff"/>'+
+      '<rect x="70" y="16" width="26" height="34" rx="12" transform="rotate(-24 70 16)" fill="#8f27e5"/>'+
+      '<circle cx="86" cy="30" r="6" fill="#2a1140"/>'+
+      '<rect x="50" y="52" width="6" height="30" rx="3" transform="rotate(10 50 52)" fill="#8626c8"/>'+
+      '<rect x="50" y="66" width="5" height="30" rx="2.5" transform="rotate(30 50 66)" fill="#8626c8"/>'+
+      '<rect x="56" y="66" width="5" height="30" rx="2.5" transform="rotate(-30 56 66)" fill="#8626c8"/></svg>'+
+      '<div style="color:#f3f3f5;font-size:20px;font-weight:500;margin:16px 0 10px">Oops, Nothing Here!</div>'+
+      '<div style="color:var(--muted);font-size:13px;line-height:1.4;max-width:260px">No transactions yet. Start by adding funds to your wallet!</div></div>';
   }
   async function loadResults(){
     try{
@@ -197,6 +209,15 @@ NEWJS = r'''
         '<button class="btn-grad big-btn" id="bk-btn" style="margin-top:6px" onclick="doSaveBank()">Save bank details</button>'+
         '<div id="bk-extra" style="margin-top:10px"></div>';
       loadBank();
+    }else if(kind==='bidfilter'){
+      tmpFilter={status:bidFilter.status,markets:bidFilter.markets.slice()};
+      s.innerHTML='<div class="grab"></div><h4>Filters</h4>'+
+        '<div class="fsec" style="margin-top:6px">Game Type</div><div class="fchips" id="bf-gametype"></div>'+
+        '<div class="fsec" style="margin-top:22px">Games</div><div class="fchips" id="bf-games"></div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:28px">'+
+        '<button class="sheet-btn cancel" onclick="closeSheet()">Cancel</button>'+
+        '<button class="btn-grad" style="height:48px;border-radius:8px;font-size:15px" onclick="applyBidFilter()">Apply</button></div>';
+      renderBidFilter();
     }else if(kind==='logout'){
       s.innerHTML='<div class="grab"></div><h4>Confirm Logout</h4><p>Are you sure you want to log out of your account?</p>'+
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">'+
@@ -321,22 +342,41 @@ NEWJS = r'''
   function openDrawer(){ document.getElementById('drawer-ov').classList.add('show'); }
   function closeDrawer(){ document.getElementById('drawer-ov').classList.remove('show'); }
   function shareApp(){ closeDrawer(); const url=location.href; if(navigator.share){ navigator.share({title:'Kalyan Games',text:'Play Kalyan Games',url}).catch(function(){}); } else { try{ navigator.clipboard.writeText(url); toast('App link copied'); }catch(e){ toast('Share: '+url); } } }
+  let myBidsCache=[]; let bidFilter={status:null,markets:[]};
   function openMyBids(){ go('mybids'); loadMyBids(); }
   async function loadMyBids(){
     const el=document.getElementById('mybids-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
-    try{ const d=await api('/bids/history'); const bs=d.bids||[];
-      if(!bs.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids yet.</div>'; return; }
-      el.innerHTML='<div style="height:8px"></div>'+bs.map(function(b){ const dt=new Date(b.createdAt);
-        const nums=Object.keys(b.selections||{}).join(', ')||'-';
-        const st=(b.session||'').toLowerCase()==='close'?'close':'open';
-        return '<div class="bid-card"><div class="bh"><div class="bn">'+(b.market?b.market.name:'Market')+'</div>'+
-          '<span class="bstatus '+st+'">'+(st==='close'?'Close':'Open')+'</span></div>'+
-          '<div class="bd"><div><div class="bl">Game Type</div><div class="bv">'+b.gameType+'</div></div>'+
-          '<div><div class="bl">Digits</div><div class="bv">'+nums+'</div></div>'+
-          '<div><div class="bl">Points</div><div class="bv">'+inr(b.total)+'</div></div></div>'+
-          '<div class="bf"><span class="bm">Best of luck</span><span class="bdt">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+', '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'; }).join('');
-    }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+    try{ const d=await api('/bids/history'); myBidsCache=d.bids||[]; renderMyBids(); }
+    catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
+  function bidSt(b){ return (b.session||'').toLowerCase()==='close'?'close':'open'; }
+  function renderMyBids(){
+    const el=document.getElementById('mybids-list'); if(!el)return;
+    let bs=myBidsCache.slice();
+    if(bidFilter.status) bs=bs.filter(function(b){ return bidSt(b)===bidFilter.status; });
+    if(bidFilter.markets.length) bs=bs.filter(function(b){ return bidFilter.markets.indexOf(b.market?b.market.name:'')>=0; });
+    if(!myBidsCache.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids yet.</div>'; return; }
+    if(!bs.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No bids match your filters.</div>'; return; }
+    el.innerHTML='<div style="height:8px"></div>'+bs.map(function(b){ const dt=new Date(b.createdAt);
+      const nums=Object.keys(b.selections||{}).join(', ')||'-'; const st=bidSt(b);
+      return '<div class="bid-card"><div class="bh"><div class="bn">'+(b.market?b.market.name:'Market')+'</div>'+
+        '<span class="bstatus '+st+'">'+(st==='close'?'Close':'Open')+'</span></div>'+
+        '<div class="bd"><div><div class="bl">Game Type</div><div class="bv">'+b.gameType+'</div></div>'+
+        '<div><div class="bl">Digits</div><div class="bv">'+nums+'</div></div>'+
+        '<div><div class="bl">Points</div><div class="bv">'+inr(b.total)+'</div></div></div>'+
+        '<div class="bf"><span class="bm">Best of luck</span><span class="bdt">'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+', '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>'; }).join('');
+  }
+  let tmpFilter={status:null,markets:[]};
+  function renderBidFilter(){
+    const markets=[...new Set(myBidsCache.map(function(b){ return b.market?b.market.name:''; }).filter(Boolean))];
+    const gt=[['open','Open'],['close','Close']].map(function(g){ return '<button class="fchip'+(tmpFilter.status===g[0]?' on':'')+'" onclick="toggleFStatus(\''+g[0]+'\')">'+g[1]+'</button>'; }).join('');
+    const gm=markets.length?markets.map(function(m){ const on=tmpFilter.markets.indexOf(m)>=0; return '<button class="fchip'+(on?' on':'')+'" onclick="toggleFMarket(\''+m.replace(/'/g,'')+'\')">'+m+'</button>'; }).join(''):'<span style="color:var(--muted);font-size:12px">No games yet</span>';
+    document.getElementById('bf-gametype').innerHTML=gt;
+    document.getElementById('bf-games').innerHTML=gm;
+  }
+  function toggleFStatus(s){ tmpFilter.status=tmpFilter.status===s?null:s; renderBidFilter(); }
+  function toggleFMarket(m){ const i=tmpFilter.markets.indexOf(m); if(i>=0)tmpFilter.markets.splice(i,1); else tmpFilter.markets.push(m); renderBidFilter(); }
+  function applyBidFilter(){ bidFilter={status:tmpFilter.status,markets:tmpFilter.markets.slice()}; closeSheet(); renderMyBids(); }
   function openPassbook(){ go('passbook'); loadPassbook(); }
   async function loadPassbook(){
     const el=document.getElementById('passbook-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
