@@ -197,6 +197,11 @@ NEWJS = r'''
         '<button class="btn-grad big-btn" id="bk-btn" style="margin-top:6px" onclick="doSaveBank()">Save bank details</button>'+
         '<div id="bk-extra" style="margin-top:10px"></div>';
       loadBank();
+    }else if(kind==='logout'){
+      s.innerHTML='<div class="grab"></div><h4>Confirm Logout</h4><p>Are you sure you want to log out of your account?</p>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px">'+
+        '<button class="sheet-btn cancel" onclick="closeSheet()">Cancel</button>'+
+        '<button class="sheet-btn danger" onclick="closeSheet();logout()">Yes, Logout</button></div>';
     }else{
       s.innerHTML='<div class="grab"></div><h4>My Account</h4>'+
         '<button class="chipsel" style="width:100%;justify-content:center;color:var(--ink);margin-bottom:18px" onclick="openSheet(\'bank\')">Bank account (for withdrawal)</button>'+
@@ -204,7 +209,7 @@ NEWJS = r'''
         '<div class="field"><label>Current password</label><div class="input"><input id="sheet-oldpass" type="password" placeholder="Current password"></div></div>'+
         '<div class="field"><label>New password</label><div class="input"><input id="sheet-newpass" type="password" placeholder="Create a new password"></div></div>'+
         '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doChangePass()">Update password</button>'+
-        '<button class="chipsel" style="width:100%;justify-content:center;margin-top:12px;color:var(--ink)" onclick="logout()">Log out</button>';
+        '<button class="chipsel" style="width:100%;justify-content:center;margin-top:12px;color:var(--red);border-color:rgba(245,47,50,.4)" onclick="openSheet(\'logout\')">Log out</button>';
     }
     document.getElementById('overlay').classList.add('show');
     setTimeout(()=>{ const a=document.getElementById('sheet-amt')||document.getElementById('bk-holder')||document.getElementById('sheet-oldpass'); if(a)a.focus(); },200);
@@ -290,17 +295,18 @@ NEWJS = r'''
       if(!items.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No notifications yet.</div>'; return; }
       const now=new Date();
       const dayKey=dt=>{ const x=new Date(dt); const diff=Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-new Date(x.getFullYear(),x.getMonth(),x.getDate()))/86400000); if(diff===0)return 'Today'; if(diff===1)return 'Yesterday'; return x.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); };
-      let html='',last='';
+      const ICON={deposit:['🏦','#c8f0d7'],withdraw:['💸','#c6f0d6'],win:['🎉','#a9bff1'],loss:['🎯','#ffcbd8'],security:['🔑','#ffeaa2'],bonus:['🎁','#ffeca7'],bid:['🎫','#a9bff1']};
+      let html='',last='',first=true;
       for(const it of items){
-        const k=dayKey(it.at); if(k!==last){ html+='<div style="color:var(--sub);font-size:12px;font-weight:600;margin:18px 2px 8px">'+k+'</div>'; last=k; }
-        const pos=it.amount>0,neg=it.amount<0,cls=pos?'in':neg?'out':'';
-        const icon=(it.kind==='deposit'||it.kind==='win')?'i-up':(it.kind==='withdraw'||it.kind==='bid'||it.kind==='loss')?'i-down':(it.kind==='security')?'i-check':'i-bell';
-        const tint=cls?'':' style="background:rgba(139,59,255,.14);color:var(--violet)"';
-        const tm=new Date(it.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-        const amt=it.amount!=null?('<div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(it.amount))+'</div>'):'';
-        html+='<div class="tx"><span class="ti '+cls+'"'+tint+'><svg width="18" height="18"><use href="#'+icon+'"/></svg></span>'+
-          '<div class="tmid"><div class="tt">'+it.title+'</div><div class="ts">'+(it.body||'')+'</div></div>'+
-          '<div>'+amt+'<div class="tdate">'+tm+'</div></div></div>';
+        const k=dayKey(it.at); if(k!==last){ html+='<div class="nt-day">'+k+'</div>'; last=k; }
+        const ic=ICON[it.kind]||['🔔','#d7d0ea'];
+        const now2=(k==='Today'&&first);
+        const tm=now2?'Just now':new Date(it.at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        const body=it.body?(it.title+' '+it.body):it.title;
+        html+='<div class="nt"><span class="nic" style="background:'+ic[1]+'">'+ic[0]+(first?'<span class="undot"></span>':'')+'</span>'+
+          '<div class="ntx">'+body+'</div>'+
+          '<span class="ntm'+(now2?' now':'')+'">'+tm+'</span></div>';
+        first=false;
       }
       el.innerHTML=html;
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
@@ -364,6 +370,13 @@ NEWJS = r'''
         rs.map(function(r){ return '<tr><td>'+new Date(r.declaredAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td><td class="v">'+r.value+'</td></tr>'; }).join('')+'</tbody></table>';
     }catch(e){ el.innerHTML='<div style="padding:24px 0;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
+  const LANGS=[['en','English'],['hi','हिन्दी'],['bn','বাংলা'],['mr','मराठी'],['te','తెలుగు'],['ta','தமிழ்'],['gu','ગુજરાતી'],['ur','اردو'],['kn','ಕನ್ನಡ']];
+  let curLang=store.get('kg_lang')||'en';
+  function openLang(){ go('lang'); loadLang(); }
+  function loadLang(){ const el=document.getElementById('lang-list'); if(!el)return;
+    el.innerHTML=LANGS.map(function(l){ return '<div class="lang-row'+(l[0]===curLang?' sel':'')+'" onclick="pickLang(\''+l[0]+'\')"><span class="radio"></span><span class="lname">'+l[1]+'</span></div>'; }).join(''); }
+  function pickLang(c){ curLang=c; loadLang(); }
+  function saveLang(){ store.set('kg_lang',curLang); toast('Language saved'); go('home'); }
   function openContact(){ go('contact'); loadContact(); }
   async function loadContact(){
     const el=document.getElementById('contact-list'); el.innerHTML='<div style="grid-column:1/-1;padding:24px 20px;color:var(--muted);font-size:13px">Loading…</div>';

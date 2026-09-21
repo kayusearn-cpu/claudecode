@@ -185,6 +185,10 @@
   .sheet{position:absolute;left:0;right:0;bottom:0;background:#0d0a1c;border-radius:24px 24px 0 0;border-top:1px solid var(--line);padding:22px 22px 28px;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
   .overlay.show .sheet{transform:none}
   .sheet .grab{width:42px;height:4px;border-radius:100px;background:#2a2440;margin:0 auto 16px}
+  .sheet-btn{height:48px;border:none;border-radius:8px;font-family:"Poppins";font-weight:500;font-size:15px;cursor:pointer;color:#fff}
+  .sheet-btn.cancel{background:#474747}
+  .sheet-btn.danger{background:var(--red)}
+  .sheet-btn:active{transform:scale(.98)}
   .sheet h4{font-weight:700;font-size:19px;margin:0 0 5px}
   .sheet p{color:var(--sub);font-size:12.5px;margin:0 0 18px;font-weight:400}
 
@@ -233,6 +237,7 @@
   <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 0 1-11.9 7.6L3 21l1.9-6.1A8.5 8.5 0 1 1 21 11.5z"/></symbol>
   <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
   <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-lang" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 5h9M8.5 3v2c0 4-2.5 7-5 8.5M6 9c0 2.5 3 5 6.5 6M13 20l4-9 4 9M14.5 17h5"/></symbol>
   <symbol id="i-eye-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.1 6.1A13.13 13.13 0 0 0 2 12s3.5 7 10 7a9.05 9.05 0 0 0 5.9-2.1M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol></defs></svg>
 
 <section class="pitch">
@@ -396,6 +401,15 @@
       <div id="contact-list" class="social-grid"></div>
     </div></div>
 
+    <div class="view" id="lang">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Languages</div></div>
+        <p style="color:var(--sub);font-size:13.5px;margin:8px 20px 6px;font-weight:400">Select Your Preferred Language</p>
+        <div id="lang-list" style="padding:8px 20px 0"></div>
+      </div>
+      <div class="bet-foot" style="border-top:none"><button class="btn-grad submit" onclick="saveLang()">Save Changes</button></div>
+    </div>
+
     <div class="drawer-ov" id="drawer-ov" onclick="if(event.target===this)closeDrawer()"><aside class="drawer" id="drawer">
       <div class="dr-user"><span class="avatar" id="dr-av">MA</span><div style="min-width:0"><b id="dr-name">Player</b><span id="dr-phone">+91</span></div></div>
       <div class="dr-nav">
@@ -404,10 +418,11 @@
         <a onclick="closeDrawer();go('wallet');loadWallet()"><svg width="20" height="20"><use href="#i-wallet"/></svg>Wallet</a>
         <a onclick="closeDrawer();openPassbook()"><svg width="20" height="20"><use href="#i-doc"/></svg>Passbook</a>
         <a onclick="closeDrawer();openChart()"><svg width="20" height="20"><use href="#i-chart"/></svg>Chart</a>
+        <a onclick="closeDrawer();openLang()"><svg width="20" height="20"><use href="#i-lang"/></svg>Language</a>
         <a onclick="closeDrawer();openContact()"><svg width="20" height="20"><use href="#i-globe2"/></svg>Contact with us</a>
         <a onclick="shareApp()"><svg width="20" height="20"><use href="#i-share"/></svg>Share app</a>
       </div>
-      <button class="dr-logout" onclick="logout()"><svg width="20" height="20"><use href="#i-logout"/></svg>Logout</button>
+      <button class="dr-logout" onclick="closeDrawer();openSheet('logout')"><svg width="20" height="20"><use href="#i-logout"/></svg>Logout</button>
     </aside></div>
 
     <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
@@ -617,4 +632,19 @@
   .pb-table tbody td{padding:9px 14px;border-bottom:1px solid var(--cream-div);color:#252226;font-size:10px;vertical-align:top}
   .pb-table tbody tr:last-child td{border-bottom:none}
   .pb-table td.amt{text-align:right;white-space:nowrap;font-weight:500}
+  /* LANGUAGES */
+  .lang-row{display:flex;align-items:center;gap:16px;padding:15px 4px;cursor:pointer}
+  .lang-row .radio{width:22px;height:22px;border-radius:50%;border:1.5px solid #4A4A58;flex:0 0 auto;display:grid;place-items:center;transition:.15s}
+  .lang-row.sel .radio{border-color:var(--brand2,#C027FF)}
+  .lang-row .radio::after{content:"";width:11px;height:11px;border-radius:50%;background:#7A2BFF;transform:scale(0);transition:transform .15s}
+  .lang-row.sel .radio::after{transform:scale(1)}
+  .lang-row .lname{font-size:16px;font-weight:500;color:var(--ink)}
+  /* NOTIFICATIONS (pastel) */
+  .nt-day{color:#d4d7dd;font-size:14px;font-weight:400;margin:22px 2px 8px}
+  .nt{display:flex;align-items:flex-start;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
+  .nt .nic{width:48px;height:48px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:23px;position:relative}
+  .nt .ntx{flex:1;min-width:0;color:#f0f1f4;font-size:13.5px;line-height:1.42}
+  .nt .ntm{flex-shrink:0;margin-left:7px;color:#737780;font-size:10px;white-space:nowrap;align-self:center}
+  .nt .ntm.now{color:#9d2eff}
+  .nt .undot{position:absolute;width:7px;height:7px;right:2px;top:1px;background:#a82cff;border-radius:50%}
 </style>
