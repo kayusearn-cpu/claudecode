@@ -236,13 +236,16 @@ NEWJS = r'''
   function openSheet(kind){
     const s=document.getElementById('sheet');
     if(kind==='add'){
-      s.innerHTML='<div class="grab"></div><h4>Add Fund</h4><p>Pay to the account/UPI below, then enter the amount and your UTR, and/or upload the payment screenshot. Your deposit will be added within 24 hours after the admin verifies your payment.</p>'+
-        '<div id="pay-info" style="background:#0d0a1c;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;color:var(--sub)">Loading payment details…</div>'+
+      s.innerHTML='<div class="grab"></div>'+
+        '<div style="display:flex;align-items:center;justify-content:space-between"><h4 style="margin:0">Manual Payment</h4><button class="help" style="width:26px;height:26px" onclick="toast(\'Enter the amount, scan the QR or copy the UPI ID, pay, then submit. Admin credits within 24h.\')"><svg width="13" height="13"><use href="#i-info"/></svg></button></div>'+
+        '<p style="margin-top:8px">Scan or copy UPI ID to make payment.</p>'+
         '<div class="field"><label>Amount</label><div class="input"><span class="pre">'+R+'</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>'+
-        '<div class="field"><label>Payment method</label><div class="input" style="padding:0 6px 0 14px"><select id="sheet-method" style="flex:1;background:transparent;border:none;outline:none;color:var(--ink);font-family:inherit;font-size:14px;height:100%"><option>UPI</option><option>Bank Transfer</option></select></div></div>'+
-        '<div class="field"><label>Transaction / UTR number</label><div class="input"><input id="sheet-ref" type="text" placeholder="e.g. 4051XXXXXXXX"></div></div>'+
+        '<div id="pay-qr"></div>'+
+        '<div class="field" style="margin-top:14px"><label>UTR / Reference (recommended)</label><div class="input"><input id="sheet-ref" type="text" placeholder="e.g. 4051XXXXXXXX"></div></div>'+
         '<div class="field"><label>Payment screenshot (optional)</label><input type="file" id="sheet-proof" accept="image/*" style="width:100%;font-size:12.5px;color:var(--sub)"></div>'+
-        '<button class="btn-grad big-btn" style="margin-top:6px" onclick="doDeposit()">Submit deposit request</button>';
+        '<input type="hidden" id="sheet-method" value="UPI">'+
+        '<button class="btn-grad big-btn" style="margin-top:4px" onclick="doDeposit()">Submit</button>'+
+        '<div style="text-align:center;margin-top:14px;font-size:12.5px;color:var(--sub)">Having issues? <span style="color:var(--violet);cursor:pointer" onclick="toast(\'Automatic payment is coming soon. Please pay via QR/UPI for now.\')">Try automatic payment</span></div>';
       loadPayInfo();
     }else if(kind==='withdraw'){
       s.innerHTML='<div class="grab"></div><h4>Withdraw Funds</h4><p>Amount will be paid to your saved bank account after admin review.</p>'+
@@ -288,18 +291,66 @@ NEWJS = r'''
   }
   function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
   async function loadPayInfo(){
+    const box=document.getElementById('pay-qr'); if(!box)return;
+    box.innerHTML='<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:10px">Loading payment details…</div>';
     try{
-      const d=await api('/wallet/payment-info'); const box=document.getElementById('pay-info'); if(!box)return;
-      if(!d.upiId && !d.bankDetails && !d.qrImage){ box.innerHTML='Ask the admin for payment details, then enter your UTR below.'; return; }
-      let h='';
-      if(d.qrImage) h+='<img src="'+d.qrImage+'" alt="Pay QR" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;display:block;margin:0 auto 10px">';
-      window._upi=d.upiId||'';
-      if(d.upiId) h+='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span>UPI: <b style="color:var(--ink)">'+d.upiId+'</b>'+(d.upiName?' ('+d.upiName+')':'')+'</span><button class="chipsel" style="padding:5px 10px;color:var(--ink)" onclick="copyUpi()">Copy</button></div>';
-      if(d.bankDetails) h+='<div style="margin-top:8px;white-space:pre-wrap;color:var(--ink)">'+d.bankDetails+'</div>';
+      const d=await api('/wallet/payment-info'); window._upi=d.upiId||'';
+      if(!d.upiId && !d.qrImage && !d.bankDetails){ box.innerHTML='<div style="background:#0d0a1c;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--sub);text-align:center">Ask the admin to add payment details (UPI / QR).</div>'; return; }
+      let h='<div class="qr-wrap">';
+      if(d.qrImage) h+='<div class="qr-box"><img id="pay-qr-img" src="'+d.qrImage+'" alt="Payment QR"></div>';
+      else h+='<div class="qr-box" style="color:#111;font-size:12px;text-align:center">No QR uploaded.<br>Use the UPI ID below.</div>';
+      if(d.upiName) h+='<div class="qr-name">'+d.upiName+'</div>';
+      else if(d.upiId) h+='<div class="qr-name">'+d.upiId+'</div>';
+      h+='<div class="qr-actions">';
+      if(d.upiId) h+='<button class="qr-btn" onclick="copyUpi()"><svg width="15" height="15"><use href="#i-copy"/></svg> Upi Id</button>';
+      if(d.qrImage) h+='<button class="qr-btn" onclick="downloadQr()"><svg width="15" height="15"><use href="#i-dl"/></svg> Download</button>';
+      h+='</div>';
+      if(d.bankDetails) h+='<div style="margin-top:14px;white-space:pre-wrap;color:var(--sub);font-size:12px;text-align:center;line-height:1.5">'+d.bankDetails+'</div>';
+      h+='</div>';
       box.innerHTML=h;
-    }catch(e){ const box=document.getElementById('pay-info'); if(box)box.textContent='Could not load payment details.'; }
+    }catch(e){ box.innerHTML='<div style="color:var(--red);font-size:12.5px;text-align:center">Could not load payment details.</div>'; }
   }
-  function copyUpi(){ try{ navigator.clipboard.writeText(window._upi||''); toast('UPI copied'); }catch(e){ toast('Copy not supported'); } }
+  function copyUpi(){ try{ navigator.clipboard.writeText(window._upi||''); toast('UPI ID copied'); }catch(e){ toast(window._upi||'Copy not supported'); } }
+  function downloadQr(){ const img=document.getElementById('pay-qr-img'); if(!img)return; try{ const a=document.createElement('a'); a.href=img.src; a.download='kalyan-payment-qr.png'; document.body.appendChild(a); a.click(); a.remove(); toast('QR downloaded'); }catch(e){ toast('Could not download'); } }
+  /* Transaction History (dark list + chips) + shared detail sheet */
+  let txhData=[],txhCur='all',detailReg=[];
+  const TXMAP={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'Winning',loss:'Bid lost'};
+  function openTxHistory(){ go('txhist'); txhCur='all'; ['all','deposit','withdraw'].forEach(function(k){ const c=document.getElementById('txh-'+k); if(c)c.classList.toggle('grad',k==='all'); }); loadTxHistory(); }
+  async function loadTxHistory(){
+    const el=document.getElementById('txhist-list'); el.innerHTML='<div style="padding:24px 4px;color:var(--muted);font-size:13px">Loading…</div>';
+    try{ const d=await api('/wallet/passbook'); txhData=d.transactions||[]; renderTxh(); }
+    catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
+  }
+  function txhFilter(f){ txhCur=f; ['all','deposit','withdraw'].forEach(function(k){ const c=document.getElementById('txh-'+k); if(c)c.classList.toggle('grad',k===f); }); renderTxh(); }
+  function renderTxh(){
+    const el=document.getElementById('txhist-list'); if(!el)return;
+    let ts=txhData.slice();
+    if(txhCur==='deposit') ts=ts.filter(function(t){ return t.type==='deposit'; });
+    else if(txhCur==='withdraw') ts=ts.filter(function(t){ return t.type==='withdraw'; });
+    if(!ts.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No transactions.</div>'; return; }
+    detailReg=ts;
+    el.innerHTML=ts.map(function(t,i){ const pos=t.amount>0,io=pos?'in':'out'; const dt=new Date(t.createdAt);
+      const ds=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short'})+', '+dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="tx" style="cursor:pointer" onclick="openTxDetail('+i+')"><span class="ti '+io+'"><svg width="18" height="18"><use href="#i-'+(pos?'up':'down')+'"/></svg></span>'+
+        '<div class="tmid"><div class="tt">'+(TXMAP[t.type]||t.type)+'</div><div class="ts">'+(t.note||'')+'</div></div>'+
+        '<div><div class="tv '+(pos?'pos':'neg')+'">'+(pos?'+ ':'- ')+inr(Math.abs(t.amount))+'</div><div class="tdate">'+ds+'</div></div></div>'; }).join('');
+  }
+  function openTxDetail(i){ const t=detailReg[i]; if(!t)return;
+    const s=document.getElementById('sheet');
+    const statusMap={deposit:'Completed',withdraw:'Completed',bid:'Placed',win:'Won',loss:'Lost'};
+    const status=statusMap[t.type]||'-'; const statusColor=(t.type==='loss')?'var(--red)':(t.type==='win'||t.amount>0)?'var(--green)':'#f0f1f3';
+    const dt=new Date(t.createdAt);
+    const row=function(k,v,c){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><span style="color:var(--sub);font-size:13px">'+k+'</span><span style="color:'+(c||'#f0f1f3')+';font-size:13px;text-align:right">'+v+'</span></div>'; };
+    s.innerHTML='<div class="grab"></div>'+
+      '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px"><h4 style="margin:0;font-size:15px">'+(t.note||TXMAP[t.type]||t.type)+'</h4><span onclick="closeSheet()" style="color:var(--sub);font-size:20px;cursor:pointer;line-height:1">&times;</span></div>'+
+      row('Type',t.amount>0?'Credit':'Debit')+
+      row('Category',TXMAP[t.type]||t.type)+
+      row('Amount',(t.amount<0?'- ':'+ ')+inr(Math.abs(t.amount)),t.amount<0?'var(--red)':'var(--green)')+
+      row('Date',dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}))+
+      row('Time',dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+
+      row('Status',status,statusColor);
+    document.getElementById('overlay').classList.add('show');
+  }
   function fileToDataUrl(file){ return new Promise((res,rej)=>{ if(!file){res(null);return;} const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error('Could not read file')); r.readAsDataURL(file); }); }
   async function doDeposit(){
     const a=+document.getElementById('sheet-amt').value;
@@ -435,10 +486,11 @@ NEWJS = r'''
       if(!ts.length){ el.innerHTML='<div style="padding:40px 4px;color:var(--muted);font-size:13px;text-align:center">No transactions yet.</div>'; return; }
       const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'Winning',loss:'Bid lost'};
       const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
-      const rows=ts.map(function(t){ const dt=new Date(t.createdAt);
+      detailReg=ts;
+      const rows=ts.map(function(t,i){ const dt=new Date(t.createdAt);
         const desc=t.note?esc(t.note):(map[t.type]||t.type);
         const sign=t.amount<0?'- ':'';
-        return '<tr><td>'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td>'+
+        return '<tr style="cursor:pointer" onclick="openTxDetail('+i+')"><td>'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td>'+
           '<td>'+desc+'</td><td class="amt">'+sign+inr(Math.abs(t.amount))+'</td></tr>'; }).join('');
       el.innerHTML='<div style="height:6px"></div><div class="pb-wrap"><table class="pb-table"><thead><tr><th style="width:95px">Date</th><th>Description</th><th class="amt" style="width:90px">Amount</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
