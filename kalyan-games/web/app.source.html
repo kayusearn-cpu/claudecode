@@ -291,10 +291,10 @@
     <div class="view" id="home">
       <div class="scroll">
         <div class="home-top">
-          <div class="brand" style="gap:12px"><button class="icon-btn" onclick="openDrawer()" title="Menu"><svg width="20" height="20"><use href="#i-menu"/></svg></button><svg class="brand-svg" style="width:44px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
+          <div class="brand"><svg class="brand-svg" style="width:44px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
           <div style="display:flex;gap:10px;align-items:center">
             <button class="icon-btn" onclick="openNotif()"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
-            <div class="avatar" onclick="openSheet('account')" title="Account &amp; password" style="cursor:pointer">MA</div><button class="icon-btn" onclick="logout()" title="Log out" style="margin-left:2px"><svg width="18" height="18"><use href="#i-logout"/></svg></button>
+            <div class="avatar" onclick="openDrawer()" title="Menu" style="cursor:pointer">MA</div>
           </div>
         </div>
         <div class="greet"><h3>Welcome!</h3><p>Start playing and win real rewards</p></div>
@@ -438,7 +438,7 @@
     </div>
 
     <div class="drawer-ov" id="drawer-ov" onclick="if(event.target===this)closeDrawer()"><aside class="drawer" id="drawer">
-      <div class="dr-user"><span class="avatar" id="dr-av">MA</span><div style="min-width:0"><b id="dr-name">Player</b><span id="dr-phone">+91</span></div></div>
+      <div class="dr-user" onclick="closeDrawer();openSheet('account')" style="cursor:pointer"><span class="avatar" id="dr-av">MA</span><div style="min-width:0"><b id="dr-name">Player</b><span id="dr-phone">+91</span></div></div>
       <div class="dr-nav">
         <a onclick="closeDrawer();go('home')"><svg width="20" height="20"><use href="#i-home"/></svg>Home</a>
         <a onclick="closeDrawer();openMyBids()"><svg width="20" height="20"><use href="#i-games"/></svg>My Bids</a>
