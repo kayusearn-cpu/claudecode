@@ -99,10 +99,12 @@ NEWJS = r'''
       '<div class="gname">'+g.n+'</div><button class="btn-grad start" onclick="event.stopPropagation();openBet(\''+g.n+'\')">Start</button></div>').join('');
   }
   function renderNums(){
-    let h=''; for(let i=0;i<100;i++){ const n=String(i).padStart(2,'0');
-      h+='<label class="num" id="num-'+i+'"><span class="nn">'+n+'</span><span class="cur">'+R+'</span>'+
+    // Single Digit = ank 0-9 (10 numbers); Jodi = 00-99 (100 pairs)
+    const single=currentGame==='Single Digit'; const n=single?10:100;
+    let h=''; for(let i=0;i<n;i++){ const lbl=single?String(i):String(i).padStart(2,'0');
+      h+='<label class="num" id="num-'+i+'" data-num="'+lbl+'"><span class="nn">'+lbl+'</span><span class="cur">'+R+'</span>'+
          '<input type="number" min="0" placeholder="Enter amount" oninput="onAmt('+i+',this)"></label>'; }
-    document.getElementById('num-grid').innerHTML=h; document.getElementById('bet-total').textContent='00';
+    document.getElementById('num-grid').innerHTML=h; document.getElementById('bet-total').textContent='0';
   }
   async function loadWallet(){
     try{
@@ -157,6 +159,11 @@ NEWJS = r'''
   }
   function openMarket(id,name){ currentMarketId=id; currentMarket=name; document.getElementById('games-title').textContent=name; renderGames(); go('games'); }
   const SANGAM={'Half Sangam':['Open Digit','Close Pana'],'Full Sangam':['Open Pana','Close Pana'],'Single Panna':['Panna',null],'Double Panna':['Panna',null],'Triple Panna':['Panna',null],'SP Motor':['Digits',null],'DP Motor':['Digits',null],'SP DP TP':['Digits',null]};
+  // Authoritative Matka panna data (SP/DP/TP), by ank sum. Used to validate panna bets.
+  const MATKA_SP='127 136 145 190 235 280 370 389 460 479 569 578 128 137 146 236 245 290 380 470 489 560 579 678 129 138 147 156 237 246 345 390 480 570 589 679 120 139 148 157 238 247 256 346 490 580 670 689 130 149 158 167 239 248 257 347 356 590 680 789 140 159 168 230 249 258 267 348 357 456 690 780 123 150 169 178 240 259 268 349 358 367 457 790 124 160 179 250 269 278 340 359 368 458 467 890 125 134 170 189 260 279 350 369 378 459 468 567 126 135 180 234 270 289 360 379 450 469 478 568';
+  const MATKA_DP='118 226 244 299 334 488 550 668 677 119 155 100 227 335 344 399 588 669 110 228 255 200 336 499 660 688 778 166 229 337 355 300 445 599 779 788 112 220 266 338 446 455 400 699 770 113 122 177 339 366 447 500 799 889 114 277 330 448 466 556 600 880 899 115 133 188 223 377 449 557 566 700 116 224 233 288 440 477 558 800 990 117 144 199 225 388 559 577 667 900';
+  const MATKA_TP='000 777 444 111 888 555 222 999 666 333';
+  const PANNA_SET={'Single Panna':new Set(MATKA_SP.split(' ')),'Double Panna':new Set(MATKA_DP.split(' ')),'Triple Panna':new Set(MATKA_TP.split(' '))};
   let sgDrafts=[],sgLabels=['',''];
   function openBet(g){ currentGame=g;
     if(g==='Single Digit'||g==='Jodi Digits'){ document.getElementById('bet-title').textContent=currentMarket+' - '+g; renderNums(); go('bet'); }
@@ -178,6 +185,7 @@ NEWJS = r'''
     const amt=+document.getElementById('sg-amt').value;
     if(!a&&!b){ toast('Enter '+sgLabels[0]); return; }
     if(!amt||amt<=0){ toast('Enter a valid amount'); return; }
+    if(PANNA_SET[currentGame]){ const p=a.replace(/\s/g,''); if(!PANNA_SET[currentGame].has(p)){ toast(a+' is not a valid '+currentGame); return; } }
     sgDrafts.push({digits:[a,b].filter(Boolean).join(' / '),amount:amt});
     document.getElementById('sg-a').value=''; if(sgLabels[1])document.getElementById('sg-b').value=''; document.getElementById('sg-amt').value='';
     renderSgTable();
@@ -207,7 +215,7 @@ NEWJS = r'''
   }
   async function submitBet(){
     const selections={}; let total=0;
-    document.querySelectorAll('#num-grid input').forEach((x,i)=>{ const v=+x.value; if(v>0){ selections[String(i).padStart(2,'0')]=v; total+=v; } });
+    document.querySelectorAll('#num-grid .num').forEach(function(cell){ const v=+cell.querySelector('input').value; if(v>0){ selections[cell.dataset.num]=v; total+=v; } });
     if(total<=0){ toast('Enter an amount to submit'); return; }
     try{
       const d=await api('/bids',{method:'POST',body:JSON.stringify({marketId:currentMarketId,gameType:currentGame,selections})});
