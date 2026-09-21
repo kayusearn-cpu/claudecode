@@ -15,3 +15,8 @@ Saved here so the designs are durable and re-readable when building each screen.
 | 008 | 008.jpg | Wallet + bank options menu open — Update Bank Details / Remove Bank / Add New Bank popover on the cream card |
 | 009 | 009.jpg | Update Bank Details (sheet) — prefilled Holder/Bank/IFSC/Account (no confirm field), gradient "Update" |
 | 010 | 010.jpg | Remove Bank Account (confirm sheet) — "Are you sure…", Cancel (grey) / Remove (red) |
+| 011 | 011.jpg | Transaction History — All/Deposit/Withdraw filter chips (All active gradient), full tx list |
+| 012 | 012.jpg | Wallet EMPTY state — cream card + "Recent Transactions" + purple telescope, "Oops, Nothing Here!" |
+| 013 | 013.jpg | My Bids — cream cards (Milan Day/Shiva Night/Test Star), Open(green)/Close(red) pill, Game Type/Digits/Points, footer msg + date, filter icon top-right |
+| 014 | 014.jpg | My Bids — Filters sheet (Game Type: Close/Open; Games chips grid: Sridevi/Milan Day/…), Cancel / Apply |
+| 015 | 015.jpg | My Bids — Filters sheet with selections (Open + Milan Day + Madhur Day highlighted purple), Cancel / Apply |
