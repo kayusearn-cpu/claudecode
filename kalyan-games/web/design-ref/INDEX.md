@@ -20,3 +20,8 @@ Saved here so the designs are durable and re-readable when building each screen.
 | 013 | 013.jpg | My Bids — cream cards (Milan Day/Shiva Night/Test Star), Open(green)/Close(red) pill, Game Type/Digits/Points, footer msg + date, filter icon top-right |
 | 014 | 014.jpg | My Bids — Filters sheet (Game Type: Close/Open; Games chips grid: Sridevi/Milan Day/…), Cancel / Apply |
 | 015 | 015.jpg | My Bids — Filters sheet with selections (Open + Milan Day + Madhur Day highlighted purple), Cancel / Apply |
+| 016 | 016.jpg | Home (full) — logo, bell+avatar, Welcome, dark balance card + Add Fund, cream market cards (Milan Day/Test Star/Shiva Night) w/ chart icon + Join, cream floating bottom nav (home/wallet/records/chart) |
+| 017 | 017.jpg | Right side drawer — avatar+name+phone, menu: Home/My Bids/Wallet/Passbook/Chart/Language/Contact with us/Share app, red Logout at bottom |
+| 018 | 018.jpg | Confirm Logout sheet — "Are you sure…", Cancel(grey)/Yes, Logout(red). NOTE: market CTA reads "Play" here |
+| 019 | 019.jpg | Passbook — Search + "Last 7 days" dropdown, cream table (Date/Description/Amount), pagination Prev 1 2 3 Next |
+| 020 | 020.jpg | Passbook — date dropdown open (Last 7/14/30 days, Previous month, Last 90 days, Select date) |
