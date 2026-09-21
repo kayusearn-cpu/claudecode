@@ -156,7 +156,50 @@ NEWJS = r'''
     const sc=document.querySelector('#'+id+' .scroll'); if(sc) sc.scrollTop=0;
   }
   function openMarket(id,name){ currentMarketId=id; currentMarket=name; document.getElementById('games-title').textContent=name; renderGames(); go('games'); }
-  function openBet(g){ currentGame=g; document.getElementById('bet-title').textContent=currentMarket+' - '+g; renderNums(); go('bet'); }
+  const SANGAM={'Half Sangam':['Open Digit','Close Pana'],'Full Sangam':['Open Pana','Close Pana'],'Single Panna':['Panna',null],'Double Panna':['Panna',null],'Triple Panna':['Panna',null],'SP Motor':['Digits',null],'DP Motor':['Digits',null],'SP DP TP':['Digits',null]};
+  let sgDrafts=[],sgLabels=['',''];
+  function openBet(g){ currentGame=g;
+    if(g==='Single Digit'||g==='Jodi Digits'){ document.getElementById('bet-title').textContent=currentMarket+' - '+g; renderNums(); go('bet'); }
+    else openSangam(g);
+  }
+  function openSangam(g){
+    sgLabels=SANGAM[g]||['Digits',null]; sgDrafts=[];
+    document.getElementById('sg-title').textContent=currentMarket+' - '+g;
+    const a=document.getElementById('sg-a'); a.placeholder=sgLabels[0]; a.value='';
+    const bw=document.getElementById('sg-b-wrap'),sw=document.getElementById('sg-swap');
+    if(sgLabels[1]){ bw.style.display=''; sw.style.display=''; const b=document.getElementById('sg-b'); b.placeholder=sgLabels[1]; b.value=''; }
+    else { bw.style.display='none'; sw.style.display='none'; }
+    document.getElementById('sg-amt').value=''; syncBalance(); renderSgTable(); go('betsg');
+  }
+  function swapSangam(){ const a=document.getElementById('sg-a'),b=document.getElementById('sg-b'); const t=a.value; a.value=b.value; b.value=t; }
+  function addSangamBid(){
+    const a=(document.getElementById('sg-a').value||'').trim();
+    const b=sgLabels[1]?((document.getElementById('sg-b').value||'').trim()):'';
+    const amt=+document.getElementById('sg-amt').value;
+    if(!a&&!b){ toast('Enter '+sgLabels[0]); return; }
+    if(!amt||amt<=0){ toast('Enter a valid amount'); return; }
+    sgDrafts.push({digits:[a,b].filter(Boolean).join(' / '),amount:amt});
+    document.getElementById('sg-a').value=''; if(sgLabels[1])document.getElementById('sg-b').value=''; document.getElementById('sg-amt').value='';
+    renderSgTable();
+  }
+  function removeSg(i){ sgDrafts.splice(i,1); renderSgTable(); }
+  function renderSgTable(){
+    const el=document.getElementById('sg-table'); if(!el)return; let t=0; sgDrafts.forEach(function(d){ t+=d.amount; });
+    const tot=document.getElementById('sg-total'); if(tot)tot.textContent=t.toLocaleString('en-IN');
+    if(!sgDrafts.length){ el.innerHTML='<div style="padding:30px 4px;color:var(--muted);font-size:12.5px;text-align:center">No bids added yet</div>'; return; }
+    el.innerHTML='<table class="sgt"><thead><tr><th>Number</th><th>Amount</th><th style="width:66px">Remove</th></tr></thead><tbody>'+
+      sgDrafts.map(function(d,i){ return '<tr><td>'+d.digits+'</td><td>'+inr(d.amount)+'</td><td><span class="rm" onclick="removeSg('+i+')">🗑</span></td></tr>'; }).join('')+'</tbody></table>';
+  }
+  async function submitSangam(){
+    if(!sgDrafts.length){ toast('Add at least one bid'); return; }
+    const selections={}; let total=0;
+    sgDrafts.forEach(function(d){ selections[d.digits]=(selections[d.digits]||0)+d.amount; total+=d.amount; });
+    try{ const r=await api('/bids',{method:'POST',body:JSON.stringify({marketId:currentMarketId,gameType:currentGame,selections})});
+      balance=r.balance; syncBalance();
+      showSuccess('Great Job!','Your bid has been placed successfully. Wishing you the best of luck!');
+      sgDrafts=[]; renderSgTable();
+    }catch(e){ toast(e.message); }
+  }
   function onAmt(i,el){
     document.getElementById('num-'+i).classList.toggle('filled',!!el.value&&+el.value>0);
     let t=0; document.querySelectorAll('#num-grid input').forEach(x=>t+=(+x.value||0));

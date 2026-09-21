@@ -340,6 +340,32 @@
       </div>
     </div>
 
+    <!-- SANGAM / PANNA / MOTOR bet -->
+    <div class="view" id="betsg">
+      <div class="sub-head" style="padding-top:8px">
+        <button class="back" onclick="go('games')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
+        <div class="htitle" id="sg-title">Half Sangam</div>
+        <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
+      </div>
+      <div class="bet-sub">
+        <span class="chipsel"><svg width="15" height="15"><use href="#i-clock"/></svg> Oct 14, 2025</span>
+        <span class="chipsel grow" id="sg-swap" onclick="swapSangam()" style="max-width:160px">Swap Inputs&nbsp; &#8646;</span>
+      </div>
+      <div class="scroll" style="flex:1"><div style="padding:14px 20px 6px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+          <div class="sg-in"><input id="sg-a" placeholder="Open Digit"></div>
+          <div class="sg-in" id="sg-b-wrap"><input id="sg-b" placeholder="Close Pana"></div>
+        </div>
+        <div class="sg-in" style="margin-top:11px"><span class="sg-cur">&#8377;</span><input id="sg-amt" type="number" placeholder="Enter amount"></div>
+        <button class="btn-grad" id="sg-add" style="width:100%;height:49px;border-radius:9px;margin-top:16px;font-size:15px" onclick="addSangamBid()">Add Bid</button>
+        <div id="sg-table" style="margin-top:22px"></div>
+      </div></div>
+      <div class="bet-foot">
+        <div class="total-row"><span class="t-l">Total amount</span><span class="t-r">₹<span id="sg-total">0</span></span></div>
+        <button class="btn-grad submit" onclick="submitSangam()">Submit</button>
+      </div>
+    </div>
+
     <!-- WALLET -->
     <div class="view" id="wallet">
       <div class="scroll">
@@ -645,6 +671,18 @@
   .fchip{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border:1px solid var(--border-strong);border-radius:18px;background:transparent;color:#e9eaed;font-size:11px;cursor:pointer;font-family:"Poppins";white-space:nowrap}
   .fchip.on{border-color:#a82cff;background:rgba(142,40,255,.07);color:#fff}
   .fsec{color:#d2d4da;font-size:13px;font-weight:400;margin:0 0 11px}
+  /* SANGAM bet */
+  .sg-in{display:flex;align-items:center;background:var(--surface-purple);border:1.4px solid rgba(104,45,255,.5);border-radius:12px;height:50px;padding:0 14px;transition:border-color .16s}
+  .sg-in:focus-within{border-color:#C084FC}
+  .sg-in input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:"Poppins"}
+  .sg-in input::placeholder{color:#777a84}
+  .sg-in .sg-cur{color:#fff;font-size:16px;font-weight:500;margin-right:8px}
+  .sgt{width:100%;border-collapse:collapse;table-layout:fixed}
+  .sgt th{height:30px;font-size:11px;font-weight:400;color:var(--sub);text-align:center;border-bottom:1px solid var(--line)}
+  .sgt th+th{border-left:1px solid var(--line)}
+  .sgt td{height:36px;font-size:11.5px;color:#d0d2d7;text-align:center;border-bottom:1px solid var(--line);word-break:break-word}
+  .sgt td+td{border-left:1px solid var(--line)}
+  .sgt .rm{color:var(--red);cursor:pointer;font-size:15px}
   /* NOTIFICATIONS (pastel) */
   .nt-day{color:#d4d7dd;font-size:14px;font-weight:400;margin:22px 2px 8px}
   .nt{display:flex;align-items:flex-start;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
