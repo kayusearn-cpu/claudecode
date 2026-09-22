@@ -25,3 +25,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 018 | admin-018.jpg | Sub Admin Management — same table variant |
 | 019 | admin-019.jpg | Sub Admin — Delete Sub Admin confirm modal (Cancel + [Delete cut off]) |
 | 020 | admin-020.jpg | Sub Admin — Update Sub Admin modal: Full Name / Username / Email / Phone Number inputs, Status (Active radio), Access Menus checkboxes (Dashboard checked; Winning Prediction/Sub Admin Management/Games/Reports/Settings), Cancel + [Save cut off] |
+| 021 | admin-021.jpg | Add Sub Admin modal — Full Name / Username / Email / Phone / Password inputs, Status (Active radio), Access Menus checkboxes (Dashboard checked), [Save cut off] |
+| 022 | admin-022.jpg | Wallet > Withdraw Request — table S.No / User / Amount / Req No. / Payment method (A/c transfer, poo…, design…, visa…); sidebar Wallet expanded: Withdraw Request(active)/Add Fund/Bid Revert |
+| 023 | admin-023.jpg | Withdraw Request DETAIL panel (Figma proto, frame 80/119) — User Name: Rohit Sharma, Request Amount ₹2,500, Request Number WRQ98342, Payment Method A/C Transfer, Bank Name HDFC Bank, A/C Holder Name, IFSC Code HDFC0001234 |
+| 024 | admin-024.jpg | Update Sub Admin modal (dup of 020) |
+| 025 | admin-025.jpg | Add Sub Admin modal (dup of 021) |
