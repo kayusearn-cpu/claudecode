@@ -35,3 +35,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 028 | admin-028.jpg | Wallet > Add Fund — User List (Select User) + Amount (Enter Amount) + gradient "Credit User" button |
 | 029 | admin-029.jpg | Wallet > Add Fund — User List dropdown open (search + user list Rahul Sharma/Priya Mehta/Aman Verma/Kavya Nair/Arjun Yadav/Sneha Roy/Karan Joshi with mobiles) |
 | 030 | admin-030.jpg | Wallet > Add Fund — Confirm Wallet Credit modal ("Are you sure you want to credit … wallet?", Cancel + [Confirm cut off]) |
+| 031 | admin-031.jpg | Wallet > Bid Revert — Date + Market Name filters; Bid History table (S.No/User: Rahul Sharma…), Show 10 pagination (frame 84/119) |
+| 032 | admin-032.jpg | Wallet > Bid Revert — same (clean crop) |
+| 033 | admin-033.jpg | Wallet > Bid Revert — date picker calendar open (August 2025, day grid, Cancel / OK, selected 17) |
+| 034 | admin-034.jpg | Reports > Customer Sell — Date + Market filters; "Single Digit Sell Summary" tiles 0-9 with Points count. Sidebar Reports expanded: User Bid History / Customer Sell(active) / Winning / Transfer Point / Bid Win / Withdraw / Deposit |
+| 035 | admin-035.jpg | Reports > Winning — Winning Report (Date/Market); Winning History table (S.No/User/Market Name/Game Name: Single Digit/Jodi/Single Panna/Double Panna/Triple Panna) (frame 88/119) |
