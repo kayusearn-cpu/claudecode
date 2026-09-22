@@ -50,3 +50,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 043 | admin-043.jpg | Notices — Update Notice modal (Title/Content/Date/Status Active, Cancel + [Save cut off]) |
 | 044 | admin-044.jpg | Notices > Send Notification — User List (Select User) + Title + Content + gradient send button |
 | 045 | admin-045.jpg | Settings > Main Settings — Add App Link (App Link + Message + Save), App Maintenance (Maintenance Message + Show message toggle + Save). Sidebar Settings submenu: Main Settings(active)/Contact Settings/Slider Images/How to Play/QR Images/User Ideas |
+| 046 | admin-046.jpg | Settings > Contact Settings — Mobile Number / Landline 1 / Email 1 / Latitude / Address inputs; Social Profile Settings (Telegram Profile…) below |
+| 047 | admin-047.jpg | Settings > Slider Images — Slider Image Management: search + table (S.No / Slider Image thumbnail / Order), pagination |
+| 048 | admin-048.jpg | Settings > Slider Images — Delete Slider Image confirm modal (Cancel + [Delete cut off]) |
+| 049 | admin-049.jpg | Settings > Slider Images — Add Slider Image modal (Upload Image dropzone "Supported formats: …", Display Order input, Cancel + [Save cut off]) |
+| 050 | admin-050.jpg | Settings > QR Images — QR Image Management: search + table (S.No / QR Image thumbnail / Order), pagination |
