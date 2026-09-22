@@ -40,3 +40,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 033 | admin-033.jpg | Wallet > Bid Revert — date picker calendar open (August 2025, day grid, Cancel / OK, selected 17) |
 | 034 | admin-034.jpg | Reports > Customer Sell — Date + Market filters; "Single Digit Sell Summary" tiles 0-9 with Points count. Sidebar Reports expanded: User Bid History / Customer Sell(active) / Winning / Transfer Point / Bid Win / Withdraw / Deposit |
 | 035 | admin-035.jpg | Reports > Winning — Winning Report (Date/Market); Winning History table (S.No/User/Market Name/Game Name: Single Digit/Jodi/Single Panna/Double Panna/Triple Panna) (frame 88/119) |
+| 036 | admin-036.jpg | Reports > Transfer Point — Transfer Point Report (Date + Get Results); Transfer List table (S.No/Sender Name/Receiver Name…) |
+| 037 | admin-037.jpg | Reports > Bid Win — Bid Winning Report (Date/Market); Total Bid Amount ₹2,600 [View], Total Win Amount ₹2,600 (green) cards (frame 90/119) |
+| 038 | admin-038.jpg | Reports > Bid Win — same + Win History table (S.No/User/Market Name/Game Name) |
+| 039 | admin-039.jpg | Reports > Withdraw — Withdraw History Report (Date + Get Results); Withdraw List table (User/Amount/Req No./Payment), Total Withdraw card |
+| 040 | admin-040.jpg | Reports > Deposit — Deposit History Report (Date + Get Results); Deposit List table (User/Amount/Req No./Payment), Total Deposit card |
