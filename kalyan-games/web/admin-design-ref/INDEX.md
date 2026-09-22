@@ -20,3 +20,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 013 | admin-013.jpg | User Management — table S.No / User / Mobile / Date & Time (Rahul Sharma, Priya Mehta…), Show 10 / Showing 1 to 10 of 154 |
 | 014 | admin-014.jpg | User Management — same table variant |
 | 015 | admin-015.jpg | User detail (Rajat Singh) — profile card (Active Yes / Betting No / Transfer Permission Yes / Is Logout Yes / Security Pin [Change]), cream Available Balance card (Add Fund/Withdraw), Basic Details (Refer Code/Last Seen), Bank & Payment (Bank Name/Branch/IFSC/AC Holder), Game Summary cards |
+| 016 | admin-016.jpg | Winning Prediction — Date + Market Name selects; Prediction Results table (S.No / User / Bid Points): Rahul Sharma 250, Priya Mehta 500… |
+| 017 | admin-017.jpg | Sub Admin Management — table S.No / Full Name / User Name / (email…), Show 10 / Showing 1 to 10 of 154 |
+| 018 | admin-018.jpg | Sub Admin Management — same table variant |
+| 019 | admin-019.jpg | Sub Admin — Delete Sub Admin confirm modal (Cancel + [Delete cut off]) |
+| 020 | admin-020.jpg | Sub Admin — Update Sub Admin modal: Full Name / Username / Email / Phone Number inputs, Status (Active radio), Access Menus checkboxes (Dashboard checked; Winning Prediction/Sub Admin Management/Games/Reports/Settings), Cancel + [Save cut off] |
