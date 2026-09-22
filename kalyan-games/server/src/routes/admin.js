@@ -4,6 +4,7 @@ const QRCode = require('qrcode');
 const { authenticator } = require('otplib');
 const prisma = require('../db');
 const { sign, adminAuth } = require('../middleware/auth');
+const { deriveResult, bidWin } = require('../lib/settle');
 
 authenticator.options = { window: 1 }; // tolerate +/- 1 time-step of clock drift
 const ISSUER = process.env.ADMIN_TOTP_ISSUER || 'Kalyan Games';
@@ -166,12 +167,90 @@ router.delete('/markets/:id', adminAuth, async (req, res) => {
 });
 
 /* ------------------------------ Results -------------------------------- */
-// POST /admin/results  { marketId, value }  -> declares a result
+// GET /admin/results  -> recent declared results
+router.get('/results', adminAuth, async (_req, res) => {
+  const results = await prisma.result.findMany({
+    orderBy: { declaredAt: 'desc' }, take: 100,
+    include: { market: { select: { name: true } } },
+  });
+  res.json({ results: results.map((r) => ({ id: r.id, market: r.market && r.market.name, value: r.value, declaredAt: r.declaredAt })) });
+});
+
+// Shared: work out the settlement for a market's pending bids without writing.
+async function computeSettlement(marketId, d) {
+  const pend = await prisma.bid.findMany({
+    where: { marketId, status: 'pending' },
+    include: { user: { select: { id: true, name: true, phone: true } } },
+  });
+  const winners = []; let settled = 0, manual = 0, totalPayout = 0;
+  for (const b of pend) {
+    const r = bidWin(b.gameType, b.selections, d);
+    if (!r.auto) { manual++; continue; }
+    settled++;
+    if (r.win > 0) { winners.push({ bid: b, win: r.win }); totalPayout += r.win; }
+  }
+  return { pend, winners, settled, manual, totalPayout };
+}
+
+// POST /admin/results/preview  { marketId, openPanna, closePanna }
+// Dry-run: shows the derived result and who would win, without committing.
+router.post('/results/preview', adminAuth, async (req, res) => {
+  const { marketId, openPanna, closePanna } = req.body || {};
+  const market = await prisma.market.findUnique({ where: { id: marketId } });
+  if (!market) return res.status(404).json({ error: 'Market not found' });
+  if (!/^\d{3}$/.test(String(openPanna)) || !/^\d{3}$/.test(String(closePanna))) {
+    return res.status(400).json({ error: 'Open and close panna must each be 3 digits' });
+  }
+  const d = deriveResult(openPanna, closePanna);
+  const s = await computeSettlement(marketId, d);
+  res.json({
+    market: market.name, derived: d,
+    summary: { pending: s.pend.length, settled: s.settled, winners: s.winners.length, manual: s.manual, totalPayout: s.totalPayout },
+    winners: s.winners.slice(0, 50).map((w) => ({ name: w.bid.user && w.bid.user.name, phone: w.bid.user && w.bid.user.phone, gameType: w.bid.gameType, win: w.win })),
+  });
+});
+
+// POST /admin/results  { marketId, openPanna, closePanna }
+// Declares the result, settles every pending bid on the market (credits
+// winners, marks won/lost) and closes the market.
 router.post('/results', adminAuth, async (req, res) => {
-  const { marketId, value } = req.body || {};
-  if (!marketId || !value) return res.status(400).json({ error: 'marketId and value required' });
-  const result = await prisma.result.create({ data: { marketId, value } });
-  res.json({ result });
+  const { marketId, openPanna, closePanna } = req.body || {};
+  const market = await prisma.market.findUnique({ where: { id: marketId } });
+  if (!market) return res.status(404).json({ error: 'Market not found' });
+  if (!/^\d{3}$/.test(String(openPanna)) || !/^\d{3}$/.test(String(closePanna))) {
+    return res.status(400).json({ error: 'Open and close panna must each be 3 digits' });
+  }
+  const d = deriveResult(openPanna, closePanna);
+  const s = await computeSettlement(marketId, d);
+
+  // Track running balances so multiple wins for one user record correctly.
+  const ids = [...new Set(s.winners.map((w) => w.bid.userId))];
+  const users = ids.length ? await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, balance: true } }) : [];
+  const bal = {}; users.forEach((u) => { bal[u.id] = u.balance; });
+
+  const ops = [];
+  for (const w of s.winners) {
+    const uid = w.bid.userId; const before = bal[uid]; const after = before + w.win; bal[uid] = after;
+    ops.push(prisma.user.update({ where: { id: uid }, data: { balance: { increment: w.win } } }));
+    ops.push(prisma.transaction.create({ data: { userId: uid, type: 'win', amount: w.win, note: `Won ${w.bid.gameType} · ${market.name} (${d.value})`, balanceBefore: before, balanceAfter: after } }));
+    ops.push(prisma.bid.update({ where: { id: w.bid.id }, data: { status: 'won' } }));
+    ops.push(prisma.notification.create({ data: { userId: uid, type: 'win', title: 'You won! 🎉', body: `You won ₹${w.win} on ${market.name} (${w.bid.gameType}).` } }));
+  }
+  // Mark the auto-settled non-winners as lost (skip manual/unknown types).
+  const winIds = new Set(s.winners.map((w) => w.bid.id));
+  for (const b of s.pend) {
+    if (winIds.has(b.id)) continue;
+    const r = bidWin(b.gameType, b.selections, d);
+    if (r.auto) ops.push(prisma.bid.update({ where: { id: b.id }, data: { status: 'lost' } }));
+  }
+  ops.push(prisma.result.create({ data: { marketId, value: d.value } }));
+  ops.push(prisma.market.update({ where: { id: marketId }, data: { status: 'closed' } }));
+  await prisma.$transaction(ops);
+
+  res.json({
+    result: { value: d.value }, derived: d,
+    summary: { settled: s.settled, winners: s.winners.length, manual: s.manual, totalPayout: s.totalPayout },
+  });
 });
 
 /* --------------------------- Withdrawals ------------------------------- */

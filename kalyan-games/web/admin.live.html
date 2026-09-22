@@ -166,6 +166,17 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
 .cream .bal{font-size:28px;font-weight:700;color:#1a140d;margin-top:2px}
 .cbtn{flex:1;height:42px;border-radius:11px;background:#fff;border:1px solid #e7d9c9;color:#5b3fb0;font-weight:600;font-size:12.5px}
 .cbtn:hover{background:#fff7ef}.cbtn.on{background:#efe4d6}
+/* results */
+.rsel{width:100%;height:50px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 12px;font-size:14px}
+.res-card{margin-top:20px;border:1px solid var(--line2);border-radius:16px;padding:20px;background:var(--card)}
+.res-val{font-size:30px;font-weight:700;letter-spacing:.06em;text-align:center;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.res-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:22px;margin:12px 0 4px;color:var(--sub);font-size:13px}
+.res-meta b{color:var(--ink);font-weight:700;margin-left:4px}
+.res-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px}
+.res-sum>div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.res-sum b{display:block;font-size:20px;font-weight:700}.res-sum span{color:var(--sub);font-size:12px}
+.res-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;align-items:end}
+@media(max-width:760px){.res-form{grid-template-columns:1fr 1fr}}
 </style></head>
 <body>
 
@@ -610,6 +621,61 @@ async function saveMkt(){
 }
 async function toggleMkt(id,status){try{await api('/admin/markets/'+id,{method:'PATCH',body:JSON.stringify({status})});toast(status==='open'?'Market opened':'Market closed');PAGES.markets()}catch(e){toast(e.message)}}
 function delMkt(id,name){confirmModal('Delete market?','Delete “'+name+'”? This can’t be undone.',async function(){try{await api('/admin/markets/'+id,{method:'DELETE'});toast('Market deleted');PAGES.markets()}catch(e){toast(e.message)}})}
+
+/* ---------- Results + settlement ---------- */
+let RES_MARKETS=[];
+PAGES.results=async function(){
+  document.getElementById('page').innerHTML=
+    '<div class="panel"><h2>Market Result Management</h2>'+
+    '<div class="af" style="max-width:none"><div class="res-form">'+
+      '<div class="field" style="margin:0"><label>Market Name</label><select id="res-mkt" class="rsel"></select></div>'+
+      '<div class="field" style="margin:0"><label>Open Panna</label><input id="res-open" maxlength="3" inputmode="numeric" placeholder="e.g. 128"></div>'+
+      '<div class="field" style="margin:0"><label>Close Panna</label><input id="res-close" maxlength="3" inputmode="numeric" placeholder="e.g. 590"></div>'+
+      '<button class="ba big grad" onclick="previewResult()">Preview</button>'+
+    '</div></div><div id="res-preview"></div></div>'+
+    '<div class="panel"><h2>Game Result History</h2><div id="res-hist"><div class="loading">Loading…</div></div></div>';
+  try{const m=await api('/markets');RES_MARKETS=m.markets||[];
+    document.getElementById('res-mkt').innerHTML=RES_MARKETS.length?RES_MARKETS.map(x=>'<option value="'+x.id+'">'+x.name+'</option>').join(''):'<option value="">No markets</option>';
+  }catch(e){toast(e.message)}
+  loadResHist();
+};
+async function loadResHist(){
+  const el=document.getElementById('res-hist');
+  try{const d=await api('/admin/results');const rows=d.results||[];
+    if(!rows.length){el.innerHTML='<p class="sub" style="padding:8px 2px">No results declared yet.</p>';return}
+    el.innerHTML='<div class="tbl-wrap"><table class="tbl"><tr><th>S.No</th><th>Market Name</th><th>Result</th><th>Declared</th></tr><tbody>'+
+      rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+(r.market||'-')+'</b></td><td style="letter-spacing:.05em;font-weight:600;color:#c9b3ff">'+r.value+'</td><td>'+fmtDate(r.declaredAt)+'</td></tr>').join('')+
+      '</tbody></table></div>';
+  }catch(e){el.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+async function previewResult(){
+  const marketId=document.getElementById('res-mkt').value;
+  const openPanna=document.getElementById('res-open').value.trim();
+  const closePanna=document.getElementById('res-close').value.trim();
+  if(!marketId){toast('Select a market');return}
+  if(!/^\d{3}$/.test(openPanna)||!/^\d{3}$/.test(closePanna)){toast('Open and close panna must each be 3 digits');return}
+  const box=document.getElementById('res-preview');box.innerHTML='<div class="loading">Calculating…</div>';
+  try{
+    const d=await api('/admin/results/preview',{method:'POST',body:JSON.stringify({marketId,openPanna,closePanna})});
+    const dv=d.derived,su=d.summary;
+    box.innerHTML='<div class="res-card">'+
+      '<div class="res-val">'+dv.value+'</div>'+
+      '<div class="res-meta"><span>Open Ank<b>'+dv.openAnk+'</b></span><span>Jodi<b>'+dv.jodi+'</b></span><span>Close Ank<b>'+dv.closeAnk+'</b></span></div>'+
+      '<div class="res-sum"><div><b>'+su.winners+'</b><span>Winners</span></div><div><b>'+inr(su.totalPayout)+'</b><span>Total Payout</span></div><div><b>'+su.settled+'</b><span>Bids Settled</span></div>'+(su.manual?'<div><b>'+su.manual+'</b><span>Manual (Motor/Sangam)</span></div>':'')+'</div>'+
+      (d.winners&&d.winners.length?('<div class="tbl-wrap" style="margin-top:14px"><table class="tbl"><tr><th>Winner</th><th>Game</th><th>Payout</th></tr><tbody>'+d.winners.map(w=>'<tr><td>'+(w.name||'-')+'<div class="sub">'+(w.phone||'')+'</div></td><td>'+w.gameType+'</td><td><b>'+inr(w.win)+'</b></td></tr>').join('')+'</tbody></table></div>'):'<p class="sub" style="margin-top:12px">No winners for this result.</p>')+
+      '<div class="drawer-act" style="margin-top:18px"><button class="ba big grad" onclick="declareResult(\''+marketId+'\',\''+openPanna+'\',\''+closePanna+'\')">Confirm &amp; Declare</button><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="document.getElementById(\'res-preview\').innerHTML=\'\'">Cancel</button></div>'+
+      (su.manual?'<p class="sub" style="margin-top:10px">Motor / Sangam bids aren’t auto-settled — settle those manually.</p>':'')+
+    '</div>';
+  }catch(e){box.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+function declareResult(marketId,openPanna,closePanna){
+  confirmModal('Declare result & pay winners?','This credits every winning player and closes the market. It can’t be undone.',async function(){
+    try{const d=await api('/admin/results',{method:'POST',body:JSON.stringify({marketId,openPanna,closePanna})});
+      toast('Result '+d.result.value+' declared · '+inr(d.summary.totalPayout)+' paid');
+      document.getElementById('res-preview').innerHTML='';document.getElementById('res-open').value='';document.getElementById('res-close').value='';loadResHist();
+    }catch(e){toast(e.message)}
+  });
+}
 
 /* boot */
 if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }
