@@ -58,6 +58,42 @@ router.get('/me', adminAuth, async (req, res) => {
   res.json({ admin: { id: admin.id, username: admin.username, totpEnabled: admin.totpEnabled } });
 });
 
+/* ----------------------------- Dashboard ------------------------------- */
+// GET /admin/dashboard  -> real aggregates for the dashboard cards.
+// Values that need bid settlement (win/loss/profit) are 0 until the results
+// engine is built; everything else is computed from live data.
+router.get('/dashboard', adminAuth, async (_req, res) => {
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const [totalUsers, todayUsers, bids, txns] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { createdAt: { gte: startOfToday } } }),
+    prisma.bid.findMany({ select: { gameType: true, total: true, marketId: true, status: true } }),
+    prisma.transaction.findMany({ select: { type: true, amount: true } }),
+  ]);
+
+  const sum = (arr, f) => arr.reduce((s, x) => s + (f(x) || 0), 0);
+  const play = sum(bids, (b) => b.total);
+  const deposit = sum(txns.filter((t) => t.type === 'deposit'), (t) => t.amount);
+  const withdraw = -sum(txns.filter((t) => t.type === 'withdraw'), (t) => t.amount);
+  const win = sum(txns.filter((t) => t.type === 'win'), (t) => t.amount);
+  const loss = sum(bids.filter((b) => b.status === 'lost'), (b) => b.total);
+  const commission = 0; // set an operator commission model later if needed
+  const profit = play - win; // house profit before settlement
+
+  // Game type overview
+  const byType = {};
+  for (const b of bids) {
+    const k = b.gameType || 'Other';
+    (byType[k] ||= { gameType: k, totalBids: 0, bidAmount: 0, won: 0, lost: 0 });
+    byType[k].totalBids += 1; byType[k].bidAmount += b.total || 0;
+  }
+
+  res.json({
+    summary: { play, commission, win, loss, deposit, withdraw, profit, todayUsers, totalUsers },
+    gameTypes: Object.values(byType),
+  });
+});
+
 /* ------------------------------- Users --------------------------------- */
 router.get('/users', adminAuth, async (_req, res) => {
   const users = await prisma.user.findMany({

@@ -1,398 +1,303 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#05050c">
-</head>
-<body>
-<title>Kalyan Games Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalyan Games — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#05050c; --panel:#0b0a16; --panel2:#100e1f; --card:#120f22;
-    --line:#211b33; --line-soft:#181327;
-    --ink:#f4f1fb; --sub:#9a94ac; --muted:#6b6580;
-    --grad:linear-gradient(91.26deg,#672DFF 6.28%,#932DFF 66.02%,#E522FF 117.64%);
-    --grad-border:linear-gradient(140deg,#682DFF,#C027FF 72%,#672DFF);
-    --violet:#8b3bff; --green:#3fcf7f; --green-bg:rgba(63,207,127,.13);
-    --red:#f0556b; --red-bg:rgba(240,85,107,.13); --amber:#f5b544; --amber-bg:rgba(245,181,68,.13);
-    color-scheme:dark;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{
-    background:
-      radial-gradient(900px 500px at 12% -8%, #150c30 0%, transparent 55%),
-      radial-gradient(760px 620px at 108% 12%, #240b34 0%, transparent 52%),
-      var(--bg);
-    color:var(--ink);
-    font-family:"Urbanist",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    min-height:100dvh;
-  }
-  button{font-family:inherit;cursor:pointer}
-  .logo{border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#fff;font-weight:800;flex:0 0 auto;box-shadow:0 6px 18px -6px rgba(140,50,230,.7)}
-  .btn{border:none;border-radius:11px;font-weight:600;font-size:13.5px;padding:11px 18px;color:#fff;background:var(--grad);box-shadow:0 10px 24px -12px rgba(150,40,220,.9)}
-  .btn:active{transform:translateY(1px)}
-  .btn.ghost{background:#161127;border:1px solid var(--line);color:var(--ink);box-shadow:none}
-  .btn.sm{padding:8px 13px;font-size:12.5px;border-radius:9px}
-  .btn.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,207,127,.35);box-shadow:none}
-  .btn.no{background:var(--red-bg);color:var(--red);border:1px solid rgba(240,85,107,.35);box-shadow:none}
-  input,select{font-family:inherit}
-  .in{background:#0c0917;border:1px solid var(--line);border-radius:11px;height:46px;padding:0 14px;color:var(--ink);font-size:14px;outline:none;width:100%}
-  .in:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,59,255,.14)}
-  .pill{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:11.5px;padding:5px 11px;border-radius:100px;white-space:nowrap}
-  .pill.on{color:var(--green);background:var(--green-bg);border:1px solid rgba(63,207,127,.35)}
-  .pill.off{color:var(--red);background:var(--red-bg);border:1px solid rgba(240,85,107,.35)}
-  .pill.pend{color:var(--amber);background:var(--amber-bg);border:1px solid rgba(245,181,68,.35)}
+:root{
+  --bg:#030712; --panel:#080b14; --card:#171b26; --card2:#10141e; --field:#1b1f2b;
+  --line:#232838; --line2:#2c3242; --ink:#f4f5f7; --sub:#9aa0ad; --muted:#6b7180;
+  --grad:linear-gradient(100deg,#682DFF 0%,#A855F7 50%,#C027FF 100%);
+  --violet:#a855f7; --red:#f5484b; --green:#00c45a; --yellow:#f5c542; --blue:#4aa3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a2f3d;border-radius:8px}
+[hidden]{display:none!important}
 
-  /* ---------------- LOGIN ---------------- */
-  #login{position:fixed;inset:0;display:grid;place-items:center;padding:24px;z-index:100}
-  .login-card{width:100%;max-width:400px;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:34px 30px;box-shadow:0 40px 90px -30px rgba(0,0,0,.8)}
-  .login-card .brand{display:flex;align-items:center;gap:11px;margin-bottom:22px}
-  .login-card .brand .logo{width:44px;height:44px;font-size:17px;border-radius:13px}
-  .login-card .brand b{font-weight:800;font-size:17px;display:block;line-height:1.1}
-  .login-card .brand small{color:var(--violet);font-size:9.5px;letter-spacing:.2em;font-weight:600}
-  .login-card h2{font-weight:700;font-size:21px;margin:2px 0 4px}
-  .login-card .lead{color:var(--sub);font-size:13px;margin:0 0 22px}
-  .lbl{display:block;font-weight:500;font-size:12.5px;color:var(--sub);margin:0 0 7px}
-  .step{margin-bottom:15px}
-  .err{color:var(--red);font-size:12.5px;margin:4px 0 0;min-height:16px}
-  .hint{color:var(--muted);font-size:11.5px;margin-top:14px;text-align:center;line-height:1.6}
-  .totp-badge{display:flex;align-items:center;gap:11px;background:#0d0a1c;border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:18px}
-  .totp-badge .ic{width:38px;height:38px;border-radius:10px;background:var(--grad);display:grid;place-items:center;flex:0 0 auto}
-  .totp-badge div b{font-size:13.5px;font-weight:600;display:block}
-  .totp-badge div span{font-size:11.5px;color:var(--sub)}
-  .otp{display:flex;gap:9px;justify-content:space-between}
-  .otp input{width:100%;height:56px;text-align:center;font-size:22px;font-weight:700;background:#0c0917;border:1px solid var(--line);border-radius:12px;color:var(--ink);outline:none}
-  .otp input:focus{border-color:var(--violet);box-shadow:0 0 0 3px rgba(139,59,255,.14)}
-  .back-link{background:none;border:none;color:var(--sub);font-size:12.5px;margin-top:16px;padding:0}
+/* ---------- LOGIN ---------- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:
+  radial-gradient(700px 500px at 20% 10%,rgba(104,45,255,.10),transparent 55%),
+  radial-gradient(700px 500px at 90% 90%,rgba(192,39,255,.08),transparent 55%),var(--bg)}
+.login-card{width:100%;max-width:400px;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:34px 28px}
+.login-card .logo{display:flex;justify-content:center;margin-bottom:20px}
+.login-card h1{font-size:22px;font-weight:600;text-align:center}
+.login-card p{color:var(--sub);text-align:center;font-size:13px;margin:6px 0 24px}
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:7px}
+.fld input{width:100%;height:48px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 16px;font-size:14px}
+.fld input:focus{outline:none;border-color:var(--violet)}
+.btn{width:100%;height:50px;border-radius:12px;background:var(--grad);color:#fff;font-weight:600;font-size:15px;transition:filter .15s,transform .1s}
+.btn:hover{filter:brightness(1.07)} .btn:active{transform:scale(.99)}
+.btn.sm{height:40px;font-size:13px;width:auto;padding:0 20px}
+.btn.ghost{background:#2b2f3b;color:#e6e8ee}
+.err{color:var(--red);font-size:12.5px;margin-top:10px;text-align:center;min-height:16px}
 
-  /* ---------------- APP SHELL ---------------- */
-  #app{display:none;min-height:100dvh;grid-template-columns:248px 1fr}
-  .side{background:linear-gradient(180deg,var(--panel),#08070f);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100dvh}
-  .side .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px}
-  .side .brand .logo{width:38px;height:38px;font-size:15px}
-  .side .brand b{font-weight:700;font-size:15px;line-height:1}
-  .side .brand small{color:var(--violet);font-size:8.5px;letter-spacing:.18em;font-weight:600;display:block;margin-top:3px}
-  .nav{display:flex;flex-direction:column;gap:3px;flex:1}
-  .nav a{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:11px;color:var(--sub);font-size:13.5px;font-weight:500;cursor:pointer;transition:.15s}
-  .nav a:hover{background:#141026;color:var(--ink)}
-  .nav a.active{background:var(--grad);color:#fff;box-shadow:0 10px 22px -12px rgba(150,40,220,.9)}
-  .nav a .badge{margin-left:auto;background:var(--amber);color:#2a1c00;font-size:10.5px;font-weight:700;border-radius:100px;padding:1px 7px}
-  .nav a.active .badge{background:#fff;color:var(--violet)}
-  .side .foot{border-top:1px solid var(--line-soft);padding-top:14px;display:flex;align-items:center;gap:11px}
-  .side .foot .av{width:36px;height:36px;border-radius:50%;background:linear-gradient(150deg,#f4d58d,#e8b34e);color:#3a2b06;display:grid;place-items:center;font-weight:700;font-size:13px}
-  .side .foot .who{flex:1;min-width:0}
-  .side .foot .who b{font-size:13px;font-weight:600;display:block}
-  .side .foot .who span{font-size:10.5px;color:var(--green);display:flex;align-items:center;gap:4px}
-  .side .foot button{background:none;border:none;color:var(--muted);padding:6px;border-radius:8px}
-  .side .foot button:hover{color:var(--red);background:var(--red-bg)}
+/* ---------- SHELL ---------- */
+.shell{display:flex;min-height:100vh}
+.side{width:252px;flex:0 0 252px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.side .brand{display:flex;justify-content:center;padding:26px 0 18px}
+.side .divider{height:1px;background:var(--line);margin:0 20px}
+.side .grp{font-size:10.5px;letter-spacing:.14em;color:#5a6070;font-weight:600;padding:20px 22px 8px}
+.nav{display:flex;flex-direction:column;padding:0 12px;gap:2px}
+.nav a,.nav button.item{display:flex;align-items:center;gap:13px;height:44px;padding:0 12px;border-radius:11px;color:#9ba1af;font-size:13.5px;font-weight:500;width:100%;text-align:left;transition:background .13s,color .13s}
+.nav a:hover,.nav button.item:hover{background:#11151f;color:#e6e8ee}
+.nav a svg,.nav button.item svg{width:19px;height:19px;flex:0 0 19px;color:#7b8290}
+.nav a.active{background:linear-gradient(100deg,rgba(104,45,255,.22),rgba(192,39,255,.14));color:#fff;border:1px solid rgba(139,92,246,.5)}
+.nav a.active svg{color:#b98bff}
+.nav .caret{margin-left:auto;width:14px;height:14px;transition:transform .18s}
+.nav .grp-open .caret{transform:rotate(180deg)}
+.subnav{display:none;flex-direction:column;gap:1px;padding:2px 0 4px 22px;position:relative}
+.subnav.open{display:flex}
+.subnav::before{content:"";position:absolute;left:22px;top:0;bottom:8px;width:1px;background:var(--line2)}
+.subnav a{height:38px;font-size:12.5px;color:#8990a0;padding-left:16px}
+.subnav a.active{background:linear-gradient(100deg,rgba(104,45,255,.22),rgba(192,39,255,.14));color:#fff;border:1px solid rgba(139,92,246,.45)}
+.side .logout{margin:auto 12px 20px;display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;color:var(--red);font-weight:600;font-size:13.5px}
+.side .logout svg{width:19px;height:19px}
 
-  .main{padding:26px 30px 60px;min-width:0}
-  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:16px}
-  .top h1{font-weight:700;font-size:23px;margin:0}
-  .top p{color:var(--sub);font-size:13px;margin:4px 0 0}
-  .top .r{display:flex;align-items:center;gap:12px}
+.main{flex:1;min-width:0;padding:26px 30px 60px}
+.head{margin-bottom:26px}
+.head h1{font-size:32px;font-weight:600;letter-spacing:-.5px}
+.head .date{color:var(--sub);font-size:14px;margin-top:2px}
 
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
-  .tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
-  .tile .tl{color:var(--sub);font-size:12.5px;display:flex;align-items:center;gap:8px}
-  .tile .tl .ic{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:#191330;color:var(--violet)}
-  .tile .tv{font-weight:700;font-size:27px;margin-top:12px;font-variant-numeric:tabular-nums}
-  .tile .td{font-size:11.5px;margin-top:3px;color:var(--green)}
-  .tile .td.down{color:var(--red)}
+.panel{background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:22px}
+.panel > h2{font-size:20px;font-weight:600;margin-bottom:18px}
+.sub{color:var(--sub);font-size:13px}
 
-  .grid2{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
-  .panel h3{font-weight:600;font-size:15px;margin:0 0 4px}
-  .panel .sub{color:var(--sub);font-size:12px;margin:0 0 16px}
-  .panel .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  .panel .head h3{margin:0}
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.stat .ic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px}
+.stat .val{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.stat .lbl{color:var(--sub);font-size:13px;margin-top:3px}
 
-  .chart{display:flex;align-items:flex-end;gap:12px;height:170px;padding-top:10px}
-  .chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
-  .chart .bar{width:100%;max-width:34px;border-radius:7px 7px 3px 3px;background:var(--grad);opacity:.9}
-  .chart .cl{font-size:11px;color:var(--muted)}
+/* game type cards */
+.gt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.gt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.gt .gh{display:flex;align-items:center;gap:12px;padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.gt .gh .gi{width:38px;height:38px;border-radius:50%;background:#241a3a;display:grid;place-items:center;font-size:18px}
+.gt .gh b{font-size:17px;font-weight:600}
+.gt .row{display:flex;justify-content:space-between;padding:5px 0;font-size:13.5px;color:var(--sub)}
+.gt .row b{color:var(--ink);font-weight:600}
 
-  table{width:100%;border-collapse:collapse}
-  th{text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:0 12px 12px}
-  td{padding:13px 12px;border-top:1px solid var(--line-soft);font-size:13px;vertical-align:middle}
-  tr:hover td{background:#0e0b1c}
-  .u-name{font-weight:600} .u-sub{color:var(--muted);font-size:11.5px}
-  .amt{font-weight:600;font-variant-numeric:tabular-nums}
-  .row-actions{display:flex;gap:8px;justify-content:flex-end}
-  .table-wrap{overflow-x:auto}
+/* generic table */
+.tbl-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
+table.tbl{width:100%;border-collapse:collapse;min-width:560px}
+table.tbl th{background:#121622;color:#cfd3db;font-size:12.5px;font-weight:500;text-align:left;padding:14px 16px;white-space:nowrap;border-bottom:1px solid var(--line)}
+table.tbl td{padding:14px 16px;font-size:13px;color:#d3d6de;border-bottom:1px solid var(--line);white-space:nowrap}
+table.tbl tbody tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:#0e131d}
+.searchbar{display:flex;align-items:center;gap:10px;height:46px;border:1px solid var(--line2);border-radius:14px;padding:0 16px;background:var(--card2);margin-bottom:18px;max-width:340px}
+.searchbar input{flex:1;border:0;outline:none;background:none;font-size:13.5px}
+.searchbar svg{width:16px;height:16px;color:var(--muted)}
+.pager{display:flex;align-items:center;gap:14px;margin-top:16px;color:var(--sub);font-size:12.5px}
+.pill{display:inline-flex;align-items:center;height:26px;padding:0 12px;border-radius:14px;font-size:11.5px;border:1px solid}
+.pill.on{color:var(--green);border-color:var(--green)} .pill.off{color:var(--red);border-color:var(--red)} .pill.pend{color:var(--yellow);border-color:var(--yellow)}
 
-  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-  .toolbar .in{width:auto;min-width:130px;flex:1}
-  .switch{position:relative;width:44px;height:25px;border-radius:100px;background:#2a2440;border:none;transition:.2s;flex:0 0 auto}
-  .switch.on{background:var(--green)}
-  .switch::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}
-  .switch.on::after{left:22px}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:70px 24px;color:var(--sub)}
+.placeholder .pi{width:64px;height:64px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;margin-bottom:16px;color:var(--violet)}
+.placeholder h3{color:var(--ink);font-size:18px;font-weight:600;margin-bottom:8px}
+.loading{color:var(--muted);font-size:13px;padding:24px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);background:#1b1f2b;border:1px solid var(--line2);color:#fff;font-size:13px;padding:12px 20px;border-radius:12px;opacity:0;transition:.25s;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  .twofa{display:grid;grid-template-columns:220px 1fr;gap:26px;align-items:start}
-  #qrbox{width:180px;height:180px;background:#fff;border-radius:12px;padding:10px;display:grid;place-items:center}
-  #qrbox img,#qrbox canvas{width:100%;height:100%}
-  .secret{font-family:ui-monospace,Menlo,monospace;background:#0c0917;border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13px;letter-spacing:.12em;color:var(--violet);display:inline-block;margin:8px 0 0}
-  .steps{counter-reset:s;display:grid;gap:14px;margin:0 0 20px;padding:0;list-style:none}
-  .steps li{display:flex;gap:12px;font-size:13.5px;color:var(--sub)}
-  .steps li::before{counter-increment:s;content:counter(s);flex:0 0 auto;width:24px;height:24px;border-radius:50%;background:#191330;color:var(--violet);display:grid;place-items:center;font-size:12px;font-weight:700}
+@media(max-width:860px){
+  .side{position:fixed;left:0;top:0;z-index:100;transform:translateX(-100%);transition:transform .25s}
+  .side.open{transform:none}
+  .main{padding:20px 16px 60px}
+  .head h1{font-size:26px}
+  .mtoggle{display:inline-grid!important}
+}
+.mtoggle{display:none;place-items:center;width:40px;height:40px;border:1px solid var(--line2);border-radius:11px;margin-bottom:16px}
+</style></head>
+<body>
 
-  .toast{position:fixed;right:24px;bottom:24px;background:#1b1533;border:1px solid var(--line);color:var(--ink);font-size:13px;padding:12px 18px;border-radius:12px;opacity:0;transform:translateY(12px);transition:.3s;z-index:200;font-weight:500;pointer-events:none}
-  .toast.show{opacity:1;transform:none}
-  svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-  @media (max-width:900px){#app{grid-template-columns:1fr}.side{display:none}.tiles{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}.twofa{grid-template-columns:1fr}}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-  :focus-visible{outline:2px solid var(--violet);outline-offset:2px}
-</style>
-
-<!-- ================= LOGIN ================= -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="kglogograd" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient><symbol id="kglogo" viewBox="0 0 61 40"><path d="M12.2635 39.9962C10.5754 39.9962 8.98853 39.6778 7.50036 39.0411C6.01218 38.4044 4.71256 37.5377 3.60022 36.4385C2.48789 35.3406 1.60966 34.0545 0.965543 32.5814C0.321426 31.1096 0 29.5291 0 27.845C0 26.4477 0.244233 25.0832 0.731433 23.7542C1.21863 22.4251 1.91337 21.2236 2.81311 20.1497L2.88777 19.9817L2.81311 19.8692C1.91337 18.7954 1.21863 17.5939 0.731433 16.2648C0.244233 14.9357 0 13.5725 0 12.174C0 10.4772 0.321426 8.89422 0.965543 7.42743C1.60966 5.96064 2.48789 4.67831 3.60022 3.58043C4.71256 2.48255 6.01345 1.61208 7.50036 0.969013C8.98853 0.325951 10.5754 0.00505076 12.2635 0.00505076H27.2288V8.59859H12.2635C11.2638 8.59859 10.4096 8.94476 9.70351 9.63835C8.99739 10.3307 8.64432 11.1772 8.64432 12.1752C8.64432 12.6503 8.74177 13.1051 8.93538 13.5422C9.129 13.9793 9.38588 14.3571 9.70478 14.6755C10.0237 14.9938 10.402 15.244 10.8399 15.4247C11.2777 15.6066 11.7523 15.6963 12.2648 15.6963H27.2301V24.2898H12.2648C11.7523 24.2898 11.2777 24.3833 10.8399 24.5703C10.402 24.7573 10.0237 25.0137 9.70478 25.3384C9.38588 25.6631 9.13026 26.0409 8.93538 26.4717C8.74177 26.9025 8.64432 27.3611 8.64432 27.8475C8.64432 28.3339 8.74177 28.7963 8.93538 29.2334C9.129 29.6706 9.38588 30.0483 9.70478 30.3667C10.0237 30.6851 10.402 30.9403 10.8399 31.1348C11.2777 31.3281 11.7523 31.4254 12.2648 31.4254H27.2301V40H12.2648L12.2635 39.9962ZM48.7365 0.00379C50.4246 0.00379 52.0115 0.322162 53.4997 0.958908C54.9878 1.59565 56.2874 2.46234 57.3998 3.56148C58.5121 4.65936 59.3903 5.94549 60.0345 7.41859C60.6786 8.89043 61 10.4709 61 12.155C61 13.5523 60.7558 14.9168 60.2686 16.2459C59.7814 17.5749 59.0866 18.7764 58.1869 19.8503L58.1122 20.0183L58.1869 20.1308C59.0866 21.2046 59.7814 22.4061 60.2686 23.7352C60.7558 25.0643 61 26.4275 61 27.826C61 29.5228 60.6786 31.1058 60.0345 32.5726C59.3903 34.0394 58.5121 35.3217 57.3998 36.4196C56.2874 37.5175 54.9866 38.3879 53.4997 39.031C52.0115 39.674 50.4246 39.9949 48.7365 39.9949H33.7712V31.4014H48.7365C49.7362 31.4014 50.5904 31.0552 51.2965 30.3616C52.0026 29.6693 52.3557 28.8228 52.3557 27.8248C52.3557 27.3497 52.2582 26.8949 52.0646 26.4578C51.871 26.0207 51.6141 25.6429 51.2952 25.3245C50.9763 25.0062 50.598 24.756 50.1601 24.5753C49.7223 24.3934 49.2477 24.3037 48.7352 24.3037H33.7699V15.7102H48.7352C49.2477 15.7102 49.7223 15.6167 50.1601 15.4297C50.598 15.2427 50.9763 14.9863 51.2952 14.6616C51.6141 14.3369 51.8697 13.9591 52.0646 13.5283C52.2582 13.0975 52.3557 12.6389 52.3557 12.1525C52.3557 11.6661 52.2582 11.2037 52.0646 10.7666C51.871 10.3294 51.6141 9.95168 51.2952 9.6333C50.9763 9.31493 50.598 9.05972 50.1601 8.86516C49.7223 8.67187 49.2477 8.57459 48.7352 8.57459H33.7699V0H48.7352L48.7365 0.00379Z" fill="url(#kglogograd)"/></symbol></defs></svg>
-<div id="login">
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
   <div class="login-card">
-    <div class="brand"><svg class="brand-svg" style="width:46px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN PANEL</small></div></div>
-
-    <!-- step 1: password -->
-    <div id="step-pw">
-      <h2>Sign in</h2>
-      <p class="lead">Enter your admin credentials to continue.</p>
-      <div class="step"><label class="lbl">Username</label><input class="in" id="a-user" value="admin" autocomplete="username"></div>
-      <div class="step"><label class="lbl">Password</label><input class="in" id="a-pass" type="password" placeholder="Enter password" autocomplete="current-password"></div>
-      <p class="err" id="pw-err"></p>
-      <button class="btn" style="width:100%;height:48px" onclick="submitPw()">Continue</button>
-      <p class="hint">Sign in with your admin username &amp; password.</p>
+    <div class="logo">
+      <svg width="70" height="46" viewBox="0 0 61 40"><defs><linearGradient id="lg" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient></defs><path fill="url(#lg)" d="M12.26 40c-1.69 0-3.28-.32-4.76-.96a12.3 12.3 0 0 1-3.9-2.6A12.2 12.2 0 0 1 .97 32.58 12.03 12.03 0 0 1 0 27.85c0-1.4.24-2.76.73-4.09.49-1.33 1.18-2.53 2.08-3.6l.07-.17-.07-.11a12.3 12.3 0 0 1-2.08-3.6A12.03 12.03 0 0 1 0 12.17C0 10.48.32 8.9.97 7.43a12.2 12.2 0 0 1 2.63-3.85A12.3 12.3 0 0 1 7.5.97C8.99.33 10.58 0 12.26 0h14.97v8.6H12.26c-1 0-1.85.35-2.56 1.04a3.5 3.5 0 0 0-1.06 2.54c0 .47.1.93.29 1.36.19.44.45.82.77 1.14.32.32.7.57 1.13.75.44.18.92.27 1.43.27h14.97v8.6H12.26c-.51 0-.99.09-1.43.27-.44.19-.81.44-1.13.77-.32.32-.58.7-.77 1.13a3.6 3.6 0 0 0-.29 1.43c0 .49.1.95.29 1.39.19.43.45.81.77 1.14.32.31.7.57 1.13.75.44.19.92.29 1.43.29h14.97V40H12.26Zm36.47-40c1.69 0 3.28.32 4.77.96a12.3 12.3 0 0 1 3.9 2.6 12.2 12.2 0 0 1 2.63 3.86c.64 1.47.96 3.05.96 4.73 0 1.4-.24 2.76-.73 4.09a12.3 12.3 0 0 1-2.08 3.6l-.08.17.08.11c.9 1.07 1.59 2.27 2.08 3.6.49 1.33.73 2.7.73 4.09 0 1.7-.32 3.28-.96 4.75a12.2 12.2 0 0 1-2.63 3.85 12.3 12.3 0 0 1-3.9 2.6c-1.49.64-3.08.97-4.77.97H33.77v-8.6h14.96c1 0 1.85-.35 2.56-1.04a3.5 3.5 0 0 0 1.06-2.54c0-.47-.1-.93-.29-1.36a3.65 3.65 0 0 0-.77-1.14c-.32-.32-.7-.57-1.13-.75a3.65 3.65 0 0 0-1.43-.27H33.77V15.7h14.96c.51 0 .99-.09 1.43-.28.44-.19.81-.44 1.13-.77.32-.32.58-.7.77-1.13.19-.43.29-.89.29-1.38 0-.49-.1-.95-.29-1.39a3.63 3.63 0 0 0-.77-1.13 3.55 3.55 0 0 0-1.13-.75 3.65 3.65 0 0 0-1.43-.27H33.77V0h14.96Z"/></svg>
     </div>
-
-    <!-- step 2: google authenticator -->
-    <div id="step-otp" hidden>
-      <h2>Two-step verification</h2>
-      <p class="lead">Enter the 6-digit code from Google Authenticator.</p>
-      <div class="totp-badge">
-        <span class="ic"><svg class="i" viewBox="0 0 24 24" style="stroke:#fff"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-        <div><b>Google Authenticator</b><span>Code refreshes every 30 seconds</span></div>
-      </div>
-      <div class="otp" id="otp">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
-      </div>
-      <p class="err" id="otp-err"></p>
-      <button class="btn" style="width:100%;height:48px;margin-top:6px" onclick="submitOtp()">Verify &amp; sign in</button>
-      <button class="back-link" onclick="toStep('pw')">&larr; Back</button>
-      <p class="hint">Open Google Authenticator and enter the current 6-digit code.</p>
-    </div>
+    <h1>Admin Panel</h1>
+    <p>Sign in to manage Kalyan Games</p>
+    <div class="fld"><label>Username</label><input id="lg-user" type="text" placeholder="Admin username" autocomplete="username"></div>
+    <div class="fld"><label>Password</label><input id="lg-pass" type="password" placeholder="Password" autocomplete="current-password"></div>
+    <div class="fld" id="lg-totp-wrap" hidden><label>Google Authenticator code</label><input id="lg-totp" type="text" inputmode="numeric" placeholder="6-digit code"></div>
+    <button class="btn" onclick="doLogin()">Sign In</button>
+    <div class="err" id="lg-err"></div>
   </div>
 </div>
 
-<!-- ================= APP ================= -->
-<div id="app">
-  <aside class="side">
-    <div class="brand"><svg class="brand-svg" style="width:40px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg><div><b>Kalyan Games</b><small>ADMIN</small></div></div>
-    <nav class="nav" id="nav"></nav>
-    <div class="foot">
-      <span class="av">A</span>
-      <div class="who"><b>Admin</b><span><svg class="i" style="width:12px;height:12px;stroke:var(--green)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg> 2FA on</span></div>
-      <button title="Log out" onclick="logout()"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg></button>
+<!-- SHELL -->
+<div class="shell" id="shell" hidden>
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg width="54" height="36" viewBox="0 0 61 40"><path fill="url(#lg)" d="M12.26 40c-1.69 0-3.28-.32-4.76-.96a12.3 12.3 0 0 1-3.9-2.6A12.2 12.2 0 0 1 .97 32.58 12.03 12.03 0 0 1 0 27.85c0-1.4.24-2.76.73-4.09.49-1.33 1.18-2.53 2.08-3.6l.07-.17-.07-.11a12.3 12.3 0 0 1-2.08-3.6A12.03 12.03 0 0 1 0 12.17C0 10.48.32 8.9.97 7.43a12.2 12.2 0 0 1 2.63-3.85A12.3 12.3 0 0 1 7.5.97C8.99.33 10.58 0 12.26 0h14.97v8.6H12.26c-1 0-1.85.35-2.56 1.04a3.5 3.5 0 0 0-1.06 2.54c0 .47.1.93.29 1.36.19.44.45.82.77 1.14.32.32.7.57 1.13.75.44.18.92.27 1.43.27h14.97v8.6H12.26c-.51 0-.99.09-1.43.27-.44.19-.81.44-1.13.77-.32.32-.58.7-.77 1.13a3.6 3.6 0 0 0-.29 1.43c0 .49.1.95.29 1.39.19.43.45.81.77 1.14.32.31.7.57 1.13.75.44.19.92.29 1.43.29h14.97V40H12.26Zm36.47-40c1.69 0 3.28.32 4.77.96a12.3 12.3 0 0 1 3.9 2.6 12.2 12.2 0 0 1 2.63 3.86c.64 1.47.96 3.05.96 4.73 0 1.4-.24 2.76-.73 4.09a12.3 12.3 0 0 1-2.08 3.6l-.08.17.08.11c.9 1.07 1.59 2.27 2.08 3.6.49 1.33.73 2.7.73 4.09 0 1.7-.32 3.28-.96 4.75a12.2 12.2 0 0 1-2.63 3.85 12.3 12.3 0 0 1-3.9 2.6c-1.49.64-3.08.97-4.77.97H33.77v-8.6h14.96c1 0 1.85-.35 2.56-1.04a3.5 3.5 0 0 0 1.06-2.54c0-.47-.1-.93-.29-1.36a3.65 3.65 0 0 0-.77-1.14c-.32-.32-.7-.57-1.13-.75a3.65 3.65 0 0 0-1.43-.27H33.77V15.7h14.96c.51 0 .99-.09 1.43-.28.44-.19.81-.44 1.13-.77.32-.32.58-.7.77-1.13.19-.43.29-.89.29-1.38 0-.49-.1-.95-.29-1.39a3.63 3.63 0 0 0-.77-1.13 3.55 3.55 0 0 0-1.13-.75 3.65 3.65 0 0 0-1.43-.27H33.77V0h14.96Z"/></svg>
     </div>
+    <div class="divider"></div>
+    <div class="grp">MAIN</div>
+    <nav class="nav" id="nav-main"></nav>
+    <div class="divider" style="margin-top:14px"></div>
+    <div class="grp">SETTINGS</div>
+    <nav class="nav" id="nav-settings"></nav>
+    <button class="logout" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M16 8l4 4-4 4M20 12H9"/></svg>Log out</button>
   </aside>
   <main class="main">
-    <div class="top">
-      <div><h1 id="pg-title">Dashboard</h1><p id="pg-sub">Overview of your platform</p></div>
-      <div class="r"><span class="pill on"><svg class="i" style="width:13px;height:13px" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg> Secured with 2FA</span></div>
-    </div>
-    <div id="view"></div>
+    <button class="mtoggle" onclick="document.getElementById('side').classList.toggle('open')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="head"><h1>Hey, Admin!</h1><div class="date" id="today"></div></div>
+    <div id="page"></div>
   </main>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-
 const API='https://satta-matka-app-production.up.railway.app';
-const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
-let TOKEN=store.get('kg_admin_token')||'';
-let creds={};
-const R='₹';
-const inr=n=>R+Number(n||0).toLocaleString('en-IN');
-const cap=s=>String(s||'').charAt(0).toUpperCase()+String(s||'').slice(1);
-const v=id=>document.getElementById(id).value.trim();
-let tT; function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2600);}
-async function api(path,opts){
-  opts=opts||{}; const headers={'Content-Type':'application/json'};
-  if(TOKEN) headers.Authorization='Bearer '+TOKEN;
-  const res=await fetch(API+path,{method:opts.method||'GET',headers,body:opts.body});
-  let data={}; try{data=await res.json();}catch(e){}
-  if(!res.ok) throw new Error(data.error||('Error '+res.status));
-  return data;
+let TOKEN=''; try{TOKEN=localStorage.getItem('kg_admin_token')||''}catch(e){}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400)}
+async function api(path,opts={}){
+  const headers={'Content-Type':'application/json'};if(TOKEN)headers.Authorization='Bearer '+TOKEN;
+  const r=await fetch(API+path,{...opts,headers});
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(d.error||('Error '+r.status));return d;
 }
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const num=n=>Number(n||0).toLocaleString('en-IN');
 
-/* ---- login ---- */
-function toStep(s){ document.getElementById('step-pw').hidden=s!=='pw'; document.getElementById('step-otp').hidden=s!=='otp'; if(s==='otp')setTimeout(()=>{const f=document.querySelector('#otp input'); if(f)f.focus();},50); }
-async function submitPw(){
-  creds={username:v('a-user'),password:document.getElementById('a-pass').value};
-  const err=document.getElementById('pw-err'); err.textContent='';
-  if(!creds.username||!creds.password){ err.textContent='Enter username and password.'; return; }
-  try{ const d=await api('/admin/login',{method:'POST',body:JSON.stringify(creds)});
-    if(d.totpRequired){ toStep('otp'); return; } finishLogin(d);
-  }catch(e){ err.textContent=e.message; }
-}
-async function submitOtp(){
-  const code=[...document.querySelectorAll('#otp input')].map(i=>i.value).join('');
-  const err=document.getElementById('otp-err'); err.textContent='';
-  if(code.length!==6){ err.textContent='Enter the full 6-digit code.'; return; }
-  try{ finishLogin(await api('/admin/login',{method:'POST',body:JSON.stringify(Object.assign({},creds,{token:code}))})); }
-  catch(e){ err.textContent=e.message; }
-}
-function finishLogin(d){ TOKEN=d.token; store.set('kg_admin_token',TOKEN); enterApp(); }
-function enterApp(){ document.getElementById('login').style.display='none'; document.getElementById('app').style.display='grid'; buildNav(); go('dashboard'); }
-function logout(){ TOKEN=''; store.del('kg_admin_token'); location.reload(); }
-document.querySelectorAll('#otp input').forEach((el,i,arr)=>{
-  el.addEventListener('input',()=>{ el.value=el.value.replace(/\D/g,''); if(el.value&&arr[i+1])arr[i+1].focus(); });
-  el.addEventListener('keydown',e=>{ if(e.key==='Backspace'&&!el.value&&arr[i-1])arr[i-1].focus(); if(e.key==='Enter')submitOtp(); });
-});
+/* ---------- icons ---------- */
+function icon(n){const s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';const p={
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="4" rx="1.5"/><rect x="14" y="10" width="7" height="11" rx="1.5"/><rect x="3" y="13" width="7" height="8" rx="1.5"/>',
+  bars:'<path d="M4 20V10M9 20V4M14 20v-7M19 20V8"/>',
+  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a6 6 0 0 0-3-11Z"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 5M21 20a6 6 0 0 0-4-5.6"/>',
+  users2:'<circle cx="12" cy="7" r="2.6"/><circle cx="5" cy="10" r="2.2"/><circle cx="19" cy="10" r="2.2"/><path d="M8 20a4 4 0 0 1 8 0M2 20a3.5 3.5 0 0 1 4-3.4M22 20a3.5 3.5 0 0 0-4-3.4"/>',
+  chart:'<rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M7 13l3-3 2 2 4-4M9 21h6M12 17v4"/>',
+  money:'<path d="M6 8h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6.5C5 5 6 4 7.5 4H15M9 12h5M11 9v6"/>',
+  game:'<rect x="3" y="7" width="18" height="11" rx="4"/><path d="M8 12h3M9.5 10.5v3"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="17.5" cy="13.5" r="1"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h13a3 3 0 0 1 0 6H3"/><circle cx="16.5" cy="13" r="1.1" fill="currentColor" stroke="none"/>',
+  report:'<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M15 3v4h4M9 12h6M9 16h4"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  trophy:'<path d="M8 4h8v4a4 4 0 0 1-8 0V4ZM6 4H4v2a3 3 0 0 0 3 3M18 4h2v2a3 3 0 0 1-3 3M10 16h4M9 20h6M12 12v4"/>',
+  trend:'<path d="M4 18l5-5 3 3 7-8M15 8h5v5"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5 9-5ZM3 13l9 5 9-5M3 17l9 5 9-5"/>'
+};return s+(p[n]||p.grid)+'</svg>'}
 
-/* ---- nav ---- */
-const pages=[
-  ['dashboard','Dashboard','Overview of your platform','M3 13h8V3H3zM13 21h8V11h-8zM13 3v6h8V3zM3 21h8v-6H3z'],
-  ['users','Users','All registered players','M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8'],
-  ['markets','Markets','Open, close and add markets','M3 3v18h18M7 14l4-4 3 3 5-6'],
-  ['results','Results','Declare and view results','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
-  ['deposits','Deposits','Verify and approve deposits','M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4'],
-  ['withdrawals','Withdrawals','Approve or reject payouts','M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'],
-  ['settings','Settings','Deposit / payment details','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'],
-  ['security','Security','Google Authenticator (2FA)','M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'],
+/* ---------- nav ---------- */
+const NAV_MAIN=[
+  {id:'dashboard',label:'Dashboard',icon:'grid'},
+  {id:'markets',label:'Markets',icon:'bars'},
+  {id:'prediction',label:'Winning Prediction',icon:'bulb'},
+  {id:'users',label:'User Management',icon:'users'},
+  {id:'subadmins',label:'Sub Admin Management',icon:'users2'},
+  {id:'results',label:'Results',icon:'chart'},
+  {id:'funds',label:'Funds',icon:'money'},
+  {id:'games',label:'Games',icon:'game',sub:[
+    {id:'games-rates',label:'Game Rates'},{id:'games-mgmt',label:'Game Management'},{id:'games-numbers',label:'Game Numbers'}]},
+  {id:'wallet',label:'Wallet',icon:'wallet',sub:[
+    {id:'wallet-withdraw',label:'Withdraw Request'},{id:'wallet-addfund',label:'Add Fund'},{id:'wallet-bidrevert',label:'Bid Revert'}]},
+  {id:'reports',label:'Reports',icon:'report',sub:[
+    {id:'reports-userbids',label:'User Bid History'},{id:'reports-sell',label:'Customer Sell'},{id:'reports-winning',label:'Winning'},
+    {id:'reports-transfer',label:'Transfer Point'},{id:'reports-bidwin',label:'Bid Win'},{id:'reports-withdraw',label:'Withdraw'},{id:'reports-deposit',label:'Deposit'}]},
+  {id:'notices',label:'Notices',icon:'bell',sub:[
+    {id:'notices-mgmt',label:'Notice Management'},{id:'notices-send',label:'Send Notification'}]},
 ];
+const NAV_SETTINGS=[
+  {id:'settings',label:'Settings',icon:'gear',sub:[
+    {id:'settings-main',label:'Main Settings'},{id:'settings-contact',label:'Contact Settings'},{id:'settings-slider',label:'Slider Images'},
+    {id:'settings-howto',label:'How to Play'},{id:'settings-qr',label:'QR Images'},{id:'settings-ideas',label:'User Ideas'}]},
+];
+let CURRENT='dashboard';
 function buildNav(){
-  document.getElementById('nav').innerHTML=pages.map(p=>{
-    let badge=''; if(p[0]==='withdrawals')badge='<span class="badge" id="wd-badge">0</span>'; if(p[0]==='deposits')badge='<span class="badge" id="dp-badge">0</span>';
-    return '<a id="nav-'+p[0]+'" onclick="go(\''+p[0]+'\')"><svg class="i" viewBox="0 0 24 24"><path d="'+p[3]+'"/></svg>'+p[1]+badge+'</a>';
+  const render=(list)=>list.map(function(it){
+    if(it.sub){
+      const subs=it.sub.map(s=>'<a data-page="'+s.id+'" onclick="go(\''+s.id+'\')">'+s.label+'</a>').join('');
+      return '<button class="item" data-group="'+it.id+'" onclick="toggleGroup(\''+it.id+'\')">'+icon(it.icon)+it.label+
+        '<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>'+
+        '<div class="subnav" data-subgroup="'+it.id+'">'+subs+'</div>';
+    }
+    return '<a data-page="'+it.id+'" onclick="go(\''+it.id+'\')">'+icon(it.icon)+it.label+'</a>';
   }).join('');
+  document.getElementById('nav-main').innerHTML=render(NAV_MAIN);
+  document.getElementById('nav-settings').innerHTML=render(NAV_SETTINGS);
 }
-function setBadge(n){ const b=document.getElementById('wd-badge'); if(b)b.textContent=n; }
-function setDepBadge(n){ const b=document.getElementById('dp-badge'); if(b)b.textContent=n; }
-async function go(id){
-  const p=pages.find(x=>x[0]===id);
-  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
-  const na=document.getElementById('nav-'+id); if(na)na.classList.add('active');
-  document.getElementById('pg-title').textContent=p[1];
-  document.getElementById('pg-sub').textContent=p[2];
-  const view=document.getElementById('view');
-  view.innerHTML='<div style="padding:48px 4px;color:var(--muted);font-size:14px">Loading…</div>';
-  try{ await loaders[id](view); }catch(e){ view.innerHTML='<div class="panel" style="color:var(--red)">'+e.message+'</div>'; }
+function toggleGroup(id){
+  const sub=document.querySelector('.subnav[data-subgroup="'+id+'"]');
+  const btn=document.querySelector('.item[data-group="'+id+'"]');
+  const open=sub.classList.toggle('open');btn.classList.toggle('grp-open',open);
+}
+function setActiveNav(page){
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
+}
+function go(page){
+  CURRENT=page;setActiveNav(page);
+  document.getElementById('side').classList.remove('open');
+  const parent=[...NAV_MAIN,...NAV_SETTINGS].find(g=>g.sub&&g.sub.some(s=>s.id===page));
+  if(parent){const sub=document.querySelector('.subnav[data-subgroup="'+parent.id+'"]');const btn=document.querySelector('.item[data-group="'+parent.id+'"]');if(sub&&!sub.classList.contains('open')){sub.classList.add('open');btn.classList.add('grp-open')}}
+  (PAGES[page]||PAGES._todo)(page);
 }
 
-const loaders={
-  async dashboard(view){
-    const [u,m,w,r]=await Promise.all([api('/admin/users'),api('/markets'),api('/admin/withdrawals'),api('/results')]);
-    const pend=(w.withdrawals||[]).filter(x=>x.status==='pending'); setBadge(pend.length);
-    const openM=(m.markets||[]).filter(x=>x.status==='open').length;
-    const tiles=[
-      ['Total Users',(u.users||[]).length,'registered players','M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',false],
-      ['Open Markets',openM+' / '+(m.markets||[]).length,'currently running','M3 3v18h18M7 14l4-4 3 3 5-6',false],
-      ['Pending Payouts',pend.length,pend.length?'awaiting review':'all clear','M12 8v4l3 3M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20',pend.length>0],
-    ];
-    view.innerHTML='<div class="tiles">'+tiles.map(t=>`<div class="tile"><div class="tl"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="${t[3]}"/></svg></span>${t[0]}</div><div class="tv">${t[1]}</div><div class="td ${t[4]?'down':''}">${t[2]}</div></div>`).join('')+'</div>'+
-    `<div class="grid2"><div class="panel"><h3>Pending withdrawals</h3><p class="sub">Approve or reject payouts</p>`+
-    (pend.length? '<div class="table-wrap"><table><thead><tr><th>Player</th><th>Amount</th><th style="text-align:right">Action</th></tr></thead><tbody>'+
-      pend.map(x=>`<tr><td class="u-name">${x.user?x.user.name:''}<div class="u-sub">+91 ${x.user?x.user.phone:''}</div></td><td class="amt">${inr(x.amount)}</td><td><div class="row-actions"><button class="btn sm ok" onclick="decide('${x.id}','approved')">Approve</button><button class="btn sm no" onclick="decide('${x.id}','rejected')">Reject</button></div></td></tr>`).join('')+
-      '</tbody></table></div>' : '<p style="color:var(--muted);font-size:13px">No pending withdrawals.</p>')+
-    `</div><div class="panel"><h3>Latest results</h3><p class="sub">Most recent declared</p>`+
-    ((r.results||[]).length? (r.results||[]).slice(0,6).map(x=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-top:1px solid var(--line-soft)"><div><div style="font-weight:600;font-size:13.5px">${x.market}</div><div class="u-sub">${x.time||''}</div></div><div style="font-weight:700;letter-spacing:.05em;color:var(--violet)">${x.value}</div></div>`).join('') : '<p style="color:var(--muted);font-size:13px">No results declared yet.</p>')+
-    `</div></div>`;
-  },
-  async users(view){
-    const d=await api('/admin/users'); const us=d.users||[];
-    view.innerHTML=`<div class="panel"><div class="head"><h3>Registered players</h3><span class="pill on">${us.length} total</span></div><p class="sub">Players reset their own password by OTP. Use Reset only if a player is locked out.</p><div class="table-wrap"><table><thead><tr><th>Player</th><th>Mobile</th><th>Wallet</th><th>Joined</th><th style="text-align:right">Action</th></tr></thead><tbody>`+
-    (us.length? us.map(u=>`<tr><td class="u-name">${u.name}</td><td>+91 ${u.phone}</td><td class="amt">${inr(u.balance)}</td><td class="u-sub">${new Date(u.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</td><td style="text-align:right"><button class="btn sm ghost" onclick="resetPw('${u.id}','${(u.name||'').replace(/'/g,'')}')">Reset password</button></td></tr>`).join('') : '<tr><td colspan="5" style="color:var(--muted)">No users yet.</td></tr>')+
-    `</tbody></table></div></div>`;
-  },
-  async markets(view){
-    const d=await api('/markets'); const ms=d.markets||[];
-    view.innerHTML=`<div class="panel"><h3>Add a market</h3><p class="sub">Create a new game market</p><div class="toolbar"><input class="in" id="m-name" placeholder="Market name (e.g. Sridevi Night)"><input class="in" id="m-open" placeholder="Open time (07:00 PM)"><input class="in" id="m-close" placeholder="Close time (08:00 PM)"><button class="btn" onclick="addMarket()">Add market</button></div></div>`+
-    `<div class="panel"><div class="head"><h3>All markets</h3><span class="pill on">${ms.filter(m=>m.status==='open').length} open</span></div><div class="table-wrap"><table><thead><tr><th>Market</th><th>Open</th><th>Close</th><th>Status</th><th style="text-align:right">Toggle</th></tr></thead><tbody>`+
-    ms.map(m=>`<tr><td class="u-name">${m.name}</td><td>${m.openTime}</td><td>${m.closeTime}</td><td><span class="pill ${m.status==='open'?'on':'off'}">${m.status==='open'?'Open':'Closed'}</span></td><td style="text-align:right"><button class="switch ${m.status==='open'?'on':''}" onclick="toggleMarket('${m.id}','${m.status}')"></button></td></tr>`).join('')+
-    `</tbody></table></div></div>`;
-  },
-  async results(view){
-    const [m,r]=await Promise.all([api('/markets'),api('/results')]);
-    const ms=m.markets||[], rs=r.results||[];
-    view.innerHTML=`<div class="panel"><h3>Declare a result</h3><p class="sub">Publish the winning number for a market</p><div class="toolbar"><select class="in" id="r-market">`+ms.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')+`</select><input class="in" id="r-value" placeholder="Result (e.g. 128-14-590)"><button class="btn" onclick="declareResult()">Declare</button></div></div>`+
-    `<div class="panel"><h3>Declared results</h3><p class="sub">Latest first</p><div class="table-wrap"><table><thead><tr><th>Market</th><th>Result</th><th>When</th></tr></thead><tbody>`+
-    (rs.length? rs.map(x=>`<tr><td class="u-name">${x.market}</td><td style="font-weight:700;letter-spacing:.05em;color:var(--violet)">${x.value}</td><td class="u-sub">${x.time||new Date(x.declaredAt).toLocaleString('en-IN')}</td></tr>`).join('') : '<tr><td colspan="3" style="color:var(--muted)">No results yet.</td></tr>')+
-    `</tbody></table></div></div>`;
-  },
-  async withdrawals(view){
-    const d=await api('/admin/withdrawals'); const ws=d.withdrawals||[];
-    const pc=ws.filter(w=>w.status==='pending').length; setBadge(pc);
-    view.innerHTML=`<div class="panel"><div class="head"><h3>Withdrawal requests</h3><span class="pill pend">${pc} pending</span></div><p class="sub">Pay the player at the bank details shown, then approve.</p><div class="table-wrap"><table><thead><tr><th>Player</th><th>Mobile</th><th>Bank details</th><th>Amount</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>`+
-    (ws.length? ws.map(w=>`<tr><td class="u-name">${w.user?w.user.name:''}</td><td>+91 ${w.user?w.user.phone:''}</td><td class="u-sub" style="max-width:260px;white-space:normal">${w.bankInfo||'—'}</td><td class="amt">${inr(w.amount)}</td><td><span class="pill ${w.status==='approved'?'on':w.status==='rejected'?'off':'pend'}">${cap(w.status)}</span></td><td><div class="row-actions">${w.status==='pending'?`<button class="btn sm ok" onclick="decide('${w.id}','approved')">Approve</button><button class="btn sm no" onclick="decide('${w.id}','rejected')">Reject</button>`:'<span class="u-sub">Done</span>'}</div></td></tr>`).join('') : '<tr><td colspan="6" style="color:var(--muted)">No withdrawal requests.</td></tr>')+
-    `</tbody></table></div></div>`;
-  },
-  async deposits(view){
-    const d=await api('/admin/deposits'); const ds=d.deposits||[];
-    const pc=ds.filter(x=>x.status==='pending').length; setDepBadge(pc);
-    view.innerHTML=`<div class="panel"><div class="head"><h3>Deposit requests</h3><span class="pill pend">${pc} pending</span></div><p class="sub">Confirm the real payment (check the UTR / screenshot) before approving. Approving credits the player's wallet.</p><div class="table-wrap"><table><thead><tr><th>Player</th><th>Method</th><th>Reference / UTR</th><th>Proof</th><th>Amount</th><th>Status</th><th style="text-align:right">Action</th></tr></thead><tbody>`+
-    (ds.length? ds.map(x=>`<tr><td class="u-name">${x.user?x.user.name:''}<div class="u-sub">+91 ${x.user?x.user.phone:''}</div></td><td>${x.method}</td><td class="u-sub">${x.reference}</td><td>${x.proof?`<img src="${x.proof}" style="width:38px;height:38px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="lightbox(this.src)">`:'<span class="u-sub">—</span>'}</td><td class="amt">${inr(x.amount)}</td><td><span class="pill ${x.status==='approved'?'on':x.status==='rejected'?'off':'pend'}">${cap(x.status)}</span></td><td><div class="row-actions">${x.status==='pending'?`<button class="btn sm ok" onclick="approveDep('${x.id}',${x.amount})">Approve</button><button class="btn sm no" onclick="decideDep('${x.id}','reject')">Reject</button>`:'<span class="u-sub">Done</span>'}</div></td></tr>`).join('') : '<tr><td colspan="7" style="color:var(--muted)">No deposit requests.</td></tr>')+
-    `</tbody></table></div></div>`;
-  },
-  async settings(view){
-    const d=await api('/admin/settings'); const s=d.settings||{};
-    view.innerHTML=`<div class="panel"><h3>Deposit / payment details</h3><p class="sub">Shown to players on the Add Fund screen so they know where to pay. Upload your UPI/bank QR and enter your UPI ID.</p>`+
-    `<div class="step"><label class="lbl">UPI ID</label><input class="in" id="set-upi" value="${(s.upiId||'').replace(/"/g,'&quot;')}" placeholder="yourname@bank"></div>`+
-    `<div class="step"><label class="lbl">Account name</label><input class="in" id="set-name" value="${(s.upiName||'').replace(/"/g,'&quot;')}" placeholder="Account holder name"></div>`+
-    `<div class="step"><label class="lbl">Bank details (optional)</label><textarea class="in" id="set-bank" style="height:90px;padding:10px 14px;resize:vertical" placeholder="Bank name, A/C no, IFSC">${(s.bankDetails||'').replace(/</g,'&lt;')}</textarea></div>`+
-    `<div class="step"><label class="lbl">Payment QR image</label>${s.qrImage?`<img id="set-qr-prev" src="${s.qrImage}" style="width:150px;height:150px;object-fit:contain;background:#fff;border-radius:10px;padding:6px;display:block;margin-bottom:8px">`:'<div id="set-qr-prev" class="u-sub" style="margin-bottom:8px">No QR uploaded</div>'}<input type="file" id="set-qr" accept="image/*" style="font-size:12.5px;color:var(--sub)"></div>`+
-    `<h3 style="margin-top:26px">Social media links</h3><p class="sub">Paste the full link (https://…). Only the ones you fill in appear on the app's Contact with us screen.</p>`+
-    `<div class="step"><label class="lbl">Instagram</label><input class="in" id="set-ig" value="${(s.igUrl||'').replace(/"/g,'&quot;')}" placeholder="https://instagram.com/yourpage"></div>`+
-    `<div class="step"><label class="lbl">Facebook</label><input class="in" id="set-fb" value="${(s.fbUrl||'').replace(/"/g,'&quot;')}" placeholder="https://facebook.com/yourpage"></div>`+
-    `<div class="step"><label class="lbl">YouTube</label><input class="in" id="set-yt" value="${(s.ytUrl||'').replace(/"/g,'&quot;')}" placeholder="https://youtube.com/@yourchannel"></div>`+
-    `<div class="step"><label class="lbl">WhatsApp</label><input class="in" id="set-wa" value="${(s.waUrl||'').replace(/"/g,'&quot;')}" placeholder="https://wa.me/91XXXXXXXXXX"></div>`+
-    `<div class="step"><label class="lbl">Telegram</label><input class="in" id="set-tg" value="${(s.tgUrl||'').replace(/"/g,'&quot;')}" placeholder="https://t.me/yourchannel"></div>`+
-    `<div style="margin-top:12px"><button class="btn" onclick="saveSettings()">Save all settings</button></div></div>`;
-    window._qrData = s.qrImage || null;
-    const qi=document.getElementById('set-qr');
-    if(qi) qi.addEventListener('change',()=>{ const f=qi.files[0]; if(!f)return; if(f.size>2*1024*1024){ toast('QR image must be under 2MB'); qi.value=''; return; } const r=new FileReader(); r.onload=()=>{ window._qrData=r.result; const p=document.getElementById('set-qr-prev'); if(p&&p.tagName==='IMG'){p.src=r.result;} }; r.readAsDataURL(f); });
-  },
-  async security(view){
-    const me=await api('/admin/me'); const on=me.admin.totpEnabled;
-    view.innerHTML=`<div class="panel"><div class="head"><h3>Google Authenticator</h3><span class="pill ${on?'on':'off'}">${on?'Enabled':'Not enabled'}</span></div><p class="sub">Every admin login requires a 6-digit code from the authenticator app — password alone is never enough.</p>`+
-    (on? `<p style="color:var(--sub);font-size:13.5px">Two-step verification is active. You'll be asked for a code at every login.</p><div style="margin-top:16px"><button class="btn ghost" onclick="setupTotp()">Re-configure device</button></div>` : `<p style="color:var(--sub);font-size:13.5px">Turn this on to protect the admin panel.</p><div style="margin-top:16px"><button class="btn" onclick="setupTotp()">Set up Google Authenticator</button></div>`)+
-    `<div id="twofa-setup" style="margin-top:22px"></div></div>`;
-  },
+/* ---------- auth ---------- */
+async function doLogin(){
+  const username=document.getElementById('lg-user').value.trim();
+  const password=document.getElementById('lg-pass').value;
+  const token=document.getElementById('lg-totp').value.trim();
+  const err=document.getElementById('lg-err');err.textContent='';
+  if(!username||!password){err.textContent='Enter username and password';return}
+  try{
+    const body={username,password};if(token)body.token=token;
+    const d=await api('/admin/login',{method:'POST',body:JSON.stringify(body)});
+    if(d.totpRequired){document.getElementById('lg-totp-wrap').hidden=false;err.textContent='Enter your authenticator code';return}
+    TOKEN=d.token;try{localStorage.setItem('kg_admin_token',TOKEN)}catch(e){}
+    enterApp(d.admin);
+  }catch(e){err.textContent=e.message||'Login failed'}
+}
+function logout(){TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}document.getElementById('shell').hidden=true;document.getElementById('login').hidden=false}
+function enterApp(admin){
+  document.getElementById('login').hidden=true;document.getElementById('shell').hidden=false;
+  if(admin&&admin.username)document.querySelector('.head h1').textContent='Hey, '+admin.username.charAt(0).toUpperCase()+admin.username.slice(1)+'!';
+  document.getElementById('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',month:'short',day:'2-digit',year:'numeric'});
+  buildNav();go('dashboard');
+}
+
+/* ---------- PAGES ---------- */
+const PAGES={};
+PAGES._todo=function(page){
+  const label=[...NAV_MAIN,...NAV_SETTINGS].flatMap(g=>g.sub?[g,...g.sub]:[g]).find(x=>x.id===page);
+  document.getElementById('page').innerHTML='<div class="panel"><div class="placeholder"><span class="pi">'+icon('layers')+'</span>'+
+    '<h3>'+((label&&label.label)||page)+'</h3><p>This admin screen is designed and queued — it lands in the next build wave.</p></div></div>';
 };
 
-/* ---- actions ---- */
-async function toggleMarket(id,cur){ try{ await api('/admin/markets/'+id,{method:'PATCH',body:JSON.stringify({status:cur==='open'?'closed':'open'})}); go('markets'); toast('Market updated'); }catch(e){ toast(e.message); } }
-async function addMarket(){ const name=v('m-name'),o=v('m-open')||'07:00 PM',c=v('m-close')||'08:00 PM'; if(!name){ toast('Enter a market name'); return; } try{ await api('/admin/markets',{method:'POST',body:JSON.stringify({name,openTime:o,closeTime:c})}); go('markets'); toast('Market "'+name+'" added'); }catch(e){ toast(e.message); } }
-async function declareResult(){ const marketId=document.getElementById('r-market').value; const value=v('r-value'); if(!value){ toast('Enter a result value'); return; } try{ await api('/admin/results',{method:'POST',body:JSON.stringify({marketId,value})}); go('results'); toast('Result declared'); }catch(e){ toast(e.message); } }
-async function decide(id,status){ try{ await api('/admin/withdrawals/'+id+'/'+(status==='approved'?'approve':'reject'),{method:'POST'}); go('withdrawals'); toast('Withdrawal '+status); }catch(e){ toast(e.message); } }
-async function decideDep(id,action){ try{ await api('/admin/deposits/'+id+'/'+action,{method:'POST'}); go('deposits'); toast('Deposit '+(action==='approve'?'approved':'rejected')); }catch(e){ toast(e.message); } }
-async function approveDep(id,amt){ const a=prompt('Amount to credit (adjust if needed):',amt); if(a===null)return; const n=Math.floor(Number(a)); if(!n||n<=0){ toast('Enter a valid amount'); return; } try{ const d=await api('/admin/deposits/'+id+'/approve',{method:'POST',body:JSON.stringify({amount:n})}); go('deposits'); toast('Deposit approved: '+inr(d.credited||n)); }catch(e){ toast(e.message); } }
-async function resetPw(id,name){ const pw=prompt('Set a new password for '+name+':'); if(pw===null)return; if(pw.length<4){ toast('Password must be at least 4 characters'); return; } try{ await api('/admin/users/'+id+'/reset-password',{method:'POST',body:JSON.stringify({password:pw})}); toast('Password reset for '+name); go('users'); }catch(e){ toast(e.message); } }
-async function saveSettings(){
-  const upiId=v('set-upi'), upiName=v('set-name'), bankDetails=document.getElementById('set-bank').value.trim(), qrImage=window._qrData||null;
-  const igUrl=v('set-ig'), fbUrl=v('set-fb'), ytUrl=v('set-yt'), waUrl=v('set-wa'), tgUrl=v('set-tg');
-  try{ await api('/admin/settings',{method:'PUT',body:JSON.stringify({upiId,upiName,bankDetails,qrImage,igUrl,fbUrl,ytUrl,waUrl,tgUrl})}); toast('Settings saved'); }catch(e){ toast(e.message); }
-}
-function lightbox(src){
-  let o=document.getElementById('lightbox');
-  if(!o){ o=document.createElement('div'); o.id='lightbox'; o.style.cssText='position:fixed;inset:0;background:rgba(3,3,10,.85);display:grid;place-items:center;z-index:300;cursor:zoom-out;padding:30px'; o.onclick=()=>o.remove(); document.body.appendChild(o); }
-  o.innerHTML='<img src="'+src+'" style="max-width:90%;max-height:90%;border-radius:12px">';
-}
-async function setupTotp(){
-  try{ const d=await api('/admin/totp/setup',{method:'POST'});
-    document.getElementById('twofa-setup').innerHTML=`<div class="twofa"><div><div id="qrbox"><img src="${d.qr}" alt="QR code"></div><div style="text-align:center;margin-top:12px"><div class="u-sub">Manual key</div><span class="secret">${d.secret}</span></div></div><div><ol class="steps"><li>Install <b>Google Authenticator</b> on your phone.</li><li>Tap <b>+</b> &rarr; <b>Scan a QR code</b> and scan this.</li><li>A 6-digit code for <b>Kalyan Games (admin)</b> appears.</li><li>Enter it below to turn on 2-step login.</li></ol><div class="step" style="max-width:240px"><label class="lbl">Enter the 6-digit code</label><input class="in" id="totp-code" inputmode="numeric" maxlength="6" placeholder="123456"></div><div style="margin-top:12px"><button class="btn" onclick="enableTotp()">Verify &amp; enable</button></div></div></div>`;
-  }catch(e){ toast(e.message); }
-}
-async function enableTotp(){ const code=v('totp-code'); if(code.length!==6){ toast('Enter the 6-digit code'); return; } try{ await api('/admin/totp/enable',{method:'POST',body:JSON.stringify({token:code})}); toast('Google Authenticator enabled'); go('security'); }catch(e){ toast(e.message); } }
+PAGES.dashboard=async function(){
+  const el=document.getElementById('page');
+  el.innerHTML='<div class="panel"><h2>Game Summary</h2><div class="loading">Loading…</div></div>';
+  try{
+    const d=await api('/admin/dashboard');const s=d.summary||{};
+    const cards=[
+      ['Play','game','#1c3550','#4aa3ff',num(s.play)],['Commission','money','#3a3410','#f5c542',num(s.commission)],
+      ['Win','trophy','#3a1440','#e05bff',num(s.win)],['Profit','trend','#123324','#2fd07a',num(s.profit)],
+      ['Loss','trend','#3a1414','#ff5a5f',num(s.loss)],['Deposit','wallet','#3a2410','#ff9a3c',inr(s.deposit)],
+      ['Today Users','users','#3a1030','#ff4f9a',num(s.todayUsers)],['Total Users','users','#123324','#2fd07a',num(s.totalUsers)],
+    ];
+    const summary='<div class="panel"><h2>Game Summary</h2><div class="stat-grid">'+
+      cards.map(c=>'<div class="stat"><div class="ic" style="background:'+c[2]+';color:'+c[3]+'">'+icon(c[1])+'</div><div class="val">'+c[4]+'</div><div class="lbl">'+c[0]+'</div></div>').join('')+'</div></div>';
+    const gts=(d.gameTypes||[]);
+    const overview='<div class="panel"><h2>Game Type Overview</h2>'+(gts.length?('<div class="gt-grid">'+
+      gts.map(g=>'<div class="gt"><div class="gh"><span class="gi">🎲</span><b>'+g.gameType+'</b></div>'+
+        '<div class="row">Total Bids: <b>'+num(g.totalBids)+'</b></div>'+
+        '<div class="row">Bid Amount: <b>'+inr(g.bidAmount)+'</b></div>'+
+        '<div class="row">Won: <b>'+num(g.won)+'</b></div>'+
+        '<div class="row">Lost: <b>'+num(g.lost)+'</b></div></div>').join('')+'</div>')
+      :'<p class="sub">No bids yet.</p>')+'</div>';
+    el.innerHTML=summary+overview;
+  }catch(e){el.innerHTML='<div class="panel"><p class="sub" style="color:var(--red)">'+e.message+'</p></div>'}
+};
 
-/* ---- boot ---- */
-(async function(){ if(TOKEN){ try{ await api('/admin/me'); enterApp(); }catch(e){ TOKEN=''; store.del('kg_admin_token'); } } })();
-
+/* boot */
+if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }
 </script>
-
-</body>
-</html>
+</body></html>
