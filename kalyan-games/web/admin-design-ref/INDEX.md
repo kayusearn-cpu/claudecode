@@ -60,3 +60,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 053 | admin-053.jpg | Funds (main nav) — Deposits table (User/Amount/Req No./Payment) + Withdrawal table below; sidebar Funds active |
 | 054 | admin-054.jpg | Funds — Deposits/Withdrawal table full columns: S.No/User/Amount/Req No./Payment Method (A/c transfer / upi / paytm)/Remark (Bank delay/Pending verification/Payment not received/Invalid UTR) |
 | 055 | admin-055.jpg | Funds — table with Status + action: S.No/User/Amount/Txn ID/Date & Time/Status (Accepted green / Rejected red / Pending yellow)/Accept button |
+| 056 | admin-056.jpg | Dashboard Game Summary cards close-up — Play (blue game icon) / Commission (yellow %) / Win (pink trophy) / Profit (green chart), value 37,835, colored round icons |
+| 057 | admin-057.jpg | Funds table close-up — S.No/Amount/Req No./Payment Method/Remark/Payment Receipt (View link, purple) |
+| 058 | admin-058.jpg | Dashboard Game Type Overview cards close-up — Ank / SP / DP with dice/card icons, Total Bids 1,630 / Bid Amount ₹15.2K / Won 500 / Lost 100 |
+
+TOTAL: 58 admin reference screens saved. Design set complete.
