@@ -55,3 +55,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 048 | admin-048.jpg | Settings > Slider Images — Delete Slider Image confirm modal (Cancel + [Delete cut off]) |
 | 049 | admin-049.jpg | Settings > Slider Images — Add Slider Image modal (Upload Image dropzone "Supported formats: …", Display Order input, Cancel + [Save cut off]) |
 | 050 | admin-050.jpg | Settings > QR Images — QR Image Management: search + table (S.No / QR Image thumbnail / Order), pagination |
+| 051 | admin-051.jpg | Settings > QR Images — Delete QR Image confirm modal (Cancel + [Delete cut off]) |
+| 052 | admin-052.jpg | Settings > How to Play — Instructions (rich text area) + Youtube Video Link input |
+| 053 | admin-053.jpg | Funds (main nav) — Deposits table (User/Amount/Req No./Payment) + Withdrawal table below; sidebar Funds active |
+| 054 | admin-054.jpg | Funds — Deposits/Withdrawal table full columns: S.No/User/Amount/Req No./Payment Method (A/c transfer / upi / paytm)/Remark (Bank delay/Pending verification/Payment not received/Invalid UTR) |
+| 055 | admin-055.jpg | Funds — table with Status + action: S.No/User/Amount/Txn ID/Date & Time/Status (Accepted green / Rejected red / Pending yellow)/Accept button |
