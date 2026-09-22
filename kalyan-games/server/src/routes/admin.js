@@ -98,9 +98,41 @@ router.get('/dashboard', adminAuth, async (_req, res) => {
 router.get('/users', adminAuth, async (_req, res) => {
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
-    select: { id: true, phone: true, name: true, balance: true, createdAt: true },
+    select: { id: true, phone: true, name: true, balance: true, bettingBlocked: true, createdAt: true },
   });
   res.json({ users });
+});
+
+// GET /admin/users/:id  -> full profile + game/wallet summary
+router.get('/users/:id', adminAuth, async (req, res) => {
+  const u = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  const bids = await prisma.bid.findMany({ where: { userId: u.id }, select: { total: true, status: true } });
+  const play = bids.reduce((s, b) => s + (b.total || 0), 0);
+  const won = bids.filter((b) => b.status === 'won').length;
+  const lost = bids.filter((b) => b.status === 'lost').length;
+  const [dep, wd] = await Promise.all([
+    prisma.transaction.aggregate({ where: { userId: u.id, type: 'deposit' }, _sum: { amount: true } }),
+    prisma.transaction.aggregate({ where: { userId: u.id, type: 'withdraw' }, _sum: { amount: true } }),
+  ]);
+  res.json({
+    user: {
+      id: u.id, name: u.name, phone: u.phone, balance: u.balance, createdAt: u.createdAt,
+      bettingBlocked: u.bettingBlocked,
+      bankHolder: u.bankHolder, bankAccount: u.bankAccount, bankIfsc: u.bankIfsc, bankName: u.bankName, bankUpi: u.bankUpi,
+    },
+    summary: { play, totalBids: bids.length, won, lost, deposit: dep._sum.amount || 0, withdraw: -(wd._sum.amount || 0) },
+  });
+});
+
+// PATCH /admin/users/:id  { bettingBlocked?, name? }
+router.patch('/users/:id', adminAuth, async (req, res) => {
+  const data = {};
+  if (typeof req.body?.bettingBlocked === 'boolean') data.bettingBlocked = req.body.bettingBlocked;
+  if (req.body?.name) data.name = String(req.body.name).slice(0, 80);
+  if (!Object.keys(data).length) return res.status(400).json({ error: 'Nothing to update' });
+  const u = await prisma.user.update({ where: { id: req.params.id }, data });
+  res.json({ ok: true, user: { id: u.id, name: u.name, bettingBlocked: u.bettingBlocked } });
 });
 
 /* ------------------------------ Markets -------------------------------- */
@@ -122,6 +154,15 @@ router.patch('/markets/:id', adminAuth, async (req, res) => {
   if (sort !== undefined) data.sort = Number(sort);
   const market = await prisma.market.update({ where: { id: req.params.id }, data });
   res.json({ market });
+});
+
+// DELETE /admin/markets/:id  -> only when it has no bids yet
+router.delete('/markets/:id', adminAuth, async (req, res) => {
+  const bidCount = await prisma.bid.count({ where: { marketId: req.params.id } });
+  if (bidCount > 0) return res.status(400).json({ error: 'This market has bids — close it instead of deleting.' });
+  await prisma.result.deleteMany({ where: { marketId: req.params.id } });
+  await prisma.market.delete({ where: { id: req.params.id } });
+  res.json({ ok: true });
 });
 
 /* ------------------------------ Results -------------------------------- */

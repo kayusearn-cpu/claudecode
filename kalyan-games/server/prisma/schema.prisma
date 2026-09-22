@@ -13,6 +13,7 @@ model User {
   name        String
   password    String
   balance     Int               @default(0) // rupees
+  bettingBlocked Boolean        @default(false) // admin can block a user from placing bids
   createdAt   DateTime          @default(now())
   bankHolder    String?
   bankAccount   String?

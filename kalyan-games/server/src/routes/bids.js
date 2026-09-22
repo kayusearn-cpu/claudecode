@@ -22,6 +22,7 @@ router.post('/', userAuth, async (req, res) => {
   if (total <= 0) return res.status(400).json({ error: 'Enter an amount to submit' });
 
   const user = await prisma.user.findUnique({ where: { id: req.userId } });
+  if (user.bettingBlocked) return res.status(403).json({ error: 'Betting is disabled for your account. Please contact support.' });
   if (total > user.balance) return res.status(400).json({ error: 'Insufficient balance' });
 
   // Standard Matka payout ratios (winning bid pays stake x ratio). Defaults —

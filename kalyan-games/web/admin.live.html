@@ -156,6 +156,16 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
 .af-list .s{padding:10px}.af-list .s input{height:40px}
 .af-list .u{display:flex;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
 .af-list .u:hover{background:#0e131d}.af-list .u .sub{color:var(--muted);font-size:12px}
+/* user detail */
+.udetail{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:0}
+@media(max-width:900px){.udetail{grid-template-columns:1fr}}
+.uhead{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.uav{width:62px;height:62px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:25px;font-weight:700;color:#fff;flex:0 0 62px}
+.cream{background:#FBF1E9;border-radius:16px;padding:18px;margin-top:16px}
+.cream .lbl2{color:#7a6a58;font-size:13px}
+.cream .bal{font-size:28px;font-weight:700;color:#1a140d;margin-top:2px}
+.cbtn{flex:1;height:42px;border-radius:11px;background:#fff;border:1px solid #e7d9c9;color:#5b3fb0;font-weight:600;font-size:12.5px}
+.cbtn:hover{background:#fff7ef}.cbtn.on{background:#efe4d6}
 </style></head>
 <body>
 
@@ -206,6 +216,19 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
 <div class="modal-card" id="cmodal">
   <h3 class="m-title"></h3><p class="m-text"></p>
   <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeModal()">Cancel</button><button class="ba big grad m-yes">Confirm</button></div>
+</div>
+<!-- market form modal -->
+<div class="overlay" id="mkt-ov" onclick="closeMkt()"></div>
+<div class="modal-card" id="mkt-modal" style="width:420px">
+  <h3 id="mkt-title">Add Market</h3>
+  <div class="af" style="max-width:none">
+    <div class="field"><label>Market Name</label><input id="mkt-name" placeholder="e.g. Time Bazaar"></div>
+    <div style="display:flex;gap:12px">
+      <div class="field" style="flex:1"><label>Open Time</label><input id="mkt-open" placeholder="12:25 PM"></div>
+      <div class="field" style="flex:1"><label>Close Time</label><input id="mkt-close" placeholder="03:32 PM"></div>
+    </div>
+  </div>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeMkt()">Cancel</button><button class="ba big grad" onclick="saveMkt()">Save</button></div>
 </div>
 <!-- receipt viewer -->
 <div class="overlay imgmodal" id="imgmodal" onclick="this.classList.remove('show')"><img alt="receipt"></div>
@@ -458,7 +481,7 @@ function wdAct(id,action){
 }
 
 /* ---------- Wallet > Add Fund (manual credit) ---------- */
-let AF_USERS=[];let AF_SEL=null;
+let AF_USERS=[];let AF_SEL=null;let AF_PRESELECT=null;
 PAGES['wallet-addfund']=async function(){
   AF_SEL=null;
   document.getElementById('page').innerHTML='<div class="panel"><h2>Add Fund</h2><div class="af">'+
@@ -469,7 +492,8 @@ PAGES['wallet-addfund']=async function(){
     '<button class="ba big grad" style="width:100%" onclick="creditUser()">Credit User</button>'+
     '<p class="sub" style="margin-top:14px">This credits the player\'s wallet instantly — use it for a payment received outside the normal deposit flow, or a bonus.</p>'+
     '</div></div>';
-  try{const d=await api('/admin/users');AF_USERS=d.users||[];renderAfList()}
+  try{const d=await api('/admin/users');AF_USERS=d.users||[];renderAfList();
+    if(AF_PRESELECT){const pid=AF_PRESELECT.id;AF_PRESELECT=null;if(AF_USERS.find(u=>u.id===pid))pickUser(pid)}}
   catch(e){toast(e.message)}
 };
 function toggleAfList(e){e.stopPropagation();const l=document.getElementById('af-list');l.hidden=!l.hidden;if(!l.hidden){const q=document.getElementById('af-q');if(q)q.focus()}}
@@ -490,6 +514,102 @@ function creditUser(){
   });
 }
 document.addEventListener('click',function(){const l=document.getElementById('af-list');if(l&&!l.hidden)l.hidden=true});
+
+/* ---------- User Management ---------- */
+let USER_ROWS=[];let CUR_USER=null;
+PAGES.users=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>User Management</h2>'+
+    '<div class="searchbar">'+icon('search')+'<input id="u-q" placeholder="Search by name or mobile" oninput="renderUsers()"></div>'+
+    '<div id="u-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/users');USER_ROWS=d.users||[];renderUsers()}
+  catch(e){document.getElementById('u-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderUsers(){
+  const q=((document.getElementById('u-q')||{}).value||'').toLowerCase();
+  const rows=USER_ROWS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
+  const body=document.getElementById('u-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No users found.</p>';return}
+  const head='<tr><th>S.No</th><th>User</th><th>Mobile</th><th>Balance</th><th>Betting</th><th>Joined</th><th></th></tr>';
+  const tr=rows.map((u,i)=>'<tr style="cursor:pointer" onclick="openUser(\''+u.id+'\')"><td>'+(i+1)+'</td><td><b>'+(u.name||'-')+'</b></td>'+
+    '<td>'+(u.phone||'-')+'</td><td><b>'+inr(u.balance)+'</b></td>'+
+    '<td>'+(u.bettingBlocked?'<span class="pill off">Blocked</span>':'<span class="pill on">Allowed</span>')+'</td>'+
+    '<td>'+fmtDate(u.createdAt)+'</td><td class="sub" style="font-size:18px">›</td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+async function openUser(id){
+  document.getElementById('page').innerHTML='<div class="loading">Loading…</div>';
+  try{const d=await api('/admin/users/'+id);CUR_USER=d.user;renderUserDetail(d.user,d.summary)}
+  catch(e){document.getElementById('page').innerHTML='<div class="panel"><p class="sub" style="color:var(--red)">'+e.message+'</p></div>'}
+}
+function renderUserDetail(u,s){
+  const initials=(u.name||'?').trim().charAt(0).toUpperCase();const betAllowed=!u.bettingBlocked;
+  const bank=[['Bank Name',u.bankName||'—'],['A/C Holder Name',u.bankHolder||'—'],['A/C Number',u.bankAccount||'—'],['IFSC Code',u.bankIfsc||'—'],['UPI ID',u.bankUpi||'—']];
+  const stats=[['Play',num(s.play)],['Total Bids',num(s.totalBids)],['Won',num(s.won)],['Lost',num(s.lost)],['Deposit',inr(s.deposit)],['Withdraw',inr(s.withdraw)]];
+  document.getElementById('page').innerHTML=
+    '<button class="ba" style="border-color:var(--line2);color:#cfd3db;margin-bottom:16px" onclick="go(\'users\')">‹ Back to Users</button>'+
+    '<div class="udetail">'+
+      '<div class="panel"><div class="uhead"><div class="uav">'+initials+'</div><div><h2 style="margin:0;font-size:20px">'+(u.name||'-')+'</h2><div class="sub">'+(u.phone||'')+'</div></div></div>'+
+        '<div class="drow"><span>Betting</span>'+(betAllowed?'<span class="pill on">Allowed</span>':'<span class="pill off">Blocked</span>')+'</div>'+
+        '<div class="drow"><span>Joined</span><b>'+fmtDate(u.createdAt)+'</b></div>'+
+        '<div class="cream"><div class="lbl2">Available Balance</div><div class="bal">'+inr(u.balance)+'</div>'+
+          '<div style="display:flex;gap:10px;margin-top:14px"><button class="cbtn" onclick="goAddFund(\''+u.id+'\')">＋ Add Fund</button>'+
+          '<button class="cbtn'+(betAllowed?'':' on')+'" onclick="toggleBet(\''+u.id+'\','+betAllowed+')">'+(betAllowed?'Block Betting':'Unblock Betting')+'</button></div></div>'+
+      '</div>'+
+      '<div class="panel"><h2>Bank &amp; Payment</h2>'+bank.map(x=>'<div class="drow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div>'+
+    '</div>'+
+    '<div class="panel"><h2>Game Summary</h2><div class="stat-grid">'+
+      stats.map(x=>'<div class="stat" style="padding:16px 18px"><div class="val">'+x[1]+'</div><div class="lbl">'+x[0]+'</div></div>').join('')+'</div></div>';
+}
+function toggleBet(id,curAllowed){
+  const block=curAllowed;
+  confirmModal(block?'Block betting?':'Unblock betting?',block?'This player won’t be able to place any bids until you unblock them.':'This player will be able to place bids again.',async function(){
+    try{await api('/admin/users/'+id,{method:'PATCH',body:JSON.stringify({bettingBlocked:block})});toast(block?'Betting blocked':'Betting unblocked');
+      const idx=USER_ROWS.findIndex(u=>u.id===id);if(idx>=0)USER_ROWS[idx].bettingBlocked=block;openUser(id)}
+    catch(e){toast(e.message)}
+  });
+}
+function goAddFund(userId){AF_PRESELECT=USER_ROWS.find(u=>u.id===userId)||CUR_USER;go('wallet-addfund')}
+
+/* ---------- Markets ---------- */
+let MKT_ROWS=[];let MKT_EDIT=null;
+PAGES.markets=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><h2 style="margin:0">Market List</h2><button class="ba grad" onclick="openMkt()">+ Add Market</button></div>'+
+    '<div class="searchbar">'+icon('search')+'<input id="mkt-q" placeholder="Search market" oninput="renderMkt()"></div>'+
+    '<div id="mkt-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/markets');MKT_ROWS=d.markets||[];renderMkt()}
+  catch(e){document.getElementById('mkt-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderMkt(){
+  const q=((document.getElementById('mkt-q')||{}).value||'').toLowerCase();
+  const rows=MKT_ROWS.filter(m=>!q||(m.name||'').toLowerCase().includes(q));
+  const body=document.getElementById('mkt-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No markets yet. Add one to get started.</p>';return}
+  const head='<tr><th>S.No</th><th>Market Name</th><th>Today Open</th><th>Today Close</th><th>Status</th><th>Action</th></tr>';
+  const tr=rows.map((m,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+m.name+'</b></td><td>'+m.openTime+'</td><td>'+m.closeTime+'</td>'+
+    '<td>'+(m.status==='open'?'<span class="pill on">Open</span>':'<span class="pill off">Closed</span>')+'</td>'+
+    '<td class="act"><button class="ba" style="border-color:var(--line2);color:#cfd3db" onclick="openMkt(\''+m.id+'\')">Edit</button>'+
+    '<button class="ba '+(m.status==='open'?'rej':'acc')+'" onclick="toggleMkt(\''+m.id+'\',\''+(m.status==='open'?'closed':'open')+'\')">'+(m.status==='open'?'Close':'Open')+'</button>'+
+    '<button class="ba rej" onclick="delMkt(\''+m.id+'\',\''+String(m.name).replace(/[\\\\\'\"]/g,'')+'\')">Delete</button></td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function openMkt(id){
+  MKT_EDIT=id||null;const m=id?MKT_ROWS.find(x=>x.id===id):null;
+  document.getElementById('mkt-title').textContent=m?'Update Market':'Add Market';
+  document.getElementById('mkt-name').value=m?m.name:'';document.getElementById('mkt-open').value=m?m.openTime:'';document.getElementById('mkt-close').value=m?m.closeTime:'';
+  document.getElementById('mkt-modal').classList.add('show');document.getElementById('mkt-ov').classList.add('show');
+}
+function closeMkt(){document.getElementById('mkt-modal').classList.remove('show');document.getElementById('mkt-ov').classList.remove('show')}
+async function saveMkt(){
+  const name=document.getElementById('mkt-name').value.trim();const openTime=document.getElementById('mkt-open').value.trim();const closeTime=document.getElementById('mkt-close').value.trim();
+  if(!name||!openTime||!closeTime){toast('Fill name, open and close time');return}
+  try{
+    if(MKT_EDIT)await api('/admin/markets/'+MKT_EDIT,{method:'PATCH',body:JSON.stringify({name,openTime,closeTime})});
+    else await api('/admin/markets',{method:'POST',body:JSON.stringify({name,openTime,closeTime})});
+    toast('Saved');closeMkt();PAGES.markets();
+  }catch(e){toast(e.message)}
+}
+async function toggleMkt(id,status){try{await api('/admin/markets/'+id,{method:'PATCH',body:JSON.stringify({status})});toast(status==='open'?'Market opened':'Market closed');PAGES.markets()}catch(e){toast(e.message)}}
+function delMkt(id,name){confirmModal('Delete market?','Delete “'+name+'”? This can’t be undone.',async function(){try{await api('/admin/markets/'+id,{method:'DELETE'});toast('Market deleted');PAGES.markets()}catch(e){toast(e.message)}})}
 
 /* boot */
 if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }
