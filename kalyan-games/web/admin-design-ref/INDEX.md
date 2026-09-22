@@ -45,3 +45,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 038 | admin-038.jpg | Reports > Bid Win — same + Win History table (S.No/User/Market Name/Game Name) |
 | 039 | admin-039.jpg | Reports > Withdraw — Withdraw History Report (Date + Get Results); Withdraw List table (User/Amount/Req No./Payment), Total Withdraw card |
 | 040 | admin-040.jpg | Reports > Deposit — Deposit History Report (Date + Get Results); Deposit List table (User/Amount/Req No./Payment), Total Deposit card |
+| 041 | admin-041.jpg | Notices > Notice Management — search + table (S.No/Notice Title/Content: Server Maintenance/Result Delay/New Game Added…). Sidebar Notices submenu: Notice Management(active)/Send Notification |
+| 042 | admin-042.jpg | Notices — Delete Notice confirm modal (Cancel + [Delete cut off]) |
+| 043 | admin-043.jpg | Notices — Update Notice modal (Title/Content/Date/Status Active, Cancel + [Save cut off]) |
+| 044 | admin-044.jpg | Notices > Send Notification — User List (Select User) + Title + Content + gradient send button |
+| 045 | admin-045.jpg | Settings > Main Settings — Add App Link (App Link + Message + Save), App Maintenance (Maintenance Message + Show message toggle + Save). Sidebar Settings submenu: Main Settings(active)/Contact Settings/Slider Images/How to Play/QR Images/User Ideas |
