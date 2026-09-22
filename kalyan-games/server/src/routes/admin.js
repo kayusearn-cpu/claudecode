@@ -209,6 +209,27 @@ router.post('/deposits/:id/reject', adminAuth, async (req, res) => {
   res.json({ status: 'rejected' });
 });
 
+/* ---------------------- Add Fund (manual credit) ----------------------- */
+// POST /admin/users/:id/credit  { amount, note? }
+// Admin directly credits a player's wallet (Wallet > Add Fund). Use for
+// bonuses or a payment received outside the normal deposit-request flow.
+router.post('/users/:id/credit', adminAuth, async (req, res) => {
+  const amount = Math.floor(Number(req.body?.amount));
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'Enter a valid amount to credit' });
+  const user = await prisma.user.findUnique({ where: { id: req.params.id } });
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  const note = String(req.body?.note || '').slice(0, 200) || 'Wallet credited by admin';
+  const [, txn, updated] = await prisma.$transaction([
+    prisma.user.update({ where: { id: user.id }, data: { balance: { increment: amount } } }),
+    prisma.transaction.create({ data: { userId: user.id, type: 'deposit', amount, note, balanceBefore: user.balance, balanceAfter: user.balance + amount } }),
+    prisma.user.findUnique({ where: { id: user.id } }),
+  ]);
+  await prisma.notification.create({
+    data: { userId: user.id, type: 'deposit', title: 'Wallet credited', body: '₹' + amount + ' was added to your wallet.' },
+  }).catch(() => {});
+  res.json({ ok: true, balance: updated.balance, txn });
+});
+
 /* ------------------- Password reset (admin fallback) ------------------- */
 // Used only if a player is locked out; players normally change their own
 // password in the app (old password -> new password).

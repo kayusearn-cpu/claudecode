@@ -113,6 +113,49 @@ table.tbl tbody tr:hover{background:#0e131d}
   .mtoggle{display:inline-grid!important}
 }
 .mtoggle{display:none;place-items:center;width:40px;height:40px;border:1px solid var(--line2);border-radius:11px;margin-bottom:16px}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:2px}
+.tabs .tab{height:38px;padding:0 18px;border-radius:10px 10px 0 0;color:var(--sub);font-size:13.5px;font-weight:500}
+.tabs .tab.on{color:#fff;background:linear-gradient(180deg,rgba(139,92,246,.18),transparent);border-bottom:2px solid var(--violet)}
+/* row action buttons */
+td.act{display:flex;gap:8px}
+.ba{height:32px;padding:0 14px;border-radius:9px;font-size:12.5px;font-weight:600;border:1px solid}
+.ba.acc{color:var(--green);border-color:rgba(0,196,90,.5)}.ba.acc:hover{background:rgba(0,196,90,.12)}
+.ba.rej{color:var(--red);border-color:rgba(245,72,75,.5)}.ba.rej:hover{background:rgba(245,72,75,.12)}
+.ba.big{height:46px;flex:1;font-size:14px;border-radius:12px}
+.ba.grad{background:var(--grad);color:#fff;border:0}.ba.grad:hover{filter:brightness(1.07)}
+.lnk{color:var(--violet);cursor:pointer;font-weight:500}.lnk:hover{text-decoration:underline}
+table.tbl td .sub{font-size:11.5px;margin-top:1px}
+/* drawer + modal */
+.overlay{position:fixed;inset:0;background:rgba(3,7,18,.66);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:.22s;z-index:150}
+.overlay.show{opacity:1;pointer-events:auto}
+.drawer-panel{position:fixed;top:0;right:0;height:100vh;width:400px;max-width:92vw;background:var(--card2);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:160;display:flex;flex-direction:column;padding:26px 24px}
+.drawer-panel.show{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.drawer-head h3{font-size:19px;font-weight:600}
+.drawer-head .x{width:34px;height:34px;border-radius:9px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--sub)}
+.drow{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.drow span{color:var(--sub)}.drow b{font-weight:600;text-align:right}
+.drawer-act{display:flex;gap:12px;margin-top:auto;padding-top:22px}
+.modal-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.97);width:380px;max-width:92vw;background:var(--card2);border:1px solid var(--line2);border-radius:20px;padding:26px 24px;z-index:170;opacity:0;pointer-events:none;transition:.2s}
+.modal-card.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal-card h3{font-size:18px;font-weight:600;margin-bottom:10px}
+.modal-card p{color:var(--sub);font-size:13.5px;line-height:1.5;margin-bottom:22px}
+.m-actions{display:flex;gap:12px}
+.imgmodal img{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:88vw;max-height:84vh;border-radius:14px;border:1px solid var(--line2);z-index:170;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+/* add fund */
+.af{max-width:460px}
+.af label{display:block;font-size:13px;color:var(--sub);margin:0 0 8px}
+.af .field{margin-bottom:20px;position:relative}
+.af input{width:100%;height:50px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 16px;font-size:14px}
+.af input:focus{outline:none;border-color:var(--violet)}
+.af .picker{border:1px solid var(--line2);border-radius:12px;background:var(--field);min-height:50px;display:flex;align-items:center;padding:0 16px;cursor:pointer;justify-content:space-between}
+.af .picker.on{color:#fff}.af .picker .ph{color:var(--muted)}
+.af-list{position:absolute;top:56px;left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:12px;max-height:280px;overflow:auto;z-index:20;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.af-list .s{padding:10px}.af-list .s input{height:40px}
+.af-list .u{display:flex;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+.af-list .u:hover{background:#0e131d}.af-list .u .sub{color:var(--muted);font-size:12px}
 </style></head>
 <body>
 
@@ -152,6 +195,20 @@ table.tbl tbody tr:hover{background:#0e131d}
     <div id="page"></div>
   </main>
 </div>
+<!-- detail drawer -->
+<div class="overlay" id="drawer-ov" onclick="closeDrawer()"></div>
+<aside class="drawer-panel" id="drawer">
+  <div class="drawer-head"><h3 id="drawer-title">Details</h3><button class="x" onclick="closeDrawer()">✕</button></div>
+  <div id="drawer-body"></div>
+</aside>
+<!-- confirm modal -->
+<div class="overlay" id="modal-ov" onclick="closeModal()"></div>
+<div class="modal-card" id="cmodal">
+  <h3 class="m-title"></h3><p class="m-text"></p>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeModal()">Cancel</button><button class="ba big grad m-yes">Confirm</button></div>
+</div>
+<!-- receipt viewer -->
+<div class="overlay imgmodal" id="imgmodal" onclick="this.classList.remove('show')"><img alt="receipt"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -296,6 +353,143 @@ PAGES.dashboard=async function(){
     el.innerHTML=summary+overview;
   }catch(e){el.innerHTML='<div class="panel"><p class="sub" style="color:var(--red)">'+e.message+'</p></div>'}
 };
+
+/* ---------- shared helpers (tables / drawer / modal) ---------- */
+function fmtDate(s){const d=new Date(s);if(isNaN(d))return '-';return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+function statusPill(st){const m={approved:['on','Accepted'],rejected:['off','Rejected'],pending:['pend','Pending']};const x=m[st]||['pend',st];return '<span class="pill '+x[0]+'">'+x[1]+'</span>'}
+function reqNo(id,pfx){return (pfx||'')+String(id).slice(-8).toUpperCase()}
+function payMethod(bankInfo){const b=String(bankInfo||'');if(b.includes('@')&&!b.includes('A/C'))return 'UPI';if(/A\/C|IFSC/i.test(b))return 'A/C Transfer';return b?'Bank':'-'}
+function parseBank(bankInfo){
+  const parts=String(bankInfo||'').split('|').map(s=>s.trim()).filter(Boolean);const out=[];
+  parts.forEach((p,i)=>{
+    if(/^A\/C\s/i.test(p))out.push(['A/C Number',p.replace(/^A\/C\s/i,'')]);
+    else if(/^IFSC\s/i.test(p))out.push(['IFSC Code',p.replace(/^IFSC\s/i,'')]);
+    else if(p.includes('@'))out.push(['UPI ID',p]);
+    else if(i===0)out.push(['A/C Holder Name',p]);
+    else out.push(['Bank Name',p]);
+  });
+  return out;
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('show');document.getElementById('drawer-ov').classList.remove('show')}
+function openDrawer(title,rowsHtml){document.getElementById('drawer-title').textContent=title;document.getElementById('drawer-body').innerHTML=rowsHtml;document.getElementById('drawer').classList.add('show');document.getElementById('drawer-ov').classList.add('show')}
+function confirmModal(title,text,onYes){const m=document.getElementById('cmodal');m.querySelector('.m-title').textContent=title;m.querySelector('.m-text').textContent=text;m.querySelector('.m-yes').onclick=function(){closeModal();onYes()};m.classList.add('show');document.getElementById('modal-ov').classList.add('show')}
+function closeModal(){document.getElementById('cmodal').classList.remove('show');document.getElementById('modal-ov').classList.remove('show')}
+
+/* ---------- Funds (deposit + withdraw approvals) ---------- */
+let FUND_TAB='deposits';let FUND_ROWS=[];
+PAGES.funds=function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div class="tabs">'+
+    '<button class="tab" data-t="deposits" onclick="setFundTab(\'deposits\')">Deposits</button>'+
+    '<button class="tab" data-t="withdrawals" onclick="setFundTab(\'withdrawals\')">Withdrawals</button></div>'+
+    '<div id="fund-body"><div class="loading">Loading…</div></div></div>';
+  setFundTab(FUND_TAB);
+};
+function setFundTab(t){FUND_TAB=t;document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));loadFund(t)}
+async function loadFund(t){
+  const body=document.getElementById('fund-body');body.innerHTML='<div class="loading">Loading…</div>';
+  try{
+    if(t==='deposits'){const d=await api('/admin/deposits');FUND_ROWS=d.deposits||[];renderFund(body,FUND_ROWS,'deposit')}
+    else{const d=await api('/admin/withdrawals');renderFund(body,d.withdrawals||[],'withdraw')}
+  }catch(e){body.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+function renderFund(body,rows,kind){
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No '+(kind==='deposit'?'deposits':'withdrawals')+' yet.</p>';return}
+  const rcH=kind==='deposit'?'<th>Receipt</th>':'';
+  const head='<tr><th>S.No</th><th>User</th><th>Amount</th><th>'+(kind==='deposit'?'Txn / UTR':'Req No.')+'</th><th>Date &amp; Time</th>'+rcH+'<th>Status</th><th>Action</th></tr>';
+  const tr=rows.map(function(r,i){
+    const act=r.status==='pending'
+      ?'<button class="ba acc" onclick="fundAct(\''+kind+'\',\''+r.id+'\',\'approve\')">Accept</button><button class="ba rej" onclick="fundAct(\''+kind+'\',\''+r.id+'\',\'reject\')">Reject</button>'
+      :'<span class="sub">—</span>';
+    const rc=kind==='deposit'?('<td>'+(r.proof?'<span class="lnk" onclick="viewProof(\''+r.id+'\')">View</span>':'<span class="sub">—</span>')+'</td>'):'';
+    const idcol=kind==='deposit'?(r.reference||'-'):reqNo(r.id,'WRQ');
+    return '<tr><td>'+(i+1)+'</td><td>'+((r.user&&r.user.name)||'-')+'<div class="sub">'+((r.user&&r.user.phone)||'')+'</div></td>'+
+      '<td><b>'+inr(r.amount)+'</b></td><td>'+idcol+'</td><td>'+fmtDate(r.createdAt)+'</td>'+rc+'<td>'+statusPill(r.status)+'</td><td class="act">'+act+'</td></tr>';
+  }).join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function fundAct(kind,id,action){
+  const isDep=kind==='deposit';const verb=action==='approve'?'Accept':'Reject';
+  const text=action==='reject'?'The request will be marked rejected and the player notified.'
+    :(isDep?'The player\'s wallet will be credited with this amount.':'The amount will be paid out and deducted from the player\'s wallet.');
+  confirmModal(verb+' this '+kind+'?',text,async function(){
+    try{await api('/admin/'+(isDep?'deposits':'withdrawals')+'/'+id+'/'+action,{method:'POST',body:'{}'});toast(verb==='Accept'?'Accepted':'Rejected');loadFund(FUND_TAB)}
+    catch(e){toast(e.message)}
+  });
+}
+function viewProof(id){const r=FUND_ROWS.find(x=>x.id===id);if(!r||!r.proof){toast('No receipt attached');return}const m=document.getElementById('imgmodal');m.querySelector('img').src=r.proof;m.classList.add('show')}
+
+/* ---------- Wallet > Withdraw Request ---------- */
+let WD_ROWS=[];
+PAGES['wallet-withdraw']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Withdraw Request</h2>'+
+    '<div class="searchbar">'+icon('search')+'<input id="wd-q" placeholder="Search by name or request no." oninput="renderWd()"></div>'+
+    '<div id="wd-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/withdrawals');WD_ROWS=d.withdrawals||[];renderWd()}
+  catch(e){document.getElementById('wd-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderWd(){
+  const q=((document.getElementById('wd-q')||{}).value||'').toLowerCase();
+  const rows=WD_ROWS.filter(r=>!q||((r.user&&r.user.name)||'').toLowerCase().includes(q)||reqNo(r.id,'WRQ').toLowerCase().includes(q));
+  const body=document.getElementById('wd-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No withdraw requests.</p>';return}
+  const head='<tr><th>S.No</th><th>User</th><th>Amount</th><th>Req No.</th><th>Payment</th><th>Status</th><th></th></tr>';
+  const tr=rows.map((r,i)=>'<tr style="cursor:pointer" onclick="openWd(\''+r.id+'\')"><td>'+(i+1)+'</td>'+
+    '<td>'+((r.user&&r.user.name)||'-')+'<div class="sub">'+((r.user&&r.user.phone)||'')+'</div></td>'+
+    '<td><b>'+inr(r.amount)+'</b></td><td>'+reqNo(r.id,'WRQ')+'</td><td>'+payMethod(r.bankInfo)+'</td>'+
+    '<td>'+statusPill(r.status)+'</td><td class="sub" style="font-size:18px">›</td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function openWd(id){
+  const r=WD_ROWS.find(x=>x.id===id);if(!r)return;
+  const base=[['User Name',(r.user&&r.user.name)||'-'],['Mobile',(r.user&&r.user.phone)||'-'],['Request Amount',inr(r.amount)],['Request Number',reqNo(r.id,'WRQ')],['Payment Method',payMethod(r.bankInfo)],['Wallet Balance',inr(r.user&&r.user.balance)]];
+  const rowsHtml=base.concat(parseBank(r.bankInfo)).map(x=>'<div class="drow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+
+    (r.status==='pending'
+      ?'<div class="drawer-act"><button class="ba big acc" onclick="wdAct(\''+r.id+'\',\'approve\')">Approve &amp; Pay</button><button class="ba big rej" onclick="wdAct(\''+r.id+'\',\'reject\')">Reject</button></div>'
+      :'<div class="drawer-act" style="justify-content:center">'+statusPill(r.status)+'</div>');
+  openDrawer('Withdraw Request',rowsHtml);
+}
+function wdAct(id,action){
+  const verb=action==='approve'?'Approve':'Reject';
+  confirmModal(verb+' this withdrawal?',action==='approve'?'The amount will be paid out and deducted from the player\'s wallet.':'The request will be rejected and the player notified.',async function(){
+    try{await api('/admin/withdrawals/'+id+'/'+action,{method:'POST',body:'{}'});toast(action==='approve'?'Approved':'Rejected');closeDrawer();
+      const d=await api('/admin/withdrawals');WD_ROWS=d.withdrawals||[];renderWd()}
+    catch(e){toast(e.message)}
+  });
+}
+
+/* ---------- Wallet > Add Fund (manual credit) ---------- */
+let AF_USERS=[];let AF_SEL=null;
+PAGES['wallet-addfund']=async function(){
+  AF_SEL=null;
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Add Fund</h2><div class="af">'+
+    '<div class="field"><label>Select User</label><div class="picker" id="af-picker" onclick="toggleAfList(event)"><span class="ph">Choose a player…</span>'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>'+
+      '<div class="af-list" id="af-list" hidden onclick="event.stopPropagation()"><div class="s"><input id="af-q" placeholder="Search name or mobile" oninput="renderAfList()"></div><div id="af-users"></div></div></div>'+
+    '<div class="field"><label>Amount</label><input id="af-amt" type="number" inputmode="numeric" placeholder="Enter amount"></div>'+
+    '<button class="ba big grad" style="width:100%" onclick="creditUser()">Credit User</button>'+
+    '<p class="sub" style="margin-top:14px">This credits the player\'s wallet instantly — use it for a payment received outside the normal deposit flow, or a bonus.</p>'+
+    '</div></div>';
+  try{const d=await api('/admin/users');AF_USERS=d.users||[];renderAfList()}
+  catch(e){toast(e.message)}
+};
+function toggleAfList(e){e.stopPropagation();const l=document.getElementById('af-list');l.hidden=!l.hidden;if(!l.hidden){const q=document.getElementById('af-q');if(q)q.focus()}}
+function renderAfList(){
+  const q=((document.getElementById('af-q')||{}).value||'').toLowerCase();
+  const rows=AF_USERS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q)).slice(0,60);
+  document.getElementById('af-users').innerHTML=rows.length?rows.map(u=>'<div class="u" onclick="pickUser(\''+u.id+'\')"><span>'+(u.name||'-')+'</span><span class="sub">'+(u.phone||'')+' · '+inr(u.balance)+'</span></div>').join(''):'<div class="u"><span class="sub">No users found</span></div>';
+}
+function pickUser(id){AF_SEL=AF_USERS.find(u=>u.id===id);const p=document.getElementById('af-picker');p.classList.add('on');p.querySelector('span').className='';p.querySelector('span').textContent=(AF_SEL.name||'-')+' · '+(AF_SEL.phone||'');document.getElementById('af-list').hidden=true}
+function creditUser(){
+  if(!AF_SEL){toast('Select a user first');return}
+  const amt=Math.floor(Number((document.getElementById('af-amt')||{}).value));
+  if(!amt||amt<=0){toast('Enter a valid amount');return}
+  confirmModal('Credit wallet?','Add '+inr(amt)+' to '+(AF_SEL.name||'this user')+'’s wallet?',async function(){
+    try{const d=await api('/admin/users/'+AF_SEL.id+'/credit',{method:'POST',body:JSON.stringify({amount:amt})});toast('Credited · new balance '+inr(d.balance));document.getElementById('af-amt').value='';
+      const idx=AF_USERS.findIndex(u=>u.id===AF_SEL.id);if(idx>=0)AF_USERS[idx].balance=d.balance}
+    catch(e){toast(e.message)}
+  });
+}
+document.addEventListener('click',function(){const l=document.getElementById('af-list');if(l&&!l.hidden)l.hidden=true});
 
 /* boot */
 if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }
