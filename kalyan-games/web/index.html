@@ -814,11 +814,23 @@
     const status=statusMap[t.type]||'-'; const statusColor=(t.type==='loss')?'var(--red)':(t.type==='win'||t.amount>0)?'var(--green)':'#f0f1f3';
     const dt=new Date(t.createdAt);
     const row=function(k,v,c){ return '<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 0"><span style="color:var(--sub);font-size:13px">'+k+'</span><span style="color:'+(c||'#f0f1f3')+';font-size:13px;text-align:right">'+v+'</span></div>'; };
+    const m=t.meta||{};
+    let extra='';
+    if(m.market) extra+=row('Provider',m.market);
+    if(m.gameType) extra+=row('Game',m.gameType);
+    if(m.digits!=null) extra+=row('Numbers played',m.digits);
+    if(m.winRatio!=null) extra+=row('Win ratio',m.winRatio);
+    if(m.playedFor) extra+=row('Played for',m.playedFor);
+    let bals='';
+    if(t.balanceBefore!=null) bals+=row('Balance before',inr(t.balanceBefore));
+    if(t.balanceAfter!=null) bals+=row('Balance after',inr(t.balanceAfter));
     s.innerHTML='<div class="grab"></div>'+
       '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px"><h4 style="margin:0;font-size:15px">'+(t.note||TXMAP[t.type]||t.type)+'</h4><span onclick="closeSheet()" style="color:var(--sub);font-size:20px;cursor:pointer;line-height:1">&times;</span></div>'+
       row('Type',t.amount>0?'Credit':'Debit')+
       row('Category',TXMAP[t.type]||t.type)+
+      extra+
       row('Amount',(t.amount<0?'- ':'+ ')+inr(Math.abs(t.amount)),t.amount<0?'var(--red)':'var(--green)')+
+      bals+
       row('Date',dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}))+
       row('Time',dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))+
       row('Status',status,statusColor);
@@ -960,12 +972,15 @@
       const map={deposit:'Deposit',withdraw:'Withdrawal',bid:'Bid placed',win:'Winning',loss:'Bid lost'};
       const esc=function(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
       detailReg=ts;
+      const bal=function(v){ return v==null?'-':inr(v); };
       const rows=ts.map(function(t,i){ const dt=new Date(t.createdAt);
         const desc=t.note?esc(t.note):(map[t.type]||t.type);
         const sign=t.amount<0?'- ':'';
         return '<tr style="cursor:pointer" onclick="openTxDetail('+i+')"><td>'+dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+'</td>'+
-          '<td>'+desc+'</td><td class="amt">'+sign+inr(Math.abs(t.amount))+'</td></tr>'; }).join('');
-      el.innerHTML='<div style="height:6px"></div><div class="pb-wrap"><table class="pb-table"><thead><tr><th style="width:95px">Date</th><th>Description</th><th class="amt" style="width:90px">Amount</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+          '<td>'+desc+'</td><td class="amt">'+sign+inr(Math.abs(t.amount))+'</td>'+
+          '<td class="amt">'+bal(t.balanceBefore)+'</td><td class="amt">'+bal(t.balanceAfter)+'</td>'+
+          '<td style="text-align:center"><span style="color:var(--violet)">View</span></td></tr>'; }).join('');
+      el.innerHTML='<div style="height:6px"></div><div class="pb-wrap"><table class="pb-table" style="min-width:580px"><thead><tr><th style="width:96px">Date</th><th style="width:150px">Description</th><th class="amt" style="width:80px">Amount</th><th class="amt" style="width:96px">Balance Before</th><th class="amt" style="width:92px">Balance After</th><th style="width:64px;text-align:center">Details</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
     }catch(e){ el.innerHTML='<div style="padding:24px 4px;color:var(--red);font-size:13px">'+e.message+'</div>'; }
   }
   function openChart(){ go('chart'); loadChart(); }

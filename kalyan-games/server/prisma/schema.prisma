@@ -107,13 +107,16 @@ model Result {
 }
 
 model Transaction {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  type      String // deposit | withdraw | bid | win
-  amount    Int // signed: +deposit/win, -bid/withdraw
-  note      String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  type          String // deposit | withdraw | bid | win
+  amount        Int // signed: +deposit/win, -bid/withdraw
+  note          String?
+  balanceBefore Int? // wallet balance before this transaction
+  balanceAfter  Int? // wallet balance after this transaction
+  meta          Json? // extra detail (e.g. bid: market, gameType, digits, winRatio)
+  createdAt     DateTime @default(now())
 }
 
 model WithdrawRequest {

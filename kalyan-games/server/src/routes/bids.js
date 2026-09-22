@@ -24,9 +24,27 @@ router.post('/', userAuth, async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: req.userId } });
   if (total > user.balance) return res.status(400).json({ error: 'Insufficient balance' });
 
+  // Standard Matka payout ratios (winning bid pays stake x ratio). Defaults —
+  // adjust here (or move to admin settings) if the operator uses other rates.
+  const RATES = {
+    'Single Digit': 9.5, 'Jodi Digits': 95,
+    'Single Panna': 142, 'Double Panna': 285, 'Triple Panna': 700,
+    'SP Motor': 142, 'DP Motor': 285, 'SP DP TP': 700,
+    'Half Sangam': 1000, 'Full Sangam': 10000,
+  };
+  const before = user.balance;
+  const after = before - total;
+  const meta = {
+    market: market.name,
+    gameType,
+    digits: Object.keys(selections).filter((k) => Math.floor(Number(selections[k])) > 0).length,
+    winRatio: RATES[gameType] || null,
+    playedFor: market.openTime || null,
+  };
+
   const [, bid, updated] = await prisma.$transaction([
     prisma.transaction.create({
-      data: { userId: req.userId, type: 'bid', amount: -total, note: `${gameType} · ${market.name}` },
+      data: { userId: req.userId, type: 'bid', amount: -total, note: `${gameType} · ${market.name}`, balanceBefore: before, balanceAfter: after, meta },
     }),
     prisma.bid.create({
       data: { userId: req.userId, marketId, gameType, selections, total, status: 'pending' },

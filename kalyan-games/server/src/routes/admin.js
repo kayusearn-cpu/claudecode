@@ -117,7 +117,7 @@ router.post('/withdrawals/:id/approve', adminAuth, async (req, res) => {
   await prisma.$transaction([
     prisma.user.update({ where: { id: wr.userId }, data: { balance: { decrement: wr.amount } } }),
     prisma.transaction.create({
-      data: { userId: wr.userId, type: 'withdraw', amount: -wr.amount, note: 'Withdrawal approved' },
+      data: { userId: wr.userId, type: 'withdraw', amount: -wr.amount, note: 'Withdrawal approved', balanceBefore: user.balance, balanceAfter: user.balance - wr.amount },
     }),
     prisma.withdrawRequest.update({ where: { id: wr.id }, data: { status: 'approved' } }),
   ]);
@@ -154,9 +154,10 @@ router.post('/deposits/:id/approve', adminAuth, async (req, res) => {
   const note = credit === dr.amount
     ? 'Deposit approved (' + dr.method + ' ' + dr.reference + ')'
     : 'Deposit approved, adjusted to ₹' + credit + ' (' + dr.method + ' ' + dr.reference + ')';
+  const depUser = await prisma.user.findUnique({ where: { id: dr.userId } });
   await prisma.$transaction([
     prisma.user.update({ where: { id: dr.userId }, data: { balance: { increment: credit } } }),
-    prisma.transaction.create({ data: { userId: dr.userId, type: 'deposit', amount: credit, note } }),
+    prisma.transaction.create({ data: { userId: dr.userId, type: 'deposit', amount: credit, note, balanceBefore: depUser.balance, balanceAfter: depUser.balance + credit } }),
     prisma.depositRequest.update({ where: { id: dr.id }, data: { status: 'approved' } }),
   ]);
   res.json({ status: 'approved', credited: credit });
