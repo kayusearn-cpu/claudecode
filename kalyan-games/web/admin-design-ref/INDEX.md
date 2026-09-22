@@ -30,3 +30,8 @@ Saved here so the designs are durable and re-readable when building each admin s
 | 023 | admin-023.jpg | Withdraw Request DETAIL panel (Figma proto, frame 80/119) — User Name: Rohit Sharma, Request Amount ₹2,500, Request Number WRQ98342, Payment Method A/C Transfer, Bank Name HDFC Bank, A/C Holder Name, IFSC Code HDFC0001234 |
 | 024 | admin-024.jpg | Update Sub Admin modal (dup of 020) |
 | 025 | admin-025.jpg | Add Sub Admin modal (dup of 021) |
+| 026 | admin-026.jpg | Wallet > Withdraw Request list (dup of 022) |
+| 027 | admin-027.jpg | Withdraw Request detail panel (dup of 023, frame 80/119) |
+| 028 | admin-028.jpg | Wallet > Add Fund — User List (Select User) + Amount (Enter Amount) + gradient "Credit User" button |
+| 029 | admin-029.jpg | Wallet > Add Fund — User List dropdown open (search + user list Rahul Sharma/Priya Mehta/Aman Verma/Kavya Nair/Arjun Yadav/Sneha Roy/Karan Joshi with mobiles) |
+| 030 | admin-030.jpg | Wallet > Add Fund — Confirm Wallet Credit modal ("Are you sure you want to credit … wallet?", Cancel + [Confirm cut off]) |
