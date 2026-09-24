@@ -177,6 +177,18 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
 .res-sum b{display:block;font-size:20px;font-weight:700}.res-sum span{color:var(--sub);font-size:12px}
 .res-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;align-items:end}
 @media(max-width:760px){.res-form{grid-template-columns:1fr 1fr}}
+/* reports */
+.rep-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}
+.rep-filters .field{margin:0;min-width:150px}
+.rep-filters input,.rep-filters select{width:100%;height:46px;border:1px solid var(--line2);border-radius:11px;background:var(--field);padding:0 12px;font-size:13.5px;color-scheme:dark}
+.total-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.total-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.total-card .v{font-size:24px;font-weight:700}.total-card .l{color:var(--sub);font-size:12.5px;margin-top:2px}
+.sell-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
+.sell-tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.sell-tile .n{font-size:22px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sell-tile .p{color:var(--sub);font-size:12px;margin-top:4px}
+.sell-tile b{color:var(--ink)}
 </style></head>
 <body>
 
@@ -676,6 +688,117 @@ function declareResult(marketId,openPanna,closePanna){
     }catch(e){toast(e.message)}
   });
 }
+
+/* ---------- Reports (shared helpers) ---------- */
+let REP_MARKETS=[];let REP_BIDS=[];
+async function repMarkets(){ if(REP_MARKETS.length)return REP_MARKETS; try{const m=await api('/markets');REP_MARKETS=m.markets||[]}catch(e){} return REP_MARKETS; }
+function marketOptions(){ return '<option value="">All markets</option>'+REP_MARKETS.map(m=>'<option value="'+m.name+'">'+m.name+'</option>').join(''); }
+function dayMatch(iso,dateStr){ if(!dateStr)return true; const d=new Date(iso); const s=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); return s===dateStr; }
+function repPanel(title,filters,bodyId){ return '<div class="panel"><h2>'+title+'</h2>'+(filters||'')+'<div id="'+bodyId+'"><div class="loading">Loading…</div></div></div>'; }
+function repErr(e){ return '<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'; }
+function userCell(u){ return ((u&&u.name)||'-')+'<div class="sub">'+((u&&u.phone)||'')+'</div>'; }
+function repTable(head,rows){
+  if(!rows.length)return '<p class="sub" style="padding:10px 2px">No records for this filter.</p>';
+  return '<div class="tbl-wrap"><table class="tbl"><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr><tbody>'+
+    rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+
+/* Deposit report */
+PAGES['reports-deposit']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Deposit History Report',
+    '<div class="rep-filters"><div class="field"><label>Date</label><input type="date" id="rd-date" onchange="renderRepDep()"></div></div>','rd-body');
+  try{const d=await api('/admin/deposits');window._rdep=d.deposits||[];renderRepDep()}catch(e){document.getElementById('rd-body').innerHTML=repErr(e)}
+};
+function renderRepDep(){
+  const date=(document.getElementById('rd-date')||{}).value;
+  const rows=(window._rdep||[]).filter(r=>dayMatch(r.createdAt,date));
+  const total=rows.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById('rd-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v" style="color:var(--green)">'+inr(total)+'</div><div class="l">Total Deposit (approved)</div></div></div>'+
+    repTable(['S.No','User','Amount','Ref / UTR','Status','Date'],rows.map((r,i)=>[i+1,userCell(r.user),'<b>'+inr(r.amount)+'</b>',r.reference||'-',statusPill(r.status),fmtDate(r.createdAt)]));
+}
+
+/* Withdraw report */
+PAGES['reports-withdraw']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Withdraw History Report',
+    '<div class="rep-filters"><div class="field"><label>Date</label><input type="date" id="rw-date" onchange="renderRepWd()"></div></div>','rw-body');
+  try{const d=await api('/admin/withdrawals');window._rwd=d.withdrawals||[];renderRepWd()}catch(e){document.getElementById('rw-body').innerHTML=repErr(e)}
+};
+function renderRepWd(){
+  const date=(document.getElementById('rw-date')||{}).value;
+  const rows=(window._rwd||[]).filter(r=>dayMatch(r.createdAt,date));
+  const total=rows.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById('rw-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v" style="color:var(--red)">'+inr(total)+'</div><div class="l">Total Withdraw (approved)</div></div></div>'+
+    repTable(['S.No','User','Amount','Req No.','Status','Date'],rows.map((r,i)=>[i+1,userCell(r.user),'<b>'+inr(r.amount)+'</b>',reqNo(r.id,'WRQ'),statusPill(r.status),fmtDate(r.createdAt)]));
+}
+
+/* User Bid History */
+PAGES['reports-userbids']=async function(){
+  await repMarkets();
+  document.getElementById('page').innerHTML=repPanel('User Bid History',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="rb-mkt" onchange="renderRepBids()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Date</label><input type="date" id="rb-date" onchange="renderRepBids()"></div></div>','rb-body');
+  try{const d=await api('/admin/bids');REP_BIDS=d.bids||[];renderRepBids()}catch(e){document.getElementById('rb-body').innerHTML=repErr(e)}
+};
+function renderRepBids(){
+  const mkt=(document.getElementById('rb-mkt')||{}).value; const date=(document.getElementById('rb-date')||{}).value;
+  const rows=REP_BIDS.filter(b=>(!mkt||b.market===mkt)&&dayMatch(b.createdAt,date));
+  document.getElementById('rb-body').innerHTML=repTable(['S.No','User','Market','Game','Amount','Status','Date'],
+    rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',statusPill(b.status),fmtDate(b.createdAt)]));
+}
+
+/* Winning report */
+PAGES['reports-winning']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Winning Report','','rn-body');
+  try{const d=await api('/admin/bids?status=won');const rows=d.bids||[];
+    document.getElementById('rn-body').innerHTML=repTable(['S.No','User','Market Name','Game Name','Bid','Date'],
+      rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',fmtDate(b.createdAt)]));
+  }catch(e){document.getElementById('rn-body').innerHTML=repErr(e)}
+};
+
+/* Bid Win report */
+PAGES['reports-bidwin']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Bid Winning Report</h2><div id="rbw-body"><div class="loading">Loading…</div></div></div>';
+  try{
+    const [dash,won]=await Promise.all([api('/admin/dashboard'),api('/admin/bids?status=won')]);
+    const play=(dash.summary&&dash.summary.play)||0; const win=(dash.summary&&dash.summary.win)||0; const rows=won.bids||[];
+    document.getElementById('rbw-body').innerHTML=
+      '<div class="total-cards"><div class="total-card"><div class="v">'+inr(play)+'</div><div class="l">Total Bid Amount</div></div>'+
+      '<div class="total-card"><div class="v" style="color:var(--green)">'+inr(win)+'</div><div class="l">Total Win Amount</div></div></div>'+
+      repTable(['S.No','User','Market Name','Game Name','Bid','Date'],rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',fmtDate(b.createdAt)]));
+  }catch(e){document.getElementById('rbw-body').innerHTML=repErr(e)}
+};
+
+/* Customer Sell summary */
+PAGES['reports-sell']=async function(){
+  await repMarkets();
+  const gts=['Single Digit','Jodi Digits','Single Panna','Double Panna','Triple Panna'];
+  document.getElementById('page').innerHTML=repPanel('Customer Sell Summary',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="rs-mkt" onchange="renderRepSell()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Game</label><select id="rs-game" onchange="renderRepSell()">'+gts.map(g=>'<option>'+g+'</option>').join('')+'</select></div></div>','rs-body');
+  try{const d=await api('/admin/bids?status=pending');window._rsell=d.bids||[];renderRepSell()}catch(e){document.getElementById('rs-body').innerHTML=repErr(e)}
+};
+function renderRepSell(){
+  const mkt=(document.getElementById('rs-mkt')||{}).value; const game=(document.getElementById('rs-game')||{}).value;
+  const agg={};
+  (window._rsell||[]).forEach(b=>{ if(b.gameType!==game)return; if(mkt&&b.market!==mkt)return;
+    Object.entries(b.selections||{}).forEach(([k,v])=>{const a=Math.floor(Number(v))||0;if(a>0)agg[k]=(agg[k]||0)+a}); });
+  let keys=game==='Single Digit'?['0','1','2','3','4','5','6','7','8','9']:Object.keys(agg);
+  keys.sort((a,b)=>Number(a)-Number(b));
+  const total=Object.values(agg).reduce((s,v)=>s+v,0);
+  const tiles=keys.map(k=>'<div class="sell-tile"><div class="n">'+(game==='Jodi Digits'?String(k).padStart(2,'0'):k)+'</div><div class="p"><b>'+num(agg[k]||0)+'</b> pts</div></div>').join('');
+  document.getElementById('rs-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v">'+inr(total)+'</div><div class="l">Total Points ('+game+')</div></div></div>'+
+    (keys.length?'<div class="sell-grid">'+tiles+'</div>':'<p class="sub">No open bids for this game.</p>');
+}
+
+/* Transfer Point — feature not in the app */
+PAGES['reports-transfer']=function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Transfer Point Report</h2>'+
+    '<div class="placeholder"><span class="pi">'+icon('users2')+'</span><h3>Point transfers aren’t enabled</h3>'+
+    '<p>Player-to-player point transfer isn’t part of the app yet, so there is nothing to report here. If the client wants players to transfer points to each other, that’s a feature I can build (app + backend) as its own task.</p></div></div>';
+};
 
 /* boot */
 if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }

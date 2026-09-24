@@ -95,6 +95,27 @@ router.get('/dashboard', adminAuth, async (_req, res) => {
   });
 });
 
+/* ------------------------------- Bids ---------------------------------- */
+// GET /admin/bids?status=&marketId=  -> bids with user + market, for the
+// Reports pages (bid history, winning, bid win, customer sell aggregation).
+router.get('/bids', adminAuth, async (req, res) => {
+  const { status, marketId } = req.query || {};
+  const where = {};
+  if (status) where.status = String(status);
+  if (marketId) where.marketId = String(marketId);
+  const bids = await prisma.bid.findMany({
+    where, orderBy: { createdAt: 'desc' }, take: 500,
+    include: { user: { select: { name: true, phone: true } }, market: { select: { name: true } } },
+  });
+  res.json({
+    bids: bids.map((b) => ({
+      id: b.id, user: b.user, market: b.market && b.market.name,
+      gameType: b.gameType, selections: b.selections, total: b.total,
+      status: b.status, createdAt: b.createdAt,
+    })),
+  });
+});
+
 /* ------------------------------- Users --------------------------------- */
 router.get('/users', adminAuth, async (_req, res) => {
   const users = await prisma.user.findMany({
