@@ -150,6 +150,8 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
 .af .field{margin-bottom:20px;position:relative}
 .af input{width:100%;height:50px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 16px;font-size:14px}
 .af input:focus{outline:none;border-color:var(--violet)}
+.af textarea{width:100%;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:12px 14px;font-size:14px;resize:vertical;font-family:inherit;color:var(--ink)}
+.af textarea:focus{outline:none;border-color:var(--violet)}
 .af .picker{border:1px solid var(--line2);border-radius:12px;background:var(--field);min-height:50px;display:flex;align-items:center;padding:0 16px;cursor:pointer;justify-content:space-between}
 .af .picker.on{color:#fff}.af .picker .ph{color:var(--muted)}
 .af-list{position:absolute;top:56px;left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:12px;max-height:280px;overflow:auto;z-index:20;box-shadow:0 16px 40px rgba(0,0,0,.5)}
@@ -252,6 +254,17 @@ table.tbl td .sub{font-size:11.5px;margin-top:1px}
     </div>
   </div>
   <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeMkt()">Cancel</button><button class="ba big grad" onclick="saveMkt()">Save</button></div>
+</div>
+<!-- notice form modal -->
+<div class="overlay" id="ntc-ov" onclick="closeNtc()"></div>
+<div class="modal-card" id="ntc-modal" style="width:460px">
+  <h3 id="ntc-title">Add Notice</h3>
+  <div class="af" style="max-width:none">
+    <div class="field"><label>Title</label><input id="ntc-t" placeholder="Notice title"></div>
+    <div class="field"><label>Content</label><textarea id="ntc-c" rows="4" placeholder="Notice content"></textarea></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);margin-bottom:4px"><input type="checkbox" id="ntc-a" checked style="width:16px;height:16px;accent-color:var(--violet)"> Active (shown to players)</label>
+  </div>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeNtc()">Cancel</button><button class="ba big grad" onclick="saveNtc()">Save</button></div>
 </div>
 <!-- receipt viewer -->
 <div class="overlay imgmodal" id="imgmodal" onclick="this.classList.remove('show')"><img alt="receipt"></div>
@@ -536,7 +549,7 @@ function creditUser(){
     catch(e){toast(e.message)}
   });
 }
-document.addEventListener('click',function(){const l=document.getElementById('af-list');if(l&&!l.hidden)l.hidden=true});
+document.addEventListener('click',function(){document.querySelectorAll('.af-list').forEach(l=>{if(!l.hidden)l.hidden=true})});
 
 /* ---------- User Management ---------- */
 let USER_ROWS=[];let CUR_USER=null;
@@ -799,6 +812,100 @@ PAGES['reports-transfer']=function(){
     '<div class="placeholder"><span class="pi">'+icon('users2')+'</span><h3>Point transfers aren’t enabled</h3>'+
     '<p>Player-to-player point transfer isn’t part of the app yet, so there is nothing to report here. If the client wants players to transfer points to each other, that’s a feature I can build (app + backend) as its own task.</p></div></div>';
 };
+
+/* ---------- Winning Prediction ---------- */
+PAGES.prediction=async function(){
+  await repMarkets();
+  document.getElementById('page').innerHTML=repPanel('Winning Prediction',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="pr-mkt" onchange="renderPred()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Date</label><input type="date" id="pr-date" onchange="renderPred()"></div></div>','pr-body');
+  try{const d=await api('/admin/bids');window._prbids=d.bids||[];renderPred()}catch(e){document.getElementById('pr-body').innerHTML=repErr(e)}
+};
+function renderPred(){
+  const mkt=(document.getElementById('pr-mkt')||{}).value; const date=(document.getElementById('pr-date')||{}).value;
+  const rows=(window._prbids||[]).filter(b=>(!mkt||b.market===mkt)&&dayMatch(b.createdAt,date));
+  const byUser={};
+  rows.forEach(b=>{const key=(b.user&&b.user.phone)||(b.user&&b.user.name)||b.id;
+    if(!byUser[key])byUser[key]={name:(b.user&&b.user.name)||'-',phone:(b.user&&b.user.phone)||'',pts:0};byUser[key].pts+=b.total||0;});
+  const list=Object.values(byUser).sort((a,b)=>b.pts-a.pts);
+  const total=list.reduce((s,u)=>s+u.pts,0);
+  document.getElementById('pr-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v">'+inr(total)+'</div><div class="l">Total Bid Points</div></div></div>'+
+    repTable(['S.No','User','Bid Points'],list.map((u,i)=>[i+1,esc(u.name)+'<div class="sub">'+esc(u.phone)+'</div>','<b>'+inr(u.pts)+'</b>']));
+}
+
+/* ---------- Notice Management ---------- */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+let NTC_ROWS=[];let NTC_EDIT=null;
+PAGES['notices-mgmt']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><h2 style="margin:0">Notice Management</h2><button class="ba grad" onclick="openNtc()">+ Add Notice</button></div>'+
+    '<div class="searchbar">'+icon('search')+'<input id="ntc-q" placeholder="Search notice" oninput="renderNtc()"></div>'+
+    '<div id="ntc-list"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/notices');NTC_ROWS=d.notices||[];renderNtc()}catch(e){document.getElementById('ntc-list').innerHTML=repErr(e)}
+};
+function renderNtc(){
+  const q=((document.getElementById('ntc-q')||{}).value||'').toLowerCase();
+  const rows=NTC_ROWS.filter(n=>!q||(n.title||'').toLowerCase().includes(q)||(n.content||'').toLowerCase().includes(q));
+  const body=document.getElementById('ntc-list');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No notices yet. Add one to show it in the app.</p>';return}
+  body.innerHTML=repTable(['S.No','Title','Content','Status','Date','Action'],rows.map((n,i)=>[i+1,'<b>'+esc(n.title)+'</b>',
+    '<span class="sub">'+esc((n.content||'').slice(0,60))+((n.content||'').length>60?'…':'')+'</span>',
+    n.active?'<span class="pill on">Active</span>':'<span class="pill off">Hidden</span>',fmtDate(n.createdAt),
+    '<div style="display:flex;gap:8px"><button class="ba" style="border-color:var(--line2);color:#cfd3db" onclick="openNtc(\''+n.id+'\')">Edit</button><button class="ba rej" onclick="delNtc(\''+n.id+'\')">Delete</button></div>']));
+}
+function openNtc(id){
+  NTC_EDIT=id||null;const n=id?NTC_ROWS.find(x=>x.id===id):null;
+  document.getElementById('ntc-title').textContent=n?'Update Notice':'Add Notice';
+  document.getElementById('ntc-t').value=n?n.title:'';document.getElementById('ntc-c').value=n?n.content:'';document.getElementById('ntc-a').checked=n?!!n.active:true;
+  document.getElementById('ntc-modal').classList.add('show');document.getElementById('ntc-ov').classList.add('show');
+}
+function closeNtc(){document.getElementById('ntc-modal').classList.remove('show');document.getElementById('ntc-ov').classList.remove('show')}
+async function saveNtc(){
+  const title=document.getElementById('ntc-t').value.trim();const content=document.getElementById('ntc-c').value.trim();const active=document.getElementById('ntc-a').checked;
+  if(!title||!content){toast('Fill title and content');return}
+  try{ if(NTC_EDIT)await api('/admin/notices/'+NTC_EDIT,{method:'PATCH',body:JSON.stringify({title,content,active})}); else await api('/admin/notices',{method:'POST',body:JSON.stringify({title,content,active})});
+    toast('Saved');closeNtc();PAGES['notices-mgmt']();
+  }catch(e){toast(e.message)}
+}
+function delNtc(id){confirmModal('Delete notice?','This notice will be removed from the app.',async function(){try{await api('/admin/notices/'+id,{method:'DELETE'});toast('Deleted');PAGES['notices-mgmt']()}catch(e){toast(e.message)}})}
+
+/* ---------- Send Notification ---------- */
+let SN_USERS=[];let SN_SEL=null;
+PAGES['notices-send']=async function(){
+  SN_SEL=null;
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Send Notification</h2><div class="af">'+
+    '<div class="field"><label>Recipient</label><div class="picker on" id="sn-picker" onclick="toggleSnList(event)"><span>All users</span>'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>'+
+      '<div class="af-list" id="sn-list" hidden onclick="event.stopPropagation()"><div class="s"><input id="sn-q" placeholder="Search user" oninput="renderSnList()"></div><div id="sn-users"></div></div></div>'+
+    '<div class="field"><label>Title</label><input id="sn-t" placeholder="Notification title"></div>'+
+    '<div class="field"><label>Message</label><textarea id="sn-c" rows="4" placeholder="Message to players"></textarea></div>'+
+    '<button class="ba big grad" style="width:100%" onclick="sendNotif()">Send Notification</button>'+
+    '<p class="sub" style="margin-top:12px">Sends into the player’s in-app notification feed. Leave recipient as “All users” to broadcast.</p>'+
+    '</div></div>';
+  try{const d=await api('/admin/users');SN_USERS=d.users||[];renderSnList()}catch(e){toast(e.message)}
+};
+function toggleSnList(e){e.stopPropagation();const l=document.getElementById('sn-list');l.hidden=!l.hidden;if(!l.hidden){const q=document.getElementById('sn-q');if(q)q.focus()}}
+function renderSnList(){
+  const q=((document.getElementById('sn-q')||{}).value||'').toLowerCase();
+  const rows=SN_USERS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q)).slice(0,60);
+  document.getElementById('sn-users').innerHTML='<div class="u" onclick="pickSn(\'all\')"><span><b>All users</b></span><span class="sub">Broadcast</span></div>'+
+    rows.map(u=>'<div class="u" onclick="pickSn(\''+u.id+'\')"><span>'+esc(u.name||'-')+'</span><span class="sub">'+(u.phone||'')+'</span></div>').join('');
+}
+function pickSn(id){
+  if(id==='all'){SN_SEL=null;document.getElementById('sn-picker').querySelector('span').textContent='All users';}
+  else{SN_SEL=SN_USERS.find(u=>u.id===id);document.getElementById('sn-picker').querySelector('span').textContent=(SN_SEL.name||'-')+' · '+(SN_SEL.phone||'');}
+  document.getElementById('sn-list').hidden=true;
+}
+function sendNotif(){
+  const title=document.getElementById('sn-t').value.trim();const body=document.getElementById('sn-c').value.trim();
+  if(!title||!body){toast('Fill title and message');return}
+  const who=SN_SEL?(SN_SEL.name||'this user'):'ALL users';
+  confirmModal('Send notification?','Send “'+title+'” to '+who+'?',async function(){
+    try{const d=await api('/admin/notifications/send',{method:'POST',body:JSON.stringify({userId:SN_SEL?SN_SEL.id:'all',title,body})});
+      toast('Sent to '+d.sent+' user'+(d.sent===1?'':'s'));document.getElementById('sn-t').value='';document.getElementById('sn-c').value='';}
+    catch(e){toast(e.message)}
+  });
+}
 
 /* boot */
 if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }

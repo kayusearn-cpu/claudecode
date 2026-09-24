@@ -116,6 +116,47 @@ router.get('/bids', adminAuth, async (req, res) => {
   });
 });
 
+/* ------------------------------ Notices -------------------------------- */
+router.get('/notices', adminAuth, async (_req, res) => {
+  const notices = await prisma.notice.findMany({ orderBy: { createdAt: 'desc' } });
+  res.json({ notices });
+});
+router.post('/notices', adminAuth, async (req, res) => {
+  const { title, content, active } = req.body || {};
+  if (!title || !content) return res.status(400).json({ error: 'Title and content are required' });
+  const notice = await prisma.notice.create({ data: { title: String(title).slice(0, 120), content: String(content).slice(0, 2000), active: active !== false } });
+  res.json({ notice });
+});
+router.patch('/notices/:id', adminAuth, async (req, res) => {
+  const { title, content, active } = req.body || {};
+  const data = {};
+  if (title) data.title = String(title).slice(0, 120);
+  if (content) data.content = String(content).slice(0, 2000);
+  if (typeof active === 'boolean') data.active = active;
+  const notice = await prisma.notice.update({ where: { id: req.params.id }, data });
+  res.json({ notice });
+});
+router.delete('/notices/:id', adminAuth, async (req, res) => {
+  await prisma.notice.delete({ where: { id: req.params.id } });
+  res.json({ ok: true });
+});
+
+// POST /admin/notifications/send  { userId?, title, body, type? }
+// Sends into a player's in-app notification feed. Omit userId (or "all")
+// to broadcast to every user.
+router.post('/notifications/send', adminAuth, async (req, res) => {
+  const { userId, title, body, type } = req.body || {};
+  if (!title || !body) return res.status(400).json({ error: 'Title and message are required' });
+  const t = String(title).slice(0, 120), b = String(body).slice(0, 1000), ty = String(type || 'system').slice(0, 20);
+  if (userId && userId !== 'all') {
+    await prisma.notification.create({ data: { userId, type: ty, title: t, body: b } });
+    return res.json({ ok: true, sent: 1 });
+  }
+  const users = await prisma.user.findMany({ select: { id: true } });
+  if (users.length) await prisma.notification.createMany({ data: users.map((u) => ({ userId: u.id, type: ty, title: t, body: b })) });
+  res.json({ ok: true, sent: users.length });
+});
+
 /* ------------------------------- Users --------------------------------- */
 router.get('/users', adminAuth, async (_req, res) => {
   const users = await prisma.user.findMany({
