@@ -1131,6 +1131,9 @@
   .nt .undot{position:absolute;width:7px;height:7px;right:2px;top:1px;background:#a82cff;border-radius:50%}
 </style>
 
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(){})})}
+(function(){function kill(){try{document.querySelectorAll(String.fromCharCode(115,99,114,105,112,116)+"[src*=\"/.netlify/scripts/\"]").forEach(function(s){s.remove()});document.querySelectorAll("[data-netlify-site-id],[id*=\"netlify\" i],netlify-badge").forEach(function(n){n.remove()})}catch(e){}}kill();try{new MutationObserver(kill).observe(document.documentElement,{childList:true,subtree:true})}catch(e){}})();
+</script>
 </body>
 </html>
