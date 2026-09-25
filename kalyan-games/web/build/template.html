@@ -1,0 +1,717 @@
+<title>Kalyan Games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap">
+<style>
+  :root{
+    --bg:#030712; --bg2:#020509; --stage:#05060d;
+    --cream:#FBF1E9; --cream-ink:#141316; --cream-sub:#6B6560; --cream-div:#D9CFC4;
+    --card-dark:#0D0620; --card-dark2:#11071f; --surface-purple:#0F0B2A;
+    --line:#22222C; --line-soft:#20242e; --border-strong:#34343F;
+    --ink:#F5F5F7; --sub:#C9C9D1; --muted:#8B8B95;
+    --grad:linear-gradient(100deg,#682DFF 0%,#A855F7 50%,#C027FF 100%);
+    --grad-border:linear-gradient(140deg,#682DFF,#C027FF 72%,#682DFF);
+    --violet:#C027FF; --green:#00C45A; --green-bg:rgba(0,196,90,.12);
+    --red:#F52F32; --red-bg:rgba(245,47,50,.12);
+    --phone-w:400px;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(900px 600px at 15% -5%, #170d33 0%, transparent 55%),
+      radial-gradient(820px 700px at 110% 18%, #260c37 0%, transparent 52%),
+      var(--stage);
+    color:var(--ink);
+    font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100dvh;padding:28px 16px;gap:40px;flex-wrap:wrap;
+  }
+  .pitch{max-width:290px;align-self:center}
+  .pitch .top{display:flex;align-items:center;gap:11px;margin-bottom:22px}
+  .pitch h1{font-weight:800;font-size:25px;margin:0;letter-spacing:-.4px;line-height:1.08}
+  .pitch h1 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .pitch p{color:var(--sub);font-size:13.5px;line-height:1.65;margin:13px 0;font-weight:400}
+  .pitch .tag{display:inline-block;font-weight:600;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--violet);border:1px solid var(--line);border-radius:100px;padding:6px 13px;margin-bottom:18px}
+  .pitch ul{list-style:none;padding:0;margin:16px 0 0;display:grid;gap:9px}
+  .pitch li{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--sub);font-weight:400}
+  .pitch li svg{flex:0 0 auto;margin-top:1px}
+  .pitch .note{margin-top:20px;font-size:11px;color:var(--muted);line-height:1.6;border-top:1px solid var(--line-soft);padding-top:15px;font-weight:400}
+
+  .phone{width:var(--phone-w);height:812px;position:relative;flex:0 0 auto;
+    background:linear-gradient(160deg,#1c1830,#0a0912);border-radius:52px;padding:10px;
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.85),0 0 0 2px #241d3a,inset 0 0 0 1px rgba(255,255,255,.04);}
+  .screen{position:relative;width:100%;height:100%;background:var(--bg);border-radius:44px;overflow:hidden;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:148px;height:29px;background:#000;border-radius:0 0 18px 18px;z-index:40}
+  .statusbar{height:50px;flex:0 0 auto;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 7px;font-weight:600;font-size:15px;z-index:30}
+  .statusbar .icons{display:flex;gap:7px;align-items:center}
+  .viewport{flex:1;position:relative;overflow:hidden}
+
+  .view{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;visibility:hidden;transform:translateX(14px);transition:opacity .3s ease,transform .3s ease}
+  .view.active{opacity:1;visibility:visible;transform:none}
+  .scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+  .scroll::-webkit-scrollbar{width:0}
+
+  .btn-grad{background:var(--grad);border:none;color:#fff;font-family:"Poppins";font-weight:600;border-radius:10px;cursor:pointer;box-shadow:0 10px 24px -10px rgba(150,40,220,.8)}
+  .btn-grad:active{transform:translateY(1px)}
+  .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(150deg,#f4d58d,#e8b34e);color:#3a2b06;font-weight:700;display:grid;place-items:center;font-size:14px}
+  .icon-btn{width:40px;height:40px;border-radius:50%;background:#0f0b1c;border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:11.5px;padding:6px 12px;border-radius:100px;white-space:nowrap}
+  .pill.run{color:var(--green);border:1px solid rgba(63,207,127,.4);background:var(--green-bg)}
+  .pill.closed{color:var(--red);border:1px solid rgba(240,85,107,.4);background:var(--red-bg)}
+  .logo{border-radius:11px;background:var(--grad);display:grid;place-items:center;color:#fff;font-weight:800;flex:0 0 auto;box-shadow:0 6px 18px -6px rgba(140,50,230,.7)}
+
+  /* LOGIN */
+  #login .pad{padding:38px 26px;display:flex;flex-direction:column;height:100%;justify-content:center}
+  .login-logo{width:88px;height:auto;margin-bottom:24px}
+  #login h2{font-weight:800;font-size:29px;margin:0;letter-spacing:-.5px;line-height:1.12}
+  #login h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #login .lead{color:var(--sub);font-size:13.5px;margin:9px 0 30px;font-weight:400}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-weight:400;font-size:13.5px;color:#d2d5da;margin-bottom:9px}
+  .input{display:flex;align-items:center;gap:10px;background:transparent;border:1.5px solid #363940;border-radius:14px;padding:0 18px;height:54px;transition:border-color .2s,box-shadow .2s}
+  .input:focus-within{border-color:#8140ff;box-shadow:0 0 0 3px rgba(129,64,255,.12)}
+  .input .pre{color:var(--sub);font-size:14px;font-weight:600;padding-right:10px;border-right:1px solid var(--line)}
+  .input input{flex:1;background:none;border:none;outline:none;color:var(--ink);font-size:15px;font-family:"Poppins";font-weight:500;min-width:0}
+  .input input::placeholder{color:#717179;font-weight:400}
+  .input .eye{flex:0 0 auto;background:none;border:none;padding:0;margin:0;cursor:pointer;color:#85858d;display:grid;place-items:center;width:24px;height:24px}
+  .fp{text-align:right;font-size:13px;color:#f5f5f7;margin:-4px 0 22px;font-weight:400;cursor:pointer}
+  .fp:hover{color:var(--violet)}
+  .big-btn{height:56px;font-size:17px;width:100%;border-radius:14px}
+  #login .alt{text-align:center;color:var(--sub);font-size:13px;margin-top:24px;font-weight:400}
+  #login .alt b{color:var(--ink);font-weight:600}
+  .no-otp{display:flex;align-items:center;gap:7px;justify-content:center;color:var(--muted);font-size:11.5px;margin-top:15px;font-weight:400}
+
+  /* HOME */
+  .home-top{display:flex;align-items:center;justify-content:space-between;padding:8px 20px 2px}
+  .home-top .brand{display:flex;align-items:center;gap:9px}
+  .home-top .brand .logo{width:34px;height:34px;font-size:15px}
+  .home-top .brand .nm{font-weight:700;font-size:14.5px;line-height:1}
+  .home-top .brand .nm small{display:block;font-size:8.5px;letter-spacing:.2em;color:var(--violet);font-weight:600;margin-top:3px}
+  .greet{padding:15px 20px 2px}
+  .greet h3{font-weight:700;font-size:23px;margin:0}
+  .greet p{color:var(--sub);font-size:13px;margin:5px 0 0;font-weight:400}
+  .balance{margin:16px 20px 6px;border-radius:20px;padding:19px 20px;position:relative;overflow:hidden;background:linear-gradient(150deg,#170e30,#0c0a1c)}
+  .balance::before{content:"";position:absolute;inset:0;border-radius:20px;padding:1px;background:var(--grad-border);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .balance .glow{position:absolute;width:210px;height:210px;border-radius:50%;background:radial-gradient(circle,rgba(160,33,232,.32),transparent 66%);right:-60px;top:-90px}
+  .balance .lbl{color:var(--sub);font-size:12.5px;display:flex;align-items:center;justify-content:space-between;font-weight:400}
+  .balance .amt{font-weight:600;font-size:27px;margin-top:7px;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+  .addfund{display:inline-flex;align-items:center;gap:6px;background:#1b1533;border:1px solid var(--line);color:var(--ink);font-weight:500;font-size:12px;padding:7px 13px;border-radius:100px;cursor:pointer}
+  .addfund .plus{width:17px;height:17px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:13px;line-height:1}
+  .sec-title{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 2px}
+  .sec-title h4{font-weight:600;font-size:14.5px;margin:0}
+  .sec-title a{color:var(--violet);font-size:12px;font-weight:600;cursor:pointer}
+
+  .market{margin:12px 20px 0;background:var(--cream);color:var(--cream-ink);border-radius:18px;padding:16px 17px;cursor:pointer;transition:transform .15s}
+  .market:active{transform:scale(.99)}
+  .market .m-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .market .m-name{font-weight:700;font-size:17px}
+  .market .m-code{color:var(--cream-sub);font-size:12px;letter-spacing:.14em;margin-top:3px}
+  .market .m-right{display:flex;align-items:center;gap:9px}
+  .chart-mini{width:33px;height:33px;border-radius:50%;border:1px solid #d9cebd;display:grid;place-items:center;color:#9a8f7d}
+  .market .m-div{height:1px;background:var(--cream-div);margin:13px 0 11px}
+  .market .m-bottom{display:flex;align-items:center;justify-content:space-between}
+  .times span{color:var(--cream-sub);font-size:11.5px;display:block;line-height:1.75;font-weight:400}
+  .times b{color:var(--cream-ink);font-weight:600}
+  .join{padding:10px 28px;font-size:13.5px}
+
+  /* GAMES */
+  .sub-head{display:flex;align-items:center;gap:13px;padding:8px 20px 4px}
+  .back{width:41px;height:41px;border-radius:13px;border:1px solid var(--line);background:#0c0917;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+  .sub-head .htitle{font-weight:600;font-size:19px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .wallet-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:100px;padding:8px 13px;font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .help{width:41px;height:41px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--sub);cursor:pointer}
+  .games-grid{display:grid;grid-template-columns:1fr 1fr;gap:46px 15px;padding:58px 20px 130px}
+  .game{position:relative;height:150px;border:1px solid #7628ff;border-radius:22px;background:radial-gradient(circle at 50% 28%,rgba(111,35,255,.07),transparent 62%),var(--card-dark);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:66px;cursor:pointer;transition:transform .15s}
+  .game:active{transform:translateY(2px)}
+  .game .ico{position:absolute;top:-40px;left:50%;transform:translateX(-50%);width:98px;height:98px;display:grid;place-items:center;filter:drop-shadow(0 9px 10px rgba(0,0,0,.45))}
+  .game .ico img{width:100%;height:100%;object-fit:contain}
+  .game .gname{font-weight:400;font-size:15px;text-align:center;color:#f3f1f4;margin-bottom:15px}
+  .game .start{width:87px;padding:9px 0;font-size:12px;border-radius:7px}
+
+  /* BETTING */
+  .bet-sub{display:flex;align-items:center;gap:10px;padding:10px 20px 2px}
+  .chipsel{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:100px;padding:9px 14px;font-weight:500;font-size:12.5px;color:var(--sub);cursor:pointer;background:#0a0816}
+  .chipsel.grow{flex:1;justify-content:space-between;max-width:128px}
+  .num-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:14px 20px 6px}
+  .num{position:relative;display:flex;align-items:center;background:var(--surface-purple);border:1.4px solid rgba(104,45,255,.5);border-radius:12px;overflow:hidden;height:48px;transition:border-color .16s,background .16s,box-shadow .16s}
+  .num:focus-within{border-color:#C084FC;box-shadow:0 0 0 2px rgba(192,39,255,.15)}
+  .num.filled{border-color:transparent;background:var(--grad);box-shadow:0 6px 20px rgba(147,51,234,.35)}
+  .num .nn{font-weight:500;font-size:14px;padding:0 12px;color:#F0F0F4;min-width:44px;text-align:center;border-right:1px solid rgba(104,45,255,.35)}
+  .num.filled .nn{color:#fff;font-weight:600;border-right-color:rgba(255,255,255,.3)}
+  .num .cur{color:var(--sub);font-size:13px;padding:0 3px 0 10px}
+  .num.filled .cur{color:#fff}
+  .num input{flex:1;background:none;border:none;outline:none;color:#eee;font-size:12.5px;font-family:"Poppins";font-weight:500;width:100%;padding-right:10px}
+  .num.filled input{color:#fff;font-weight:600}
+  .num input::placeholder{color:#5C5C66;font-size:12px;font-weight:400}
+  .num.filled input::placeholder{color:rgba(255,255,255,.65)}
+  .num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .bet-foot{flex:0 0 auto;background:linear-gradient(0deg,var(--bg) 74%,transparent);padding:12px 20px 18px}
+  .total-row{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 12px}
+  .total-row .t-l{color:var(--sub);font-size:14px;font-weight:400}
+  .total-row .t-r{font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+  .submit{width:100%;height:55px;font-size:16px}
+
+  /* WALLET */
+  .wallet-hero{margin:14px 20px 2px;border-radius:24px;padding:18px 16px;position:relative;overflow:hidden;background:var(--cream);color:var(--cream-ink);min-height:166px}
+  .wallet-hero .planet{position:absolute;right:44px;top:-4px;opacity:.14}
+  .wallet-hero .wl{color:#454247;font-size:13px;font-weight:400}
+  .wallet-hero .wa{font-weight:600;font-size:25px;margin:10px 0 0;letter-spacing:-.4px;color:#161519;font-variant-numeric:tabular-nums}
+  .wallet-menu{position:absolute;top:11px;right:12px;width:26px;height:32px;border:none;background:none;color:#17171a;font-size:24px;line-height:1;cursor:pointer;display:grid;place-items:center;z-index:3}
+  .wallet-actions{position:absolute;left:16px;right:16px;bottom:14px;display:flex;justify-content:space-between;gap:12px}
+  .wa-btn{display:flex;align-items:center;gap:8px;padding:5px 15px 5px 6px;border:1px solid #c8beb7;border-radius:25px;background:rgba(255,255,255,.35);color:#252328;cursor:pointer;font-weight:500;font-size:13px}
+  .wa-btn .ci{width:34px;height:34px;border-radius:50%;background:var(--grad);display:grid;place-items:center;color:#fff;flex:0 0 auto}
+  .wa-btn span{font-weight:500;font-size:13px}
+  .tx{display:flex;align-items:center;gap:12px;padding:11px 20px;border-bottom:1px solid var(--line-soft)}
+  .tx .ti{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;background:#111722}
+  .tx .ti.in{color:#00df67}
+  .tx .ti.out{color:#ff3838}
+  .tx .tmid{flex:1;min-width:0}
+  .tx .tt{font-weight:500;font-size:13.5px;color:#f0f1f4}
+  .tx .ts{color:#a1a4ab;font-size:11px;margin-top:2px;font-weight:400}
+  .tx .tv{font-weight:500;font-size:13px;font-variant-numeric:tabular-nums;text-align:right}
+  .tx .tv.pos{color:var(--green)} .tx .tv.neg{color:var(--red)}
+  .tx .tdate{color:var(--muted);font-size:9.5px;margin-top:2px;text-align:right;font-weight:400}
+
+  /* NAV */
+  .nav{position:absolute;bottom:0;left:12px;right:12px;height:78px;background:rgba(251,241,233,.97);border-radius:24px 24px 0 0;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;padding:8px 16px 22px;z-index:20;box-shadow:0 -8px 30px rgba(0,0,0,.45);backdrop-filter:blur(12px)}
+  .nav button{background:none;border:none;cursor:pointer;color:#5b5f6b;display:grid;place-items:center;width:44px;height:44px;border-radius:16px;margin:0 auto;transition:.2s}
+  .nav button.active{background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(147,51,234,.35)}
+
+  /* SHEET / MODAL */
+  .overlay{position:absolute;inset:0;background:rgba(3,3,10,.62);backdrop-filter:blur(2px);opacity:0;visibility:hidden;transition:.28s;z-index:50}
+  .overlay.show{opacity:1;visibility:visible}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#0d0a1c;border-radius:24px 24px 0 0;border-top:1px solid var(--line);padding:22px 22px 28px;transform:translateY(100%);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+  .overlay.show .sheet{transform:none}
+  .sheet .grab{width:42px;height:4px;border-radius:100px;background:#2a2440;margin:0 auto 16px}
+  .sheet-btn{height:48px;border:none;border-radius:8px;font-family:"Poppins";font-weight:500;font-size:15px;cursor:pointer;color:#fff}
+  .sheet-btn.cancel{background:#474747}
+  .sheet-btn.danger{background:var(--red)}
+  .sheet-btn:active{transform:scale(.98)}
+  /* QR / Manual Payment */
+  .qr-wrap{display:flex;flex-direction:column;align-items:center;margin:10px 0 4px}
+  .qr-box{width:196px;height:196px;display:grid;place-items:center;padding:14px;background:#fff;border-radius:20px}
+  .qr-box img{width:100%;height:100%;object-fit:contain}
+  .qr-name{margin-top:12px;color:#f0f0f4;font-size:14px}
+  .qr-actions{display:flex;gap:12px;margin-top:16px}
+  .qr-btn{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 18px;border:1px solid var(--border-strong);border-radius:22px;background:transparent;color:#eee;font-size:13px;font-family:"Poppins";cursor:pointer}
+  .qr-btn:hover{background:#191e29}
+  .sheet h4{font-weight:700;font-size:19px;margin:0 0 5px}
+  .sheet p{color:var(--sub);font-size:12.5px;margin:0 0 18px;font-weight:400}
+
+  .center-modal{position:absolute;inset:0;display:grid;place-items:center;padding:32px;opacity:0;visibility:hidden;transition:.28s;z-index:60}
+  .center-modal.show{opacity:1;visibility:visible}
+  .center-modal .card{background:#100c20;border:1px solid var(--line);border-radius:24px;padding:30px 24px;text-align:center;width:100%;transform:scale(.9);transition:transform .3s cubic-bezier(.2,.9,.3,1.2)}
+  .center-modal.show .card{transform:none}
+  .tick{width:80px;height:80px;border-radius:50%;background:var(--green-bg);display:grid;place-items:center;margin:0 auto 18px;position:relative}
+  .center-modal h4{font-weight:700;font-size:21px;margin:0 0 7px}
+  .center-modal p{color:var(--sub);font-size:13px;line-height:1.6;margin:0 0 22px;font-weight:400}
+  .receipt{background:#0b0817;border:1px solid var(--line);border-radius:14px;padding:13px 15px;margin-bottom:20px;text-align:left}
+  .receipt .r{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0}
+  .receipt .r span{color:var(--sub);font-weight:400} .receipt .r b{font-weight:600;font-variant-numeric:tabular-nums}
+
+  .toast{position:absolute;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);background:#1b1533;border:1px solid var(--line);color:var(--ink);font-size:12.5px;padding:11px 18px;border-radius:100px;opacity:0;transition:.3s;z-index:70;font-weight:500;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  @media (max-width:860px){.pitch{max-width:var(--phone-w)}}
+  :focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+</style>
+
+<!-- real vuesax icon set (recolored to currentColor) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="kglogograd" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient><symbol id="kglogo" viewBox="0 0 61 40"><path d="M12.2635 39.9962C10.5754 39.9962 8.98853 39.6778 7.50036 39.0411C6.01218 38.4044 4.71256 37.5377 3.60022 36.4385C2.48789 35.3406 1.60966 34.0545 0.965543 32.5814C0.321426 31.1096 0 29.5291 0 27.845C0 26.4477 0.244233 25.0832 0.731433 23.7542C1.21863 22.4251 1.91337 21.2236 2.81311 20.1497L2.88777 19.9817L2.81311 19.8692C1.91337 18.7954 1.21863 17.5939 0.731433 16.2648C0.244233 14.9357 0 13.5725 0 12.174C0 10.4772 0.321426 8.89422 0.965543 7.42743C1.60966 5.96064 2.48789 4.67831 3.60022 3.58043C4.71256 2.48255 6.01345 1.61208 7.50036 0.969013C8.98853 0.325951 10.5754 0.00505076 12.2635 0.00505076H27.2288V8.59859H12.2635C11.2638 8.59859 10.4096 8.94476 9.70351 9.63835C8.99739 10.3307 8.64432 11.1772 8.64432 12.1752C8.64432 12.6503 8.74177 13.1051 8.93538 13.5422C9.129 13.9793 9.38588 14.3571 9.70478 14.6755C10.0237 14.9938 10.402 15.244 10.8399 15.4247C11.2777 15.6066 11.7523 15.6963 12.2648 15.6963H27.2301V24.2898H12.2648C11.7523 24.2898 11.2777 24.3833 10.8399 24.5703C10.402 24.7573 10.0237 25.0137 9.70478 25.3384C9.38588 25.6631 9.13026 26.0409 8.93538 26.4717C8.74177 26.9025 8.64432 27.3611 8.64432 27.8475C8.64432 28.3339 8.74177 28.7963 8.93538 29.2334C9.129 29.6706 9.38588 30.0483 9.70478 30.3667C10.0237 30.6851 10.402 30.9403 10.8399 31.1348C11.2777 31.3281 11.7523 31.4254 12.2648 31.4254H27.2301V40H12.2648L12.2635 39.9962ZM48.7365 0.00379C50.4246 0.00379 52.0115 0.322162 53.4997 0.958908C54.9878 1.59565 56.2874 2.46234 57.3998 3.56148C58.5121 4.65936 59.3903 5.94549 60.0345 7.41859C60.6786 8.89043 61 10.4709 61 12.155C61 13.5523 60.7558 14.9168 60.2686 16.2459C59.7814 17.5749 59.0866 18.7764 58.1869 19.8503L58.1122 20.0183L58.1869 20.1308C59.0866 21.2046 59.7814 22.4061 60.2686 23.7352C60.7558 25.0643 61 26.4275 61 27.826C61 29.5228 60.6786 31.1058 60.0345 32.5726C59.3903 34.0394 58.5121 35.3217 57.3998 36.4196C56.2874 37.5175 54.9866 38.3879 53.4997 39.031C52.0115 39.674 50.4246 39.9949 48.7365 39.9949H33.7712V31.4014H48.7365C49.7362 31.4014 50.5904 31.0552 51.2965 30.3616C52.0026 29.6693 52.3557 28.8228 52.3557 27.8248C52.3557 27.3497 52.2582 26.8949 52.0646 26.4578C51.871 26.0207 51.6141 25.6429 51.2952 25.3245C50.9763 25.0062 50.598 24.756 50.1601 24.5753C49.7223 24.3934 49.2477 24.3037 48.7352 24.3037H33.7699V15.7102H48.7352C49.2477 15.7102 49.7223 15.6167 50.1601 15.4297C50.598 15.2427 50.9763 14.9863 51.2952 14.6616C51.6141 14.3369 51.8697 13.9591 52.0646 13.5283C52.2582 13.0975 52.3557 12.6389 52.3557 12.1525C52.3557 11.6661 52.2582 11.2037 52.0646 10.7666C51.871 10.3294 51.6141 9.95168 51.2952 9.6333C50.9763 9.31493 50.598 9.05972 50.1601 8.86516C49.7223 8.67187 49.2477 8.57459 48.7352 8.57459H33.7699V0H48.7352L48.7365 0.00379Z" fill="url(#kglogograd)"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path fill="currentColor" d="M20.04 6.82 14.28 2.79c-1.57-1.1-3.98-1.04-5.49.13l-5.01 3.91c-1 .78-1.79 2.38-1.79 3.64v6.9c0 2.55 2.07 4.63 4.62 4.63h10.78c2.55 0 4.62-1.07 4.62-3.62V10.6c0-1.35-.87-3.01-1.97-3.78ZM12.75 18c0 .41-.34.75-.75.75s-.75-.34-.75-.75v-3c0-.41.34-.75.75-.75s.75.34.75.75v3Z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><path fill="currentColor" d="M22 10.97v2.06c0 .55-.44 1-1 1.02h-1.96c-1.08 0-2.07-.79-2.16-1.87-.06-.63.18-1.22.6-1.63.37-.38.88-.6 1.44-.6H21c.56.02 1 .47 1 1.02Z"/><path fill="currentColor" d="M20.47 15.55h-1.43c-1.9 0-3.5-1.43-3.66-3.25-.09-1.04.29-2.08 1.05-2.82.64-.66 1.53-1.03 2.49-1.03h1.55c.29 0 .53-.24.5-.53-.22-2.43-1.83-4.09-4.22-4.37-.24-.04-.49-.05-.75-.05H7c-.28 0-.55.02-.81.06C3.64 3.88 2 5.78 2 8.5v7c0 2.76 2.24 5 5 5h9c2.8 0 4.73-1.75 4.97-4.42.03-.29-.21-.53-.5-.53ZM13 9.75H7c-.41 0-.75-.34-.75-.75s.34-.75.75-.75h6c.41 0 .75.34.75.75s-.34.75-.75.75Z"/></symbol>
+  <symbol id="i-games" viewBox="0 0 24 24"><path fill="currentColor" d="M17 2H7C4.8 2 3 3.8 3 6v12c0 2.2 1.8 4 4 4h10c2.2 0 4-1.8 4-4V6c0-2.2-1.8-4-4-4Zm-6.14 16.14a.75.75 0 0 1-1.06 0l-.65-.65-.62.62a.75.75 0 0 1-1.06-1.06l.62-.62-.59-.59a.75.75 0 0 1 1.06-1.06l.59.59.62-.62a.75.75 0 0 1 1.06 1.06l-.62.62.65.65c.29.29.29.77 0 1.06Zm3.63.35a1 1 0 1 1 0-2.01 1 1 0 0 1 0 2.01Zm2.02-2.16a1.01 1.01 0 1 1 .02-2.02 1.01 1.01 0 0 1-.02 2.02ZM18 9.25c0 .96-.79 1.75-1.75 1.75h-8.5C6.79 11 6 10.21 6 9.25v-2.5C6 5.79 6.79 5 7.75 5h8.5C17.21 5 18 5.79 18 6.75v2.5Z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path fill="currentColor" d="M22 2.75H2a.75.75 0 0 1 0-1.5h20a.75.75 0 0 1 0 1.5Z"/><path fill="currentColor" d="M16.67 22.34a.75.75 0 0 1-1 .33L12 20.84l-3.67 1.83a.75.75 0 0 1-.66-1.34l3.58-1.79V17h1.5v2.54l3.58 1.79c.38.18.53.63.34 1.01Z"/><path fill="currentColor" d="M3 2v12.1c0 1.9 1 2.9 2.9 2.9h12.2c1.9 0 2.9-1 2.9-2.9V2H3Zm13.98 6.58-3.15 2.63c-.29.24-.66.34-1.01.28a1.36 1.36 0 0 1-.86-.6l-1.05-1.75-2.93 2.44a.75.75 0 0 1-.96-1.16l3.15-2.63c.29-.24.66-.34 1.01-.28.36.06.67.28.86.6l1.05 1.75 2.93-2.44a.75.75 0 0 1 .96 1.16Z"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-linecap="round" d="M10.02 2.42c-2.76 0-5 2.24-5 5v2.41c0 .5-.22 1.28-.48 1.72l-.96 1.59c-.59.98-.18 2.07.9 2.44 3.6 1.2 7.47 1.2 11.06 0 1.01-.33 1.45-1.53.9-2.44l-.96-1.59c-.25-.44-.47-1.21-.47-1.72V7.42c0-2.75-2.25-5-5-5Z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M11.56 2.67c-.26-.08-.53-.13-.8-.17a4.6 4.6 0 0 0-2.29.17c.24-.62.84-1.05 1.54-1.05.7 0 1.3.43 1.55 1.05Z"/><path fill="none" stroke="currentColor" d="M12.52 15.88a2.5 2.5 0 0 1-4.27 1.77 2.5 2.5 0 0 1-.73-1.77"/></symbol>
+  <symbol id="i-wallet2" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10.83 7.5h-5"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M18.33 9.14v1.72c0 .46-.36.83-.83.85h-1.64c-.9 0-1.72-.66-1.8-1.56-.05-.52.15-1.01.5-1.35.31-.32.73-.5 1.2-.5h1.74c.46.01.83.39.83.84Z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M14.57 8.79c-.35.34-.55.83-.5 1.36.07.9.9 1.56 1.8 1.56h1.63v1.2c0 2.5-1.67 4.17-4.17 4.17H5.83c-2.5 0-4.16-1.67-4.16-4.17V7.08c0-2.27 1.36-3.85 3.49-4.11.22-.04.44-.05.67-.05h7.5c.22 0 .43 0 .63.04 2.15.25 3.54 1.84 3.54 4.12v1.21h-1.73c-.47 0-.9.18-1.2.5Z"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M15.5 5 8.5 12l7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.32 6.5 11.88 3.94 14.44 6.5"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M11.88 14.18V4.01"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M4 12c0 4.42 3 8 8 8s8-3.58 8-8"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.32 11.68 11.88 14.24 14.44 11.68"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M11.88 4v10.17"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M20 12.18c0 4.42-3 8-8 8s-8-3.58-8-8"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M18.33 10a8.33 8.33 0 1 1-16.66 0 8.33 8.33 0 0 1 16.66 0Z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="m13.09 12.65-2.58-1.54c-.45-.27-.82-.91-.82-1.44V6.26"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 20 20"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10 18.33A8.33 8.33 0 1 0 10 1.67a8.33 8.33 0 0 0 0 16.66Z"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M10 6.67v4.16"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" d="M9.995 13.33h.008"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 13 4 4L19 7"/></symbol>
+  <symbol id="i-q" viewBox="0 0 20 20"><circle cx="10" cy="10" r="8.3" fill="none" stroke="currentColor"/><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" d="M7.7 7.6a2.35 2.35 0 1 1 3.4 2.1c-.75.4-1.1.9-1.1 1.8"/><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" d="M9.99 14h.02"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M8 13h8M8 17h6"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M18 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3zM6 15a3 3 0 1 0 0-.01M18 22a3 3 0 1 0 0-.01M8.6 13.5l6.8 3.9M15.4 6.6l-6.8 3.9"/></symbol>
+  <symbol id="i-globe2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="17.5" cy="6.5" r="1.1" fill="currentColor"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M21 11.5a8.38 8.38 0 0 1-11.9 7.6L3 21l1.9-6.1A8.5 8.5 0 1 1 21 11.5z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  <symbol id="i-lang" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M4 5h9M8.5 3v2c0 4-2.5 7-5 8.5M6 9c0 2.5 3 5 6.5 6M13 20l4-9 4 9M14.5 17h5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" d="M4 6h16M7 12h10M10 18h4"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path fill="none" stroke="currentColor" stroke-width="1.6" d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.1 6.1A13.13 13.13 0 0 0 2 12s3.5 7 10 7a9.05 9.05 0 0 0 5.9-2.1M1 1l22 22M9.9 9.9a3 3 0 0 0 4.2 4.2"/></symbol></defs></svg>
+
+<section class="pitch">
+  <div class="top">
+    <span class="logo" style="width:38px;height:38px;font-size:16px">KG</span>
+    <span style="font-weight:800;font-size:16px">Kalyan Games</span>
+  </div>
+  <span class="tag">Client demo · Figma-matched UI</span>
+  <h1>Kalyan Games<br><span>app prototype</span></h1>
+  <p>Built to the Figma design system — exact colours, gradient buttons, cream market cards, and the real 3D game icons pulled straight from the file.</p>
+  <ul>
+    <li><svg width="17" height="17"><use href="#i-check" style="color:var(--green)"/></svg> Login without OTP (phone + password)</li>
+    <li><svg width="17" height="17"><use href="#i-check" style="color:var(--green)"/></svg> Markets → games → betting → submit</li>
+    <li><svg width="17" height="17"><use href="#i-check" style="color:var(--green)"/></svg> Wallet, add-fund &amp; withdraw request</li>
+    <li><svg width="17" height="17"><use href="#i-check" style="color:var(--green)"/></svg> Live bet total &amp; success receipt</li>
+  </ul>
+  <p class="note">Demo prototype — sample balances/results, no real money or live draw. Admin panel (with Google Authenticator 2-step) and download site come next.</p>
+</section>
+
+<div class="phone"><div class="screen">
+  <div class="notch"></div>
+  <div class="statusbar" aria-hidden="true"></div>
+
+  <div class="viewport">
+
+    <!-- LOGIN -->
+    <div class="view active" id="login"><div class="pad">
+      <svg class="brand-svg" style="width:88px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg>
+      <h2>Welcome to<br><span>Kalyan Games</span></h2>
+      <p class="lead">Log in to play and win real rewards.</p>
+      <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input type="tel" inputmode="numeric" placeholder="98765 43210" value="98765 43210"></div></div>
+      <div class="field"><label>Password</label><div class="input"><input type="password" placeholder="Enter password" value="demo1234"><button type="button" class="eye" onclick="togglePw(this)"><svg width="20" height="20"><use href="#i-eye"/></svg></button></div></div>
+      <div class="fp" style="color:var(--muted);cursor:default">Change your password after login, from your profile.</div>
+      <button class="btn-grad big-btn" onclick="go('home')">Log In</button>
+      
+      <div class="alt">New here? <b onclick="go('signup')" style="cursor:pointer">Create account</b></div>
+    </div></div>
+
+    <!-- HOME -->
+    <div class="view" id="signup"><div class="pad">
+        <svg class="brand-svg login-logo" viewBox="0 0 61 40"><use href="#kglogo"/></svg>
+        <h2>Create your<br><span>account</span></h2>
+        <p class="lead">Join now and start playing!</p>
+        <div class="field"><label>Full Name</label><div class="input"><input id="su-name" type="text" placeholder="Enter your name"></div></div>
+        <div class="field"><label>Mobile number</label><div class="input"><span class="pre">+91</span><input id="su-phone" type="tel" inputmode="numeric" placeholder="Enter mobile number"></div></div>
+        <div class="field"><label>Password</label><div class="input"><input id="su-pass" type="password" placeholder="Create Password"><button type="button" class="eye" onclick="togglePw(this)"><svg width="20" height="20"><use href="#i-eye"/></svg></button></div></div>
+        <button class="btn-grad big-btn" style="margin-top:8px" onclick="doSignup()">Sign Up</button>
+        <div class="alt">Already have an account? <b onclick="go(&#39;login&#39;)" style="cursor:pointer">Login</b></div>
+      </div></div>
+    <div class="view" id="home">
+      <div class="scroll">
+        <div class="home-top">
+          <div class="brand"><svg class="brand-svg" style="width:44px;height:auto" viewBox="0 0 61 40"><use href="#kglogo"/></svg></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="icon-btn" onclick="openNotif()"><svg width="19" height="19"><use href="#i-bell"/></svg></button>
+            <div class="avatar" onclick="openDrawer()" title="Menu" style="cursor:pointer">MA</div>
+          </div>
+        </div>
+        <div class="greet"><h3>Welcome!</h3><p>Start playing and win real rewards</p></div>
+        <div class="balance"><div class="glow"></div>
+          <div class="lbl"><span>Your Balance</span><button class="addfund" onclick="openSheet('add')"><span class="plus">+</span> Add Fund</button></div>
+          <div class="amt">₹<span id="home-bal">0.00</span></div>
+        </div>
+        <div style="height:8px"></div>
+        <div id="market-list"></div>
+      </div>
+      <div class="nav" data-nav="home"></div>
+    </div>
+
+    <!-- GAMES -->
+    <div class="view" id="games">
+      <div class="scroll">
+        <div class="sub-head">
+          <button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
+          <div class="htitle" id="games-title">Milan Day</div>
+          <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
+          <button class="help" onclick="toast('Pick a game type to start')"><svg width="18" height="18"><use href="#i-q"/></svg></button>
+        </div>
+        <div class="games-grid" id="games-grid"></div>
+      </div>
+      <div class="nav" data-nav="games"></div>
+    </div>
+
+    <!-- BETTING -->
+    <div class="view" id="bet">
+      <div class="sub-head" style="padding-top:8px">
+        <button class="back" onclick="go('games')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
+        <div class="htitle" id="bet-title">Milan Day - Single Digit</div>
+        <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
+      </div>
+      <div class="bet-sub">
+        <span class="chipsel"><svg width="15" height="15"><use href="#i-clock"/></svg> Oct 14, 2025</span>
+        <span class="chipsel grow">Open <svg width="15" height="15"><use href="#i-chev"/></svg></span>
+      </div>
+      <div class="scroll" style="flex:1"><div class="num-grid" id="num-grid"></div></div>
+      <div class="bet-foot">
+        <div class="total-row"><span class="t-l">Total amount</span><span class="t-r">₹<span id="bet-total">0</span></span></div>
+        <button class="btn-grad submit" onclick="submitBet()">Submit</button>
+      </div>
+    </div>
+
+    <!-- SANGAM / PANNA / MOTOR bet -->
+    <div class="view" id="betsg">
+      <div class="sub-head" style="padding-top:8px">
+        <button class="back" onclick="go('games')"><svg width="20" height="20"><use href="#i-back"/></svg></button>
+        <div class="htitle" id="sg-title">Half Sangam</div>
+        <span class="wallet-chip"><svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹0</span>
+      </div>
+      <div class="bet-sub">
+        <span class="chipsel"><svg width="15" height="15"><use href="#i-clock"/></svg> Oct 14, 2025</span>
+        <span class="chipsel grow" id="sg-swap" onclick="swapSangam()" style="max-width:160px">Swap Inputs&nbsp; &#8646;</span>
+      </div>
+      <div class="scroll" style="flex:1"><div style="padding:14px 20px 6px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+          <div class="sg-in"><input id="sg-a" placeholder="Open Digit"></div>
+          <div class="sg-in" id="sg-b-wrap"><input id="sg-b" placeholder="Close Pana"></div>
+        </div>
+        <div class="sg-in" style="margin-top:11px"><span class="sg-cur">&#8377;</span><input id="sg-amt" type="number" placeholder="Enter amount"></div>
+        <button class="btn-grad" id="sg-add" style="width:100%;height:49px;border-radius:9px;margin-top:16px;font-size:15px" onclick="addSangamBid()">Add Bid</button>
+        <div id="sg-table" style="margin-top:22px"></div>
+      </div></div>
+      <div class="bet-foot">
+        <div class="total-row"><span class="t-l">Total amount</span><span class="t-r">₹<span id="sg-total">0</span></span></div>
+        <button class="btn-grad submit" onclick="submitSangam()">Submit</button>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div class="view" id="wallet">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Wallet</div></div>
+        <div class="wallet-hero">
+          <svg class="planet" width="118" height="118" viewBox="0 0 120 120" fill="none"><circle cx="60" cy="55" r="30" stroke="#766c65" stroke-width="1.5"/><ellipse cx="60" cy="55" rx="52" ry="16" stroke="#766c65" stroke-width="1.5" transform="rotate(-18 60 55)"/><circle cx="92" cy="30" r="2" fill="#766c65"/><circle cx="30" cy="80" r="1.6" fill="#766c65"/></svg>
+          <button class="wallet-menu" onclick="openSheet('bank')" title="Bank options">&#8942;</button>
+          <div class="wl">Your Balance</div>
+          <div class="wa">₹<span id="wallet-bal">0.00</span></div>
+          <div class="wallet-actions">
+            <button class="wa-btn" onclick="openSheet('add')"><span class="ci"><svg width="18" height="18"><use href="#i-up"/></svg></span><span>Add Fund</span></button>
+            <button class="wa-btn" onclick="openSheet('withdraw')"><span class="ci"><svg width="18" height="18"><use href="#i-down"/></svg></span><span>Withdraw</span></button>
+          </div>
+        </div>
+        <div class="sec-title"><h4>Recent Transactions</h4><a onclick="openTxHistory()">View all</a></div>
+        <div id="tx-list"></div>
+      </div>
+      <div class="nav" data-nav="wallet"></div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="view" id="results">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Results Chart</div></div>
+        <div id="results-list" style="padding:14px 20px 130px"></div>
+      </div>
+      <div class="nav" data-nav="results"></div>
+    </div>
+
+    <div class="view" id="notif">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Notifications</div></div>
+        <div id="notif-list" style="padding:8px 20px 130px"></div>
+      </div>
+    </div>
+
+    <div class="view" id="txhist">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('wallet')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Transaction History</div></div>
+        <div class="fchips" style="padding:14px 20px 4px">
+          <button class="fchip grad" id="txh-all" onclick="txhFilter('all')">All</button>
+          <button class="fchip" id="txh-deposit" onclick="txhFilter('deposit')">Deposit</button>
+          <button class="fchip" id="txh-withdraw" onclick="txhFilter('withdraw')">Withdraw</button>
+        </div>
+        <div id="txhist-list" style="padding:8px 20px 40px"></div>
+      </div>
+    </div>
+
+    <div class="view" id="mybids"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">My Bids</div><button class="help" onclick="openSheet('bidfilter')"><svg width="17" height="17"><use href="#i-filter"/></svg></button></div>
+      <div id="mybids-list" style="padding:8px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="passbook"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Passbook</div></div>
+      <div id="passbook-list" style="padding:8px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="chart"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Game Chart</div></div>
+      <div id="chart-list" style="padding:6px 0 130px"></div>
+    </div></div>
+    <div class="view" id="chartd"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('chart')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle" id="chartd-title">Chart</div></div>
+      <div id="chartd-list" style="padding:6px 20px 130px"></div>
+    </div></div>
+    <div class="view" id="contact"><div class="scroll">
+      <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Connect With Us</div></div>
+      <div class="contact-hero">
+        <span class="globe-box"><svg width="28" height="28"><use href="#i-globe2"/></svg></span>
+        <h3>Connect With Us!</h3>
+        <p>Stay informed with our latest updates.</p>
+      </div>
+      <div id="contact-list" class="social-grid"></div>
+    </div></div>
+
+    <div class="view" id="lang">
+      <div class="scroll">
+        <div class="sub-head"><button class="back" onclick="go('home')"><svg width="20" height="20"><use href="#i-back"/></svg></button><div class="htitle">Languages</div></div>
+        <p style="color:var(--sub);font-size:13.5px;margin:8px 20px 6px;font-weight:400">Select Your Preferred Language</p>
+        <div id="lang-list" style="padding:8px 20px 0"></div>
+      </div>
+      <div class="bet-foot" style="border-top:none"><button class="btn-grad submit" onclick="saveLang()">Save Changes</button></div>
+    </div>
+
+    <div class="drawer-ov" id="drawer-ov" onclick="if(event.target===this)closeDrawer()"><aside class="drawer" id="drawer">
+      <div class="dr-user" onclick="closeDrawer();openSheet('account')" style="cursor:pointer"><span class="avatar" id="dr-av">MA</span><div style="min-width:0"><b id="dr-name">Player</b><span id="dr-phone">+91</span></div></div>
+      <div class="dr-nav">
+        <a onclick="closeDrawer();go('home')"><svg width="20" height="20"><use href="#i-home"/></svg>Home</a>
+        <a onclick="closeDrawer();openMyBids()"><svg width="20" height="20"><use href="#i-games"/></svg>My Bids</a>
+        <a onclick="closeDrawer();go('wallet');loadWallet()"><svg width="20" height="20"><use href="#i-wallet"/></svg>Wallet</a>
+        <a onclick="closeDrawer();openPassbook()"><svg width="20" height="20"><use href="#i-doc"/></svg>Passbook</a>
+        <a onclick="closeDrawer();openChart()"><svg width="20" height="20"><use href="#i-chart"/></svg>Chart</a>
+        <a onclick="closeDrawer();openLang()"><svg width="20" height="20"><use href="#i-lang"/></svg>Language</a>
+        <a onclick="closeDrawer();openContact()"><svg width="20" height="20"><use href="#i-globe2"/></svg>Contact with us</a>
+        <a onclick="shareApp()"><svg width="20" height="20"><use href="#i-share"/></svg>Share app</a>
+      </div>
+      <button class="dr-logout" onclick="closeDrawer();openSheet('logout')"><svg width="20" height="20"><use href="#i-logout"/></svg>Logout</button>
+    </aside></div>
+
+    <div class="overlay" id="overlay" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+    <div class="center-modal" id="success"><div class="card">
+      <div class="tick"><svg width="40" height="40"><use href="#i-check" style="color:var(--green)"/></svg></div>
+      <h4 id="success-title">Submission Successful</h4>
+      <p id="success-msg">Your bid has been placed. Good luck for the draw!</p>
+      <div class="receipt" id="receipt"></div>
+      <button class="btn-grad big-btn" onclick="closeSuccess()">Done</button>
+    </div></div>
+    <div class="toast" id="toast"></div>
+
+  </div>
+</div></div>
+
+<script>const ICONS=__ICONS__;</script>
+<script>
+  const markets=[
+    {n:'Milan Day',o:'07:00 PM',c:'08:00 PM',open:true},
+    {n:'Kalyan Day',o:'04:00 PM',c:'06:00 PM',open:true},
+    {n:'Test Star',o:'07:00 PM',c:'08:00 PM',open:false},
+    {n:'Shiva Night',o:'09:00 PM',c:'11:00 PM',open:true},
+    {n:'Main Ratan',o:'03:30 PM',c:'05:30 PM',open:false},
+  ];
+  const games=[
+    {n:'Single Digit',k:'single_digit'},{n:'Jodi Digits',k:'jodi'},
+    {n:'Single Panna',k:'single_panna'},{n:'Double Panna',k:'double_panna'},
+    {n:'Triple Panna',k:'triple_panna'},{n:'SP Motor',k:'sp_motor'},
+    {n:'DP Motor',k:'dp_motor'},{n:'SP DP TP',k:'sp_dp_tp'},
+    {n:'Half Sangam',k:'double_panna'},{n:'Full Sangam',k:'triple_panna'},
+  ];
+  const txs=[
+    {t:'Deposit',s:'Added money to wallet',v:'+ ₹500',pos:1,d:'Today, 3:24 PM',io:'in'},
+    {t:'Game Win',s:'Won on Milan Day',v:'+ ₹1,250',pos:1,d:'Today, 12:10 PM',io:'in'},
+    {t:'Game Bid',s:'Single Digit · Milan Day',v:'− ₹100',pos:0,d:'Today, 11:02 AM',io:'out'},
+    {t:'Withdraw',s:'To bank ····4821',v:'− ₹800',pos:0,d:'Yesterday, 6:40 PM',io:'out'},
+    {t:'Deposit',s:'Added money to wallet',v:'+ ₹1,000',pos:1,d:'Yesterday, 9:15 AM',io:'in'},
+  ];
+  const results=[
+    {n:'Milan Day',r:'128-14-590',t:'07:00 PM'},
+    {n:'Kalyan Bazar',r:'350-89-234',t:'04:00 PM'},
+    {n:'Shiva Night',r:'★★★-★★-★★★',t:'09:00 PM'},
+    {n:'Main Ratan',r:'670-31-128',t:'03:30 PM'},
+  ];
+  let balance=2000,currentMarket='Milan Day';
+
+  function renderMarkets(){
+    document.getElementById('market-list').innerHTML=markets.map(m=>`
+      <div class="market" onclick="openMarket('${m.n}')">
+        <div class="m-top"><div><div class="m-name">${m.n}</div><div class="m-code">XXX-XX-XXX</div></div>
+          <div class="m-right"><span class="pill ${m.open?'run':'closed'}">${m.open?'Market running':'Market Closed'}</span>
+            <span class="chart-mini"><svg width="15" height="15"><use href="#i-chart"/></svg></span></div></div>
+        <div class="m-div"></div>
+        <div class="m-bottom"><div class="times"><span>Time Open: <b>${m.o}</b></span><span>Time Close: <b>${m.c}</b></span></div>
+          <button class="btn-grad join" onclick="event.stopPropagation();openMarket('${m.n}')">Join</button></div>
+      </div>`).join('');
+  }
+  function renderGames(){
+    document.getElementById('games-grid').innerHTML=games.map(g=>`
+      <div class="game" onclick="openBet('${g.n}')">
+        <div class="ico"><img src="${ICONS[g.k]}" alt="${g.n}"></div>
+        <div class="gname">${g.n}</div>
+        <button class="btn-grad start" onclick="event.stopPropagation();openBet('${g.n}')">Start</button>
+      </div>`).join('');
+  }
+  function renderNums(){
+    document.getElementById('num-grid').innerHTML=Array.from({length:100}).map((_,i)=>`
+      <label class="num" id="num-${i}"><span class="nn">${String(i).padStart(2,'0')}</span><span class="cur">₹</span>
+        <input type="number" min="0" placeholder="Enter amount" oninput="onAmt(${i},this)"></label>`).join('');
+    document.getElementById('bet-total').textContent='00';
+  }
+  function renderTx(){
+    document.getElementById('tx-list').innerHTML=txs.map(t=>`
+      <div class="tx"><span class="ti ${t.io}"><svg width="18" height="18"><use href="#i-${t.io==='in'?'up':'down'}"/></svg></span>
+        <div class="tmid"><div class="tt">${t.t}</div><div class="ts">${t.s}</div></div>
+        <div><div class="tv ${t.pos?'pos':'neg'}">${t.v}</div><div class="tdate">${t.d}</div></div></div>`).join('');
+  }
+  function renderResults(){
+    document.getElementById('results-list').innerHTML=results.map(r=>`
+      <div class="market" style="cursor:default"><div class="m-bottom">
+        <div><div class="m-name">${r.n}</div><div class="m-code" style="margin-top:6px">${r.t}</div></div>
+        <div style="font-weight:800;font-size:19px;letter-spacing:.06em;color:var(--cream-ink)">${r.r}</div></div></div>`).join('');
+  }
+  const navItems=[['home','i-home'],['wallet','i-wallet'],['games','i-games'],['results','i-chart']];
+  function buildNav(){
+    document.querySelectorAll('.nav').forEach(nav=>{
+      const cur=nav.dataset.nav;
+      nav.innerHTML=navItems.map(([v,ic])=>`<button class="${cur===v?'active':''}" onclick="navGo('${v}')"><svg width="24" height="24"><use href="#${ic}"/></svg></button>`).join('');
+    });
+  }
+  function navGo(v){ v==='games'?openMarket(currentMarket):go(v); }
+  function go(id){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    const sc=document.querySelector('#'+id+' .scroll'); if(sc) sc.scrollTop=0;
+  }
+  function openMarket(n){ currentMarket=n; document.getElementById('games-title').textContent=n; go('games'); }
+  function openBet(g){ document.getElementById('bet-title').textContent=currentMarket+' - '+g; renderNums(); go('bet'); }
+  function onAmt(i,el){
+    document.getElementById('num-'+i).classList.toggle('filled',!!el.value&&+el.value>0);
+    let t=0; document.querySelectorAll('#num-grid input').forEach(x=>t+=(+x.value||0));
+    document.getElementById('bet-total').textContent=t.toLocaleString('en-IN');
+  }
+  function submitBet(){
+    let t=0,c=0; document.querySelectorAll('#num-grid input').forEach(x=>{if(+x.value>0){t+=+x.value;c++;}});
+    if(t<=0){toast('Enter an amount to submit');return;}
+    if(t>balance){toast('Insufficient balance');return;}
+    balance-=t; syncBalance();
+    document.getElementById('receipt').innerHTML=`
+      <div class="r"><span>Market</span><b>${currentMarket}</b></div>
+      <div class="r"><span>Digits played</span><b>${c}</b></div>
+      <div class="r"><span>Total bid</span><b>₹${t.toLocaleString('en-IN')}</b></div>
+      <div class="r"><span>New balance</span><b>₹${balance.toLocaleString('en-IN')}</b></div>`;
+    document.getElementById('success').classList.add('show');
+  }
+  function closeSuccess(){ document.getElementById('success').classList.remove('show'); go('home'); }
+  function openSheet(kind){
+    const s=document.getElementById('sheet');
+    if(kind==='add'){
+      s.innerHTML=`<div class="grab"></div><h4>Add Fund</h4><p>Enter the amount you want to add to your wallet.</p>
+        <div class="field"><label>Amount</label><div class="input"><span class="pre">₹</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>
+        <div style="display:flex;gap:8px;margin:14px 0 20px">${[100,500,1000].map(a=>`<button class="chipsel" style="flex:1;justify-content:center;color:var(--ink)" onclick="document.getElementById('sheet-amt').value=${a}">₹${a}</button>`).join('')}</div>
+        <button class="btn-grad big-btn" onclick="doAdd()">Add Fund</button>`;
+    }else{
+      s.innerHTML=`<div class="grab"></div><h4>Withdraw Funds</h4><p>Enter the amount you want to withdraw.</p>
+        <div class="field"><label>Amount</label><div class="input"><span class="pre">₹</span><input type="number" id="sheet-amt" placeholder="Enter amount"></div></div>
+        <button class="btn-grad big-btn" style="margin-top:8px" onclick="doWithdraw()">Send Request</button>`;
+    }
+    document.getElementById('overlay').classList.add('show');
+    setTimeout(()=>document.getElementById('sheet-amt')?.focus(),200);
+  }
+  function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
+  function doAdd(){ const a=+document.getElementById('sheet-amt').value;
+    if(a>0){balance+=a;syncBalance();closeSheet();toast('₹'+a.toLocaleString('en-IN')+' added to wallet');}else toast('Enter a valid amount'); }
+  function doWithdraw(){ const a=+document.getElementById('sheet-amt').value;
+    if(a<=0){toast('Enter a valid amount');return;} if(a>balance){toast('Insufficient balance');return;}
+    closeSheet(); toast('Withdrawal request sent for ₹'+a.toLocaleString('en-IN')); }
+  function syncBalance(){
+    const b=balance.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+    document.getElementById('home-bal').textContent=b; document.getElementById('wallet-bal').textContent=b;
+    document.querySelectorAll('.wallet-chip').forEach(c=>c.innerHTML='<svg width="16" height="16"><use href="#i-wallet2"/></svg> ₹'+Math.round(balance).toLocaleString('en-IN'));
+  }
+  let toastT;
+  function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
+  renderMarkets(); renderGames(); renderNums(); renderTx(); renderResults(); buildNav();
+</script>
+
+<style>.brand-svg{display:block;flex:0 0 auto}</style>
+
+<style>
+#signup .pad{padding:26px 26px;display:flex;flex-direction:column;justify-content:center;height:100%;overflow-y:auto}
+#signup .login-logo{width:80px;margin-bottom:16px}
+#signup h2{font-weight:800;font-size:26px;margin:2px 0 0;letter-spacing:-.5px;line-height:1.12}
+#signup h2 span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+#signup .lead{color:var(--sub);font-size:13.5px;margin:8px 0 22px;font-weight:400}
+</style>
+<style>
+  .drawer-ov{position:absolute;inset:0;background:rgba(3,3,10,.55);opacity:0;visibility:hidden;transition:.28s;z-index:80}
+  .drawer-ov.show{opacity:1;visibility:visible}
+  .drawer{position:absolute;top:0;left:0;bottom:0;width:84%;max-width:300px;background:linear-gradient(180deg,#11101d,#0a0912);border-right:1px solid var(--line);transform:translateX(-100%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;padding:calc(22px + env(safe-area-inset-top)) 0 calc(14px + env(safe-area-inset-bottom))}
+  .drawer-ov.show .drawer{transform:none}
+  .dr-user{display:flex;align-items:center;gap:12px;padding:2px 20px 18px;border-bottom:1px solid var(--line-soft)}
+  .dr-user .avatar{width:52px;height:52px;font-size:18px}
+  .dr-user b{font-weight:700;font-size:16px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dr-user span{color:var(--sub);font-size:12.5px}
+  .dr-nav{flex:1;overflow-y:auto;padding:12px}
+  .dr-nav a{display:flex;align-items:center;gap:14px;padding:12px;border-radius:12px;color:var(--ink);font-size:14.5px;font-weight:500;cursor:pointer}
+  .dr-nav a:hover{background:#171327}
+  .dr-nav a svg{color:var(--sub);flex:0 0 auto}
+  .dr-logout{margin:0 12px;display:flex;align-items:center;gap:14px;background:none;border:none;color:var(--red);font-size:14.5px;font-weight:600;padding:14px 12px;border-top:1px solid var(--line-soft);cursor:pointer}
+  .chart-row{display:flex;align-items:center;justify-content:space-between;margin:12px 20px 0;background:linear-gradient(160deg,var(--card-dark2),var(--card-dark));border-radius:14px;padding:15px 18px;position:relative}
+  .chart-row::before{content:"";position:absolute;inset:0;border-radius:14px;padding:1px;background:var(--grad-border);opacity:.5;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+  .chart-row .cn{font-weight:600;font-size:15px}
+  .chart-row .cv{font-weight:700;color:var(--violet);letter-spacing:.05em;font-size:13px;margin-top:3px}
+  .contact-hero{display:flex;flex-direction:column;align-items:center;text-align:center;margin:14px 0 26px}
+  .contact-hero .globe-box{width:60px;height:60px;display:grid;place-items:center;margin-bottom:20px;border:1px solid #8a27ff;border-radius:13px;background:linear-gradient(135deg,#0c0920,#10091f);color:#fff}
+  .contact-hero h3{font-weight:400;font-size:22px;margin:0 0 10px}
+  .contact-hero p{color:var(--sub);font-size:13px;margin:0;font-weight:400}
+  .social-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;padding:0 20px 130px}
+  .social-card{position:relative;border-radius:22px;padding:22px 12px 18px;background:linear-gradient(135deg,rgba(13,7,30,.98),rgba(14,7,27,.98));border:1px solid #8a27ff;display:flex;flex-direction:column;align-items:center;gap:0;cursor:pointer;text-align:center;transition:transform .15s}
+  .social-card:active{transform:translateY(2px)}
+  .social-card .sc-ic{width:52px;height:52px;border-radius:12px;background:#18142d;display:grid;place-items:center;margin-bottom:12px}
+  .social-card b{font-weight:400;font-size:15px;color:#f2f2f5;margin-bottom:7px}
+  .social-card span{color:#777984;font-size:10.5px;word-break:break-word}
+  .ctable{width:calc(100% - 40px);margin:6px 20px 0;border-collapse:collapse}
+  .ctable th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:0 0 10px;font-weight:600}
+  .ctable td{padding:12px 0;border-top:1px solid var(--line-soft);font-size:13.5px}
+  .ctable td.v{font-weight:700;color:var(--violet);letter-spacing:.05em;text-align:right}
+  /* MY BIDS */
+  .bid-card{margin:0 20px 16px;background:var(--cream);color:var(--cream-ink);border-radius:20px;padding:16px 16px 13px}
+  .bid-card .bh{display:flex;align-items:center;justify-content:space-between;padding-bottom:11px;border-bottom:1px solid var(--cream-div)}
+  .bid-card .bn{font-weight:500;font-size:16px;color:#111116}
+  .bid-card .bstatus{min-width:53px;height:29px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border-radius:18px;font-size:11px}
+  .bid-card .bstatus.open{border:1px solid #00b83f;color:#00a93b}
+  .bid-card .bstatus.close{border:1px solid #ef2020;color:#e91e1e}
+  .bid-card .bd{display:grid;grid-template-columns:1.4fr 1fr .7fr;padding:12px 4px 0}
+  .bid-card .bd .bl{color:#5e5b59;font-size:10px;margin-bottom:3px}
+  .bid-card .bd .bv{color:#17161a;font-size:13px;line-height:1.2}
+  .bid-card .bf{display:flex;align-items:center;justify-content:space-between;padding-top:22px}
+  .bid-card .bf .bm{color:#88837f;font-size:9.5px}
+  .bid-card .bf .bdt{color:#85807c;font-size:9.5px;white-space:nowrap}
+  /* PASSBOOK */
+  .pb-wrap{margin:6px 20px 0;overflow-x:auto;border-radius:14px}
+  .pb-table{width:100%;min-width:300px;border-collapse:separate;border-spacing:0;background:var(--cream);color:#181619;border-radius:14px;overflow:hidden}
+  .pb-table thead th{height:32px;padding:0 14px;border-bottom:1px solid var(--cream-div);color:#161419;font-size:10px;font-weight:500;text-align:left;white-space:nowrap}
+  .pb-table thead th+th{border-left:1px solid var(--cream-div)}
+  .pb-table tbody td{padding:9px 14px;border-bottom:1px solid var(--cream-div);color:#252226;font-size:10px;vertical-align:top}
+  .pb-table tbody tr:last-child td{border-bottom:none}
+  .pb-table td.amt{text-align:right;white-space:nowrap;font-weight:500}
+  /* LANGUAGES */
+  .lang-row{display:flex;align-items:center;gap:16px;padding:15px 4px;cursor:pointer}
+  .lang-row .radio{width:22px;height:22px;border-radius:50%;border:1.5px solid #4A4A58;flex:0 0 auto;display:grid;place-items:center;transition:.15s}
+  .lang-row.sel .radio{border-color:var(--brand2,#C027FF)}
+  .lang-row .radio::after{content:"";width:11px;height:11px;border-radius:50%;background:#7A2BFF;transform:scale(0);transition:transform .15s}
+  .lang-row.sel .radio::after{transform:scale(1)}
+  .lang-row .lname{font-size:16px;font-weight:500;color:var(--ink)}
+  /* FILTER CHIPS */
+  .fchips{display:flex;flex-wrap:wrap;gap:8px 12px}
+  .fchip{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 14px;border:1px solid var(--border-strong);border-radius:18px;background:transparent;color:#e9eaed;font-size:11px;cursor:pointer;font-family:"Poppins";white-space:nowrap}
+  .fchip.on{border-color:#a82cff;background:rgba(142,40,255,.07);color:#fff}
+  .fchip.grad{border-color:transparent;background:var(--grad);color:#fff}
+  .fsec{color:#d2d4da;font-size:13px;font-weight:400;margin:0 0 11px}
+  /* SANGAM bet */
+  .sg-in{display:flex;align-items:center;background:var(--surface-purple);border:1.4px solid rgba(104,45,255,.5);border-radius:12px;height:50px;padding:0 14px;transition:border-color .16s}
+  .sg-in:focus-within{border-color:#C084FC}
+  .sg-in input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;font-size:14px;font-family:"Poppins"}
+  .sg-in input::placeholder{color:#777a84}
+  .sg-in .sg-cur{color:#fff;font-size:16px;font-weight:500;margin-right:8px}
+  .sgt{width:100%;border-collapse:collapse;table-layout:fixed}
+  .sgt th{height:30px;font-size:11px;font-weight:400;color:var(--sub);text-align:center;border-bottom:1px solid var(--line)}
+  .sgt th+th{border-left:1px solid var(--line)}
+  .sgt td{height:36px;font-size:11.5px;color:#d0d2d7;text-align:center;border-bottom:1px solid var(--line);word-break:break-word}
+  .sgt td+td{border-left:1px solid var(--line)}
+  .sgt .rm{color:var(--red);cursor:pointer;font-size:15px}
+  /* NOTIFICATIONS (pastel) */
+  .nt-day{color:#d4d7dd;font-size:14px;font-weight:400;margin:22px 2px 8px}
+  .nt{display:flex;align-items:flex-start;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line-soft)}
+  .nt .nic{width:48px;height:48px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-size:23px;position:relative}
+  .nt .ntx{flex:1;min-width:0;color:#f0f1f4;font-size:13.5px;line-height:1.42}
+  .nt .ntm{flex-shrink:0;margin-left:7px;color:#737780;font-size:10px;white-space:nowrap;align-self:center}
+  .nt .ntm.now{color:#9d2eff}
+  .nt .undot{position:absolute;width:7px;height:7px;right:2px;top:1px;background:#a82cff;border-radius:50%}
+</style>

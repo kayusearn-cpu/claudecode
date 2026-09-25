@@ -1,0 +1,915 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalyan Games — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* aligned to the original DJ admin design system */
+  --bg:#030712; --panel:#151923; --card:#1f242d; --card2:#151923; --field:#1d212a;
+  --line:#71717a33; --line2:#2a2f3b; --ink:#ffffff; --sub:#d1d5db; --muted:#71717a;
+  --grad:linear-gradient(100deg,#672dff 0%,#932dff 50%,#e522ff 100%);
+  --violet:#932dff; --red:#f5484b; --green:#00c45a; --yellow:#f5c542; --blue:#4aa3ff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Urbanist",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a2f3d;border-radius:8px}
+[hidden]{display:none!important}
+
+/* ---------- LOGIN ---------- */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;background:
+  radial-gradient(700px 500px at 20% 10%,rgba(104,45,255,.10),transparent 55%),
+  radial-gradient(700px 500px at 90% 90%,rgba(192,39,255,.08),transparent 55%),var(--bg)}
+.login-card{width:100%;max-width:400px;background:var(--card2);border:1px solid var(--line);border-radius:22px;padding:34px 28px}
+.login-card .logo{display:flex;justify-content:center;margin-bottom:20px}
+.login-card h1{font-size:22px;font-weight:600;text-align:center}
+.login-card p{color:var(--sub);text-align:center;font-size:13px;margin:6px 0 24px}
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:12.5px;color:var(--sub);margin-bottom:7px}
+.fld input{width:100%;height:48px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 16px;font-size:14px}
+.fld input:focus{outline:none;border-color:var(--violet)}
+.btn{width:100%;height:50px;border-radius:12px;background:var(--grad);color:#fff;font-weight:600;font-size:15px;transition:filter .15s,transform .1s}
+.btn:hover{filter:brightness(1.07)} .btn:active{transform:scale(.99)}
+.btn.sm{height:40px;font-size:13px;width:auto;padding:0 20px}
+.btn.ghost{background:#2b2f3b;color:#e6e8ee}
+.err{color:var(--red);font-size:12.5px;margin-top:10px;text-align:center;min-height:16px}
+
+/* ---------- SHELL ---------- */
+.shell{display:flex;min-height:100vh}
+.side{width:252px;flex:0 0 252px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}
+.side .brand{display:flex;justify-content:center;padding:26px 0 18px}
+.side .divider{height:1px;background:var(--line);margin:0 20px}
+.side .grp{font-size:10.5px;letter-spacing:.14em;color:#5a6070;font-weight:600;padding:20px 22px 8px}
+.nav{display:flex;flex-direction:column;padding:0 12px;gap:2px}
+.nav a,.nav button.item{display:flex;align-items:center;gap:13px;height:44px;padding:0 12px;border-radius:11px;color:#9ba1af;font-size:13.5px;font-weight:500;width:100%;text-align:left;transition:background .13s,color .13s}
+.nav a:hover,.nav button.item:hover{background:#11151f;color:#e6e8ee}
+.nav a svg,.nav button.item svg{width:19px;height:19px;flex:0 0 19px;color:#7b8290}
+.nav a.active{background:linear-gradient(100deg,rgba(104,45,255,.22),rgba(192,39,255,.14));color:#fff;border:1px solid rgba(139,92,246,.5)}
+.nav a.active svg{color:#b98bff}
+.nav .caret{margin-left:auto;width:14px;height:14px;transition:transform .18s}
+.nav .grp-open .caret{transform:rotate(180deg)}
+.subnav{display:none;flex-direction:column;gap:1px;padding:2px 0 4px 22px;position:relative}
+.subnav.open{display:flex}
+.subnav::before{content:"";position:absolute;left:22px;top:0;bottom:8px;width:1px;background:var(--line2)}
+.subnav a{height:38px;font-size:12.5px;color:#8990a0;padding-left:16px}
+.subnav a.active{background:linear-gradient(100deg,rgba(104,45,255,.22),rgba(192,39,255,.14));color:#fff;border:1px solid rgba(139,92,246,.45)}
+.side .logout{margin:auto 12px 20px;display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;color:var(--red);font-weight:600;font-size:13.5px}
+.side .logout svg{width:19px;height:19px}
+
+.main{flex:1;min-width:0;padding:26px 30px 60px}
+.head{margin-bottom:26px}
+.head h1{font-size:32px;font-weight:600;letter-spacing:-.5px}
+.head .date{color:var(--sub);font-size:14px;margin-top:2px}
+
+.panel{background:var(--card2);border:1px solid var(--line);border-radius:24px;padding:22px;margin-bottom:22px;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(147,45,255,.18)}
+.panel > h2{font-size:20px;font-weight:600;margin-bottom:18px}
+.sub{color:var(--sub);font-size:13px}
+
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.stat .ic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin-bottom:16px}
+.stat .val{font-size:28px;font-weight:700;letter-spacing:-.5px}
+.stat .lbl{color:var(--sub);font-size:13px;margin-top:3px}
+
+/* game type cards */
+.gt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.gt{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.gt .gh{display:flex;align-items:center;gap:12px;padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.gt .gh .gi{width:38px;height:38px;border-radius:50%;background:#241a3a;display:grid;place-items:center;font-size:18px}
+.gt .gh b{font-size:17px;font-weight:600}
+.gt .row{display:flex;justify-content:space-between;padding:5px 0;font-size:13.5px;color:var(--sub)}
+.gt .row b{color:var(--ink);font-weight:600}
+
+/* generic table */
+.tbl-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
+table.tbl{width:100%;border-collapse:collapse;min-width:560px}
+table.tbl{background:#1a1f2a}
+table.tbl th{background:#252b36;color:#fff;font-size:12.5px;font-weight:500;text-align:left;padding:14px 16px;white-space:nowrap;border-bottom:1px solid var(--line)}
+table.tbl td{padding:14px 16px;font-size:13px;color:#d2d6e3;border-bottom:1px solid #242a37;white-space:nowrap}
+table.tbl tbody tr:last-child td{border-bottom:none}
+table.tbl tbody tr:hover{background:#202636}
+.searchbar{display:flex;align-items:center;gap:10px;height:46px;border:1px solid var(--line2);border-radius:14px;padding:0 16px;background:var(--card2);margin-bottom:18px;max-width:340px}
+.searchbar input{flex:1;border:0;outline:none;background:none;font-size:13.5px}
+.searchbar svg{width:16px;height:16px;color:var(--muted)}
+.pager{display:flex;align-items:center;gap:14px;margin-top:16px;color:var(--sub);font-size:12.5px}
+.pill{display:inline-flex;align-items:center;height:26px;padding:0 12px;border-radius:14px;font-size:11.5px;border:1px solid}
+.pill.on{color:var(--green);border-color:var(--green)} .pill.off{color:var(--red);border-color:var(--red)} .pill.pend{color:var(--yellow);border-color:var(--yellow)}
+
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:70px 24px;color:var(--sub)}
+.placeholder .pi{width:64px;height:64px;border-radius:18px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;margin-bottom:16px;color:var(--violet)}
+.placeholder h3{color:var(--ink);font-size:18px;font-weight:600;margin-bottom:8px}
+.loading{color:var(--muted);font-size:13px;padding:24px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(12px);background:#1b1f2b;border:1px solid var(--line2);color:#fff;font-size:13px;padding:12px 20px;border-radius:12px;opacity:0;transition:.25s;z-index:200;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:860px){
+  .side{position:fixed;left:0;top:0;z-index:100;transform:translateX(-100%);transition:transform .25s}
+  .side.open{transform:none}
+  .main{padding:20px 16px 60px}
+  .head h1{font-size:26px}
+  .mtoggle{display:inline-grid!important}
+}
+.mtoggle{display:none;place-items:center;width:40px;height:40px;border:1px solid var(--line2);border-radius:11px;margin-bottom:16px}
+
+/* tabs */
+.tabs{display:flex;gap:8px;margin-bottom:18px;border-bottom:1px solid var(--line);padding-bottom:2px}
+.tabs .tab{height:38px;padding:0 18px;border-radius:10px 10px 0 0;color:var(--sub);font-size:13.5px;font-weight:500}
+.tabs .tab.on{color:#fff;background:linear-gradient(180deg,rgba(139,92,246,.18),transparent);border-bottom:2px solid var(--violet)}
+/* row action buttons */
+td.act{display:flex;gap:8px}
+.ba{height:32px;padding:0 14px;border-radius:9px;font-size:12.5px;font-weight:600;border:1px solid}
+.ba.acc{color:var(--green);border-color:rgba(0,196,90,.5)}.ba.acc:hover{background:rgba(0,196,90,.12)}
+.ba.rej{color:var(--red);border-color:rgba(245,72,75,.5)}.ba.rej:hover{background:rgba(245,72,75,.12)}
+.ba.big{height:46px;flex:1;font-size:14px;border-radius:12px}
+.ba.grad{background:var(--grad);color:#fff;border:0}.ba.grad:hover{filter:brightness(1.07)}
+.lnk{color:var(--violet);cursor:pointer;font-weight:500}.lnk:hover{text-decoration:underline}
+table.tbl td .sub{font-size:11.5px;margin-top:1px}
+/* drawer + modal */
+.overlay{position:fixed;inset:0;background:rgba(3,7,18,.66);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:.22s;z-index:150}
+.overlay.show{opacity:1;pointer-events:auto}
+.drawer-panel{position:fixed;top:0;right:0;height:100vh;width:400px;max-width:92vw;background:var(--card2);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .26s cubic-bezier(.3,.8,.4,1);z-index:160;display:flex;flex-direction:column;padding:26px 24px}
+.drawer-panel.show{transform:none}
+.drawer-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.drawer-head h3{font-size:19px;font-weight:600}
+.drawer-head .x{width:34px;height:34px;border-radius:9px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--sub)}
+.drow{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.drow span{color:var(--sub)}.drow b{font-weight:600;text-align:right}
+.drawer-act{display:flex;gap:12px;margin-top:auto;padding-top:22px}
+.modal-card{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%) scale(.97);width:380px;max-width:92vw;background:var(--card2);border:1px solid var(--line2);border-radius:20px;padding:26px 24px;z-index:170;opacity:0;pointer-events:none;transition:.2s}
+.modal-card.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.modal-card h3{font-size:18px;font-weight:600;margin-bottom:10px}
+.modal-card p{color:var(--sub);font-size:13.5px;line-height:1.5;margin-bottom:22px}
+.m-actions{display:flex;gap:12px}
+.imgmodal img{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);max-width:88vw;max-height:84vh;border-radius:14px;border:1px solid var(--line2);z-index:170;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+/* add fund */
+.af{max-width:460px}
+.af label{display:block;font-size:13px;color:var(--sub);margin:0 0 8px}
+.af .field{margin-bottom:20px;position:relative}
+.af input{width:100%;height:50px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 16px;font-size:14px}
+.af input:focus{outline:none;border-color:var(--violet)}
+.af textarea{width:100%;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:12px 14px;font-size:14px;resize:vertical;font-family:inherit;color:var(--ink)}
+.af textarea:focus{outline:none;border-color:var(--violet)}
+.af .picker{border:1px solid var(--line2);border-radius:12px;background:var(--field);min-height:50px;display:flex;align-items:center;padding:0 16px;cursor:pointer;justify-content:space-between}
+.af .picker.on{color:#fff}.af .picker .ph{color:var(--muted)}
+.af-list{position:absolute;top:56px;left:0;right:0;background:var(--card);border:1px solid var(--line2);border-radius:12px;max-height:280px;overflow:auto;z-index:20;box-shadow:0 16px 40px rgba(0,0,0,.5)}
+.af-list .s{padding:10px}.af-list .s input{height:40px}
+.af-list .u{display:flex;justify-content:space-between;padding:12px 14px;border-top:1px solid var(--line);cursor:pointer}
+.af-list .u:hover{background:#0e131d}.af-list .u .sub{color:var(--muted);font-size:12px}
+/* user detail */
+.udetail{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:0}
+@media(max-width:900px){.udetail{grid-template-columns:1fr}}
+.uhead{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.uav{width:62px;height:62px;border-radius:50%;background:var(--grad);display:grid;place-items:center;font-size:25px;font-weight:700;color:#fff;flex:0 0 62px}
+.cream{background:#FBF1E9;border-radius:16px;padding:18px;margin-top:16px}
+.cream .lbl2{color:#7a6a58;font-size:13px}
+.cream .bal{font-size:28px;font-weight:700;color:#1a140d;margin-top:2px}
+.cbtn{flex:1;height:42px;border-radius:11px;background:#fff;border:1px solid #e7d9c9;color:#5b3fb0;font-weight:600;font-size:12.5px}
+.cbtn:hover{background:#fff7ef}.cbtn.on{background:#efe4d6}
+/* results */
+.rsel{width:100%;height:50px;border:1px solid var(--line2);border-radius:12px;background:var(--field);padding:0 12px;font-size:14px}
+.res-card{margin-top:20px;border:1px solid var(--line2);border-radius:16px;padding:20px;background:var(--card)}
+.res-val{font-size:30px;font-weight:700;letter-spacing:.06em;text-align:center;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.res-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:22px;margin:12px 0 4px;color:var(--sub);font-size:13px}
+.res-meta b{color:var(--ink);font-weight:700;margin-left:4px}
+.res-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:16px}
+.res-sum>div{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center}
+.res-sum b{display:block;font-size:20px;font-weight:700}.res-sum span{color:var(--sub);font-size:12px}
+.res-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;align-items:end}
+@media(max-width:760px){.res-form{grid-template-columns:1fr 1fr}}
+/* reports */
+.rep-filters{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin-bottom:18px}
+.rep-filters .field{margin:0;min-width:150px}
+.rep-filters input,.rep-filters select{width:100%;height:46px;border:1px solid var(--line2);border-radius:11px;background:var(--field);padding:0 12px;font-size:13.5px;color-scheme:dark}
+.total-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.total-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.total-card .v{font-size:24px;font-weight:700}.total-card .l{color:var(--sub);font-size:12.5px;margin-top:2px}
+.sell-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:12px}
+.sell-tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
+.sell-tile .n{font-size:22px;font-weight:700;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sell-tile .p{color:var(--sub);font-size:12px;margin-top:4px}
+.sell-tile b{color:var(--ink)}
+</style></head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+  <div class="login-card">
+    <div class="logo">
+      <svg width="70" height="46" viewBox="0 0 61 40"><defs><linearGradient id="lg" x1="0" y1="20" x2="61" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#682DFF"/><stop offset="1" stop-color="#C027FF"/></linearGradient></defs><path fill="url(#lg)" d="M12.26 40c-1.69 0-3.28-.32-4.76-.96a12.3 12.3 0 0 1-3.9-2.6A12.2 12.2 0 0 1 .97 32.58 12.03 12.03 0 0 1 0 27.85c0-1.4.24-2.76.73-4.09.49-1.33 1.18-2.53 2.08-3.6l.07-.17-.07-.11a12.3 12.3 0 0 1-2.08-3.6A12.03 12.03 0 0 1 0 12.17C0 10.48.32 8.9.97 7.43a12.2 12.2 0 0 1 2.63-3.85A12.3 12.3 0 0 1 7.5.97C8.99.33 10.58 0 12.26 0h14.97v8.6H12.26c-1 0-1.85.35-2.56 1.04a3.5 3.5 0 0 0-1.06 2.54c0 .47.1.93.29 1.36.19.44.45.82.77 1.14.32.32.7.57 1.13.75.44.18.92.27 1.43.27h14.97v8.6H12.26c-.51 0-.99.09-1.43.27-.44.19-.81.44-1.13.77-.32.32-.58.7-.77 1.13a3.6 3.6 0 0 0-.29 1.43c0 .49.1.95.29 1.39.19.43.45.81.77 1.14.32.31.7.57 1.13.75.44.19.92.29 1.43.29h14.97V40H12.26Zm36.47-40c1.69 0 3.28.32 4.77.96a12.3 12.3 0 0 1 3.9 2.6 12.2 12.2 0 0 1 2.63 3.86c.64 1.47.96 3.05.96 4.73 0 1.4-.24 2.76-.73 4.09a12.3 12.3 0 0 1-2.08 3.6l-.08.17.08.11c.9 1.07 1.59 2.27 2.08 3.6.49 1.33.73 2.7.73 4.09 0 1.7-.32 3.28-.96 4.75a12.2 12.2 0 0 1-2.63 3.85 12.3 12.3 0 0 1-3.9 2.6c-1.49.64-3.08.97-4.77.97H33.77v-8.6h14.96c1 0 1.85-.35 2.56-1.04a3.5 3.5 0 0 0 1.06-2.54c0-.47-.1-.93-.29-1.36a3.65 3.65 0 0 0-.77-1.14c-.32-.32-.7-.57-1.13-.75a3.65 3.65 0 0 0-1.43-.27H33.77V15.7h14.96c.51 0 .99-.09 1.43-.28.44-.19.81-.44 1.13-.77.32-.32.58-.7.77-1.13.19-.43.29-.89.29-1.38 0-.49-.1-.95-.29-1.39a3.63 3.63 0 0 0-.77-1.13 3.55 3.55 0 0 0-1.13-.75 3.65 3.65 0 0 0-1.43-.27H33.77V0h14.96Z"/></svg>
+    </div>
+    <h1>Admin Panel</h1>
+    <p>Sign in to manage Kalyan Games</p>
+    <div class="fld"><label>Username</label><input id="lg-user" type="text" placeholder="Admin username" autocomplete="username"></div>
+    <div class="fld"><label>Password</label><input id="lg-pass" type="password" placeholder="Password" autocomplete="current-password"></div>
+    <div class="fld" id="lg-totp-wrap" hidden><label>Google Authenticator code</label><input id="lg-totp" type="text" inputmode="numeric" placeholder="6-digit code"></div>
+    <button class="btn" onclick="doLogin()">Sign In</button>
+    <div class="err" id="lg-err"></div>
+  </div>
+</div>
+
+<!-- SHELL -->
+<div class="shell" id="shell" hidden>
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg width="54" height="36" viewBox="0 0 61 40"><path fill="url(#lg)" d="M12.26 40c-1.69 0-3.28-.32-4.76-.96a12.3 12.3 0 0 1-3.9-2.6A12.2 12.2 0 0 1 .97 32.58 12.03 12.03 0 0 1 0 27.85c0-1.4.24-2.76.73-4.09.49-1.33 1.18-2.53 2.08-3.6l.07-.17-.07-.11a12.3 12.3 0 0 1-2.08-3.6A12.03 12.03 0 0 1 0 12.17C0 10.48.32 8.9.97 7.43a12.2 12.2 0 0 1 2.63-3.85A12.3 12.3 0 0 1 7.5.97C8.99.33 10.58 0 12.26 0h14.97v8.6H12.26c-1 0-1.85.35-2.56 1.04a3.5 3.5 0 0 0-1.06 2.54c0 .47.1.93.29 1.36.19.44.45.82.77 1.14.32.32.7.57 1.13.75.44.18.92.27 1.43.27h14.97v8.6H12.26c-.51 0-.99.09-1.43.27-.44.19-.81.44-1.13.77-.32.32-.58.7-.77 1.13a3.6 3.6 0 0 0-.29 1.43c0 .49.1.95.29 1.39.19.43.45.81.77 1.14.32.31.7.57 1.13.75.44.19.92.29 1.43.29h14.97V40H12.26Zm36.47-40c1.69 0 3.28.32 4.77.96a12.3 12.3 0 0 1 3.9 2.6 12.2 12.2 0 0 1 2.63 3.86c.64 1.47.96 3.05.96 4.73 0 1.4-.24 2.76-.73 4.09a12.3 12.3 0 0 1-2.08 3.6l-.08.17.08.11c.9 1.07 1.59 2.27 2.08 3.6.49 1.33.73 2.7.73 4.09 0 1.7-.32 3.28-.96 4.75a12.2 12.2 0 0 1-2.63 3.85 12.3 12.3 0 0 1-3.9 2.6c-1.49.64-3.08.97-4.77.97H33.77v-8.6h14.96c1 0 1.85-.35 2.56-1.04a3.5 3.5 0 0 0 1.06-2.54c0-.47-.1-.93-.29-1.36a3.65 3.65 0 0 0-.77-1.14c-.32-.32-.7-.57-1.13-.75a3.65 3.65 0 0 0-1.43-.27H33.77V15.7h14.96c.51 0 .99-.09 1.43-.28.44-.19.81-.44 1.13-.77.32-.32.58-.7.77-1.13.19-.43.29-.89.29-1.38 0-.49-.1-.95-.29-1.39a3.63 3.63 0 0 0-.77-1.13 3.55 3.55 0 0 0-1.13-.75 3.65 3.65 0 0 0-1.43-.27H33.77V0h14.96Z"/></svg>
+    </div>
+    <div class="divider"></div>
+    <div class="grp">MAIN</div>
+    <nav class="nav" id="nav-main"></nav>
+    <div class="divider" style="margin-top:14px"></div>
+    <div class="grp">SETTINGS</div>
+    <nav class="nav" id="nav-settings"></nav>
+    <button class="logout" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M16 8l4 4-4 4M20 12H9"/></svg>Log out</button>
+  </aside>
+  <main class="main">
+    <button class="mtoggle" onclick="document.getElementById('side').classList.toggle('open')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <div class="head"><h1>Hey, Admin!</h1><div class="date" id="today"></div></div>
+    <div id="page"></div>
+  </main>
+</div>
+<!-- detail drawer -->
+<div class="overlay" id="drawer-ov" onclick="closeDrawer()"></div>
+<aside class="drawer-panel" id="drawer">
+  <div class="drawer-head"><h3 id="drawer-title">Details</h3><button class="x" onclick="closeDrawer()">✕</button></div>
+  <div id="drawer-body"></div>
+</aside>
+<!-- confirm modal -->
+<div class="overlay" id="modal-ov" onclick="closeModal()"></div>
+<div class="modal-card" id="cmodal">
+  <h3 class="m-title"></h3><p class="m-text"></p>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeModal()">Cancel</button><button class="ba big grad m-yes">Confirm</button></div>
+</div>
+<!-- market form modal -->
+<div class="overlay" id="mkt-ov" onclick="closeMkt()"></div>
+<div class="modal-card" id="mkt-modal" style="width:420px">
+  <h3 id="mkt-title">Add Market</h3>
+  <div class="af" style="max-width:none">
+    <div class="field"><label>Market Name</label><input id="mkt-name" placeholder="e.g. Time Bazaar"></div>
+    <div style="display:flex;gap:12px">
+      <div class="field" style="flex:1"><label>Open Time</label><input id="mkt-open" placeholder="12:25 PM"></div>
+      <div class="field" style="flex:1"><label>Close Time</label><input id="mkt-close" placeholder="03:32 PM"></div>
+    </div>
+  </div>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeMkt()">Cancel</button><button class="ba big grad" onclick="saveMkt()">Save</button></div>
+</div>
+<!-- notice form modal -->
+<div class="overlay" id="ntc-ov" onclick="closeNtc()"></div>
+<div class="modal-card" id="ntc-modal" style="width:460px">
+  <h3 id="ntc-title">Add Notice</h3>
+  <div class="af" style="max-width:none">
+    <div class="field"><label>Title</label><input id="ntc-t" placeholder="Notice title"></div>
+    <div class="field"><label>Content</label><textarea id="ntc-c" rows="4" placeholder="Notice content"></textarea></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--sub);margin-bottom:4px"><input type="checkbox" id="ntc-a" checked style="width:16px;height:16px;accent-color:var(--violet)"> Active (shown to players)</label>
+  </div>
+  <div class="m-actions"><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="closeNtc()">Cancel</button><button class="ba big grad" onclick="saveNtc()">Save</button></div>
+</div>
+<!-- receipt viewer -->
+<div class="overlay imgmodal" id="imgmodal" onclick="this.classList.remove('show')"><img alt="receipt"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API='https://satta-matka-app-production.up.railway.app';
+let TOKEN=''; try{TOKEN=localStorage.getItem('kg_admin_token')||''}catch(e){}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400)}
+async function api(path,opts={}){
+  const headers={'Content-Type':'application/json'};if(TOKEN)headers.Authorization='Bearer '+TOKEN;
+  const r=await fetch(API+path,{...opts,headers});
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok)throw new Error(d.error||('Error '+r.status));return d;
+}
+const inr=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const num=n=>Number(n||0).toLocaleString('en-IN');
+
+/* ---------- icons ---------- */
+function icon(n){const s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">';const p={
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="4" rx="1.5"/><rect x="14" y="10" width="7" height="11" rx="1.5"/><rect x="3" y="13" width="7" height="8" rx="1.5"/>',
+  bars:'<path d="M4 20V10M9 20V4M14 20v-7M19 20V8"/>',
+  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a6 6 0 0 0-3-11Z"/>',
+  users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 5M21 20a6 6 0 0 0-4-5.6"/>',
+  users2:'<circle cx="12" cy="7" r="2.6"/><circle cx="5" cy="10" r="2.2"/><circle cx="19" cy="10" r="2.2"/><path d="M8 20a4 4 0 0 1 8 0M2 20a3.5 3.5 0 0 1 4-3.4M22 20a3.5 3.5 0 0 0-4-3.4"/>',
+  chart:'<rect x="3" y="4" width="18" height="13" rx="2.5"/><path d="M7 13l3-3 2 2 4-4M9 21h6M12 17v4"/>',
+  money:'<path d="M6 8h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V6.5C5 5 6 4 7.5 4H15M9 12h5M11 9v6"/>',
+  game:'<rect x="3" y="7" width="18" height="11" rx="4"/><path d="M8 12h3M9.5 10.5v3"/><circle cx="15.5" cy="11.5" r="1"/><circle cx="17.5" cy="13.5" r="1"/>',
+  wallet:'<rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h13a3 3 0 0 1 0 6H3"/><circle cx="16.5" cy="13" r="1.1" fill="currentColor" stroke="none"/>',
+  report:'<path d="M6 3h9l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M15 3v4h4M9 12h6M9 16h4"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 9 4.6a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1A1.6 1.6 0 0 0 15 4.6a1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1Z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  trophy:'<path d="M8 4h8v4a4 4 0 0 1-8 0V4ZM6 4H4v2a3 3 0 0 0 3 3M18 4h2v2a3 3 0 0 1-3 3M10 16h4M9 20h6M12 12v4"/>',
+  trend:'<path d="M4 18l5-5 3 3 7-8M15 8h5v5"/>',
+  layers:'<path d="M12 3l9 5-9 5-9-5 9-5ZM3 13l9 5 9-5M3 17l9 5 9-5"/>'
+};return s+(p[n]||p.grid)+'</svg>'}
+
+/* ---------- nav ---------- */
+const NAV_MAIN=[
+  {id:'dashboard',label:'Dashboard',icon:'grid'},
+  {id:'markets',label:'Markets',icon:'bars'},
+  {id:'prediction',label:'Winning Prediction',icon:'bulb'},
+  {id:'users',label:'User Management',icon:'users'},
+  {id:'subadmins',label:'Sub Admin Management',icon:'users2'},
+  {id:'results',label:'Results',icon:'chart'},
+  {id:'funds',label:'Funds',icon:'money'},
+  {id:'games',label:'Games',icon:'game',sub:[
+    {id:'games-rates',label:'Game Rates'},{id:'games-mgmt',label:'Game Management'},{id:'games-numbers',label:'Game Numbers'}]},
+  {id:'wallet',label:'Wallet',icon:'wallet',sub:[
+    {id:'wallet-withdraw',label:'Withdraw Request'},{id:'wallet-addfund',label:'Add Fund'},{id:'wallet-bidrevert',label:'Bid Revert'}]},
+  {id:'reports',label:'Reports',icon:'report',sub:[
+    {id:'reports-userbids',label:'User Bid History'},{id:'reports-sell',label:'Customer Sell'},{id:'reports-winning',label:'Winning'},
+    {id:'reports-transfer',label:'Transfer Point'},{id:'reports-bidwin',label:'Bid Win'},{id:'reports-withdraw',label:'Withdraw'},{id:'reports-deposit',label:'Deposit'}]},
+  {id:'notices',label:'Notices',icon:'bell',sub:[
+    {id:'notices-mgmt',label:'Notice Management'},{id:'notices-send',label:'Send Notification'}]},
+];
+const NAV_SETTINGS=[
+  {id:'settings',label:'Settings',icon:'gear',sub:[
+    {id:'settings-main',label:'Main Settings'},{id:'settings-contact',label:'Contact Settings'},{id:'settings-slider',label:'Slider Images'},
+    {id:'settings-howto',label:'How to Play'},{id:'settings-qr',label:'QR Images'},{id:'settings-ideas',label:'User Ideas'}]},
+];
+let CURRENT='dashboard';
+function buildNav(){
+  const render=(list)=>list.map(function(it){
+    if(it.sub){
+      const subs=it.sub.map(s=>'<a data-page="'+s.id+'" onclick="go(\''+s.id+'\')">'+s.label+'</a>').join('');
+      return '<button class="item" data-group="'+it.id+'" onclick="toggleGroup(\''+it.id+'\')">'+icon(it.icon)+it.label+
+        '<svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>'+
+        '<div class="subnav" data-subgroup="'+it.id+'">'+subs+'</div>';
+    }
+    return '<a data-page="'+it.id+'" onclick="go(\''+it.id+'\')">'+icon(it.icon)+it.label+'</a>';
+  }).join('');
+  document.getElementById('nav-main').innerHTML=render(NAV_MAIN);
+  document.getElementById('nav-settings').innerHTML=render(NAV_SETTINGS);
+}
+function toggleGroup(id){
+  const sub=document.querySelector('.subnav[data-subgroup="'+id+'"]');
+  const btn=document.querySelector('.item[data-group="'+id+'"]');
+  const open=sub.classList.toggle('open');btn.classList.toggle('grp-open',open);
+}
+function setActiveNav(page){
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.page===page));
+}
+function go(page){
+  CURRENT=page;setActiveNav(page);
+  document.getElementById('side').classList.remove('open');
+  const parent=[...NAV_MAIN,...NAV_SETTINGS].find(g=>g.sub&&g.sub.some(s=>s.id===page));
+  if(parent){const sub=document.querySelector('.subnav[data-subgroup="'+parent.id+'"]');const btn=document.querySelector('.item[data-group="'+parent.id+'"]');if(sub&&!sub.classList.contains('open')){sub.classList.add('open');btn.classList.add('grp-open')}}
+  (PAGES[page]||PAGES._todo)(page);
+}
+
+/* ---------- auth ---------- */
+async function doLogin(){
+  const username=document.getElementById('lg-user').value.trim();
+  const password=document.getElementById('lg-pass').value;
+  const token=document.getElementById('lg-totp').value.trim();
+  const err=document.getElementById('lg-err');err.textContent='';
+  if(!username||!password){err.textContent='Enter username and password';return}
+  try{
+    const body={username,password};if(token)body.token=token;
+    const d=await api('/admin/login',{method:'POST',body:JSON.stringify(body)});
+    if(d.totpRequired){document.getElementById('lg-totp-wrap').hidden=false;err.textContent='Enter your authenticator code';return}
+    TOKEN=d.token;try{localStorage.setItem('kg_admin_token',TOKEN)}catch(e){}
+    enterApp(d.admin);
+  }catch(e){err.textContent=e.message||'Login failed'}
+}
+function logout(){TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}document.getElementById('shell').hidden=true;document.getElementById('login').hidden=false}
+function enterApp(admin){
+  document.getElementById('login').hidden=true;document.getElementById('shell').hidden=false;
+  if(admin&&admin.username)document.querySelector('.head h1').textContent='Hey, '+admin.username.charAt(0).toUpperCase()+admin.username.slice(1)+'!';
+  document.getElementById('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',month:'short',day:'2-digit',year:'numeric'});
+  buildNav();go('dashboard');
+}
+
+/* ---------- PAGES ---------- */
+const PAGES={};
+PAGES._todo=function(page){
+  const label=[...NAV_MAIN,...NAV_SETTINGS].flatMap(g=>g.sub?[g,...g.sub]:[g]).find(x=>x.id===page);
+  document.getElementById('page').innerHTML='<div class="panel"><div class="placeholder"><span class="pi">'+icon('layers')+'</span>'+
+    '<h3>'+((label&&label.label)||page)+'</h3><p>This admin screen is designed and queued — it lands in the next build wave.</p></div></div>';
+};
+
+PAGES.dashboard=async function(){
+  const el=document.getElementById('page');
+  el.innerHTML='<div class="panel"><h2>Game Summary</h2><div class="loading">Loading…</div></div>';
+  try{
+    const d=await api('/admin/dashboard');const s=d.summary||{};
+    const cards=[
+      ['Play','game','#1c3550','#4aa3ff',num(s.play)],['Commission','money','#3a3410','#f5c542',num(s.commission)],
+      ['Win','trophy','#3a1440','#e05bff',num(s.win)],['Profit','trend','#123324','#2fd07a',num(s.profit)],
+      ['Loss','trend','#3a1414','#ff5a5f',num(s.loss)],['Deposit','wallet','#3a2410','#ff9a3c',inr(s.deposit)],
+      ['Today Users','users','#3a1030','#ff4f9a',num(s.todayUsers)],['Total Users','users','#123324','#2fd07a',num(s.totalUsers)],
+    ];
+    const summary='<div class="panel"><h2>Game Summary</h2><div class="stat-grid">'+
+      cards.map(c=>'<div class="stat"><div class="ic" style="background:'+c[2]+';color:'+c[3]+'">'+icon(c[1])+'</div><div class="val">'+c[4]+'</div><div class="lbl">'+c[0]+'</div></div>').join('')+'</div></div>';
+    const gts=(d.gameTypes||[]);
+    const overview='<div class="panel"><h2>Game Type Overview</h2>'+(gts.length?('<div class="gt-grid">'+
+      gts.map(g=>'<div class="gt"><div class="gh"><span class="gi">🎲</span><b>'+g.gameType+'</b></div>'+
+        '<div class="row">Total Bids: <b>'+num(g.totalBids)+'</b></div>'+
+        '<div class="row">Bid Amount: <b>'+inr(g.bidAmount)+'</b></div>'+
+        '<div class="row">Won: <b>'+num(g.won)+'</b></div>'+
+        '<div class="row">Lost: <b>'+num(g.lost)+'</b></div></div>').join('')+'</div>')
+      :'<p class="sub">No bids yet.</p>')+'</div>';
+    el.innerHTML=summary+overview;
+  }catch(e){el.innerHTML='<div class="panel"><p class="sub" style="color:var(--red)">'+e.message+'</p></div>'}
+};
+
+/* ---------- shared helpers (tables / drawer / modal) ---------- */
+function fmtDate(s){const d=new Date(s);if(isNaN(d))return '-';return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}
+function statusPill(st){const m={approved:['on','Accepted'],rejected:['off','Rejected'],pending:['pend','Pending']};const x=m[st]||['pend',st];return '<span class="pill '+x[0]+'">'+x[1]+'</span>'}
+function reqNo(id,pfx){return (pfx||'')+String(id).slice(-8).toUpperCase()}
+function payMethod(bankInfo){const b=String(bankInfo||'');if(b.includes('@')&&!b.includes('A/C'))return 'UPI';if(/A\/C|IFSC/i.test(b))return 'A/C Transfer';return b?'Bank':'-'}
+function parseBank(bankInfo){
+  const parts=String(bankInfo||'').split('|').map(s=>s.trim()).filter(Boolean);const out=[];
+  parts.forEach((p,i)=>{
+    if(/^A\/C\s/i.test(p))out.push(['A/C Number',p.replace(/^A\/C\s/i,'')]);
+    else if(/^IFSC\s/i.test(p))out.push(['IFSC Code',p.replace(/^IFSC\s/i,'')]);
+    else if(p.includes('@'))out.push(['UPI ID',p]);
+    else if(i===0)out.push(['A/C Holder Name',p]);
+    else out.push(['Bank Name',p]);
+  });
+  return out;
+}
+function closeDrawer(){document.getElementById('drawer').classList.remove('show');document.getElementById('drawer-ov').classList.remove('show')}
+function openDrawer(title,rowsHtml){document.getElementById('drawer-title').textContent=title;document.getElementById('drawer-body').innerHTML=rowsHtml;document.getElementById('drawer').classList.add('show');document.getElementById('drawer-ov').classList.add('show')}
+function confirmModal(title,text,onYes){const m=document.getElementById('cmodal');m.querySelector('.m-title').textContent=title;m.querySelector('.m-text').textContent=text;m.querySelector('.m-yes').onclick=function(){closeModal();onYes()};m.classList.add('show');document.getElementById('modal-ov').classList.add('show')}
+function closeModal(){document.getElementById('cmodal').classList.remove('show');document.getElementById('modal-ov').classList.remove('show')}
+
+/* ---------- Funds (deposit + withdraw approvals) ---------- */
+let FUND_TAB='deposits';let FUND_ROWS=[];
+PAGES.funds=function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div class="tabs">'+
+    '<button class="tab" data-t="deposits" onclick="setFundTab(\'deposits\')">Deposits</button>'+
+    '<button class="tab" data-t="withdrawals" onclick="setFundTab(\'withdrawals\')">Withdrawals</button></div>'+
+    '<div id="fund-body"><div class="loading">Loading…</div></div></div>';
+  setFundTab(FUND_TAB);
+};
+function setFundTab(t){FUND_TAB=t;document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));loadFund(t)}
+async function loadFund(t){
+  const body=document.getElementById('fund-body');body.innerHTML='<div class="loading">Loading…</div>';
+  try{
+    if(t==='deposits'){const d=await api('/admin/deposits');FUND_ROWS=d.deposits||[];renderFund(body,FUND_ROWS,'deposit')}
+    else{const d=await api('/admin/withdrawals');renderFund(body,d.withdrawals||[],'withdraw')}
+  }catch(e){body.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+function renderFund(body,rows,kind){
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No '+(kind==='deposit'?'deposits':'withdrawals')+' yet.</p>';return}
+  const rcH=kind==='deposit'?'<th>Receipt</th>':'';
+  const head='<tr><th>S.No</th><th>User</th><th>Amount</th><th>'+(kind==='deposit'?'Txn / UTR':'Req No.')+'</th><th>Date &amp; Time</th>'+rcH+'<th>Status</th><th>Action</th></tr>';
+  const tr=rows.map(function(r,i){
+    const act=r.status==='pending'
+      ?'<button class="ba acc" onclick="fundAct(\''+kind+'\',\''+r.id+'\',\'approve\')">Accept</button><button class="ba rej" onclick="fundAct(\''+kind+'\',\''+r.id+'\',\'reject\')">Reject</button>'
+      :'<span class="sub">—</span>';
+    const rc=kind==='deposit'?('<td>'+(r.proof?'<span class="lnk" onclick="viewProof(\''+r.id+'\')">View</span>':'<span class="sub">—</span>')+'</td>'):'';
+    const idcol=kind==='deposit'?(r.reference||'-'):reqNo(r.id,'WRQ');
+    return '<tr><td>'+(i+1)+'</td><td>'+((r.user&&r.user.name)||'-')+'<div class="sub">'+((r.user&&r.user.phone)||'')+'</div></td>'+
+      '<td><b>'+inr(r.amount)+'</b></td><td>'+idcol+'</td><td>'+fmtDate(r.createdAt)+'</td>'+rc+'<td>'+statusPill(r.status)+'</td><td class="act">'+act+'</td></tr>';
+  }).join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function fundAct(kind,id,action){
+  const isDep=kind==='deposit';const verb=action==='approve'?'Accept':'Reject';
+  const text=action==='reject'?'The request will be marked rejected and the player notified.'
+    :(isDep?'The player\'s wallet will be credited with this amount.':'The amount will be paid out and deducted from the player\'s wallet.');
+  confirmModal(verb+' this '+kind+'?',text,async function(){
+    try{await api('/admin/'+(isDep?'deposits':'withdrawals')+'/'+id+'/'+action,{method:'POST',body:'{}'});toast(verb==='Accept'?'Accepted':'Rejected');loadFund(FUND_TAB)}
+    catch(e){toast(e.message)}
+  });
+}
+function viewProof(id){const r=FUND_ROWS.find(x=>x.id===id);if(!r||!r.proof){toast('No receipt attached');return}const m=document.getElementById('imgmodal');m.querySelector('img').src=r.proof;m.classList.add('show')}
+
+/* ---------- Wallet > Withdraw Request ---------- */
+let WD_ROWS=[];
+PAGES['wallet-withdraw']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Withdraw Request</h2>'+
+    '<div class="searchbar">'+icon('search')+'<input id="wd-q" placeholder="Search by name or request no." oninput="renderWd()"></div>'+
+    '<div id="wd-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/withdrawals');WD_ROWS=d.withdrawals||[];renderWd()}
+  catch(e){document.getElementById('wd-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderWd(){
+  const q=((document.getElementById('wd-q')||{}).value||'').toLowerCase();
+  const rows=WD_ROWS.filter(r=>!q||((r.user&&r.user.name)||'').toLowerCase().includes(q)||reqNo(r.id,'WRQ').toLowerCase().includes(q));
+  const body=document.getElementById('wd-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No withdraw requests.</p>';return}
+  const head='<tr><th>S.No</th><th>User</th><th>Amount</th><th>Req No.</th><th>Payment</th><th>Status</th><th></th></tr>';
+  const tr=rows.map((r,i)=>'<tr style="cursor:pointer" onclick="openWd(\''+r.id+'\')"><td>'+(i+1)+'</td>'+
+    '<td>'+((r.user&&r.user.name)||'-')+'<div class="sub">'+((r.user&&r.user.phone)||'')+'</div></td>'+
+    '<td><b>'+inr(r.amount)+'</b></td><td>'+reqNo(r.id,'WRQ')+'</td><td>'+payMethod(r.bankInfo)+'</td>'+
+    '<td>'+statusPill(r.status)+'</td><td class="sub" style="font-size:18px">›</td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function openWd(id){
+  const r=WD_ROWS.find(x=>x.id===id);if(!r)return;
+  const base=[['User Name',(r.user&&r.user.name)||'-'],['Mobile',(r.user&&r.user.phone)||'-'],['Request Amount',inr(r.amount)],['Request Number',reqNo(r.id,'WRQ')],['Payment Method',payMethod(r.bankInfo)],['Wallet Balance',inr(r.user&&r.user.balance)]];
+  const rowsHtml=base.concat(parseBank(r.bankInfo)).map(x=>'<div class="drow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+
+    (r.status==='pending'
+      ?'<div class="drawer-act"><button class="ba big acc" onclick="wdAct(\''+r.id+'\',\'approve\')">Approve &amp; Pay</button><button class="ba big rej" onclick="wdAct(\''+r.id+'\',\'reject\')">Reject</button></div>'
+      :'<div class="drawer-act" style="justify-content:center">'+statusPill(r.status)+'</div>');
+  openDrawer('Withdraw Request',rowsHtml);
+}
+function wdAct(id,action){
+  const verb=action==='approve'?'Approve':'Reject';
+  confirmModal(verb+' this withdrawal?',action==='approve'?'The amount will be paid out and deducted from the player\'s wallet.':'The request will be rejected and the player notified.',async function(){
+    try{await api('/admin/withdrawals/'+id+'/'+action,{method:'POST',body:'{}'});toast(action==='approve'?'Approved':'Rejected');closeDrawer();
+      const d=await api('/admin/withdrawals');WD_ROWS=d.withdrawals||[];renderWd()}
+    catch(e){toast(e.message)}
+  });
+}
+
+/* ---------- Wallet > Add Fund (manual credit) ---------- */
+let AF_USERS=[];let AF_SEL=null;let AF_PRESELECT=null;
+PAGES['wallet-addfund']=async function(){
+  AF_SEL=null;
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Add Fund</h2><div class="af">'+
+    '<div class="field"><label>Select User</label><div class="picker" id="af-picker" onclick="toggleAfList(event)"><span class="ph">Choose a player…</span>'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>'+
+      '<div class="af-list" id="af-list" hidden onclick="event.stopPropagation()"><div class="s"><input id="af-q" placeholder="Search name or mobile" oninput="renderAfList()"></div><div id="af-users"></div></div></div>'+
+    '<div class="field"><label>Amount</label><input id="af-amt" type="number" inputmode="numeric" placeholder="Enter amount"></div>'+
+    '<button class="ba big grad" style="width:100%" onclick="creditUser()">Credit User</button>'+
+    '<p class="sub" style="margin-top:14px">This credits the player\'s wallet instantly — use it for a payment received outside the normal deposit flow, or a bonus.</p>'+
+    '</div></div>';
+  try{const d=await api('/admin/users');AF_USERS=d.users||[];renderAfList();
+    if(AF_PRESELECT){const pid=AF_PRESELECT.id;AF_PRESELECT=null;if(AF_USERS.find(u=>u.id===pid))pickUser(pid)}}
+  catch(e){toast(e.message)}
+};
+function toggleAfList(e){e.stopPropagation();const l=document.getElementById('af-list');l.hidden=!l.hidden;if(!l.hidden){const q=document.getElementById('af-q');if(q)q.focus()}}
+function renderAfList(){
+  const q=((document.getElementById('af-q')||{}).value||'').toLowerCase();
+  const rows=AF_USERS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q)).slice(0,60);
+  document.getElementById('af-users').innerHTML=rows.length?rows.map(u=>'<div class="u" onclick="pickUser(\''+u.id+'\')"><span>'+(u.name||'-')+'</span><span class="sub">'+(u.phone||'')+' · '+inr(u.balance)+'</span></div>').join(''):'<div class="u"><span class="sub">No users found</span></div>';
+}
+function pickUser(id){AF_SEL=AF_USERS.find(u=>u.id===id);const p=document.getElementById('af-picker');p.classList.add('on');p.querySelector('span').className='';p.querySelector('span').textContent=(AF_SEL.name||'-')+' · '+(AF_SEL.phone||'');document.getElementById('af-list').hidden=true}
+function creditUser(){
+  if(!AF_SEL){toast('Select a user first');return}
+  const amt=Math.floor(Number((document.getElementById('af-amt')||{}).value));
+  if(!amt||amt<=0){toast('Enter a valid amount');return}
+  confirmModal('Credit wallet?','Add '+inr(amt)+' to '+(AF_SEL.name||'this user')+'’s wallet?',async function(){
+    try{const d=await api('/admin/users/'+AF_SEL.id+'/credit',{method:'POST',body:JSON.stringify({amount:amt})});toast('Credited · new balance '+inr(d.balance));document.getElementById('af-amt').value='';
+      const idx=AF_USERS.findIndex(u=>u.id===AF_SEL.id);if(idx>=0)AF_USERS[idx].balance=d.balance}
+    catch(e){toast(e.message)}
+  });
+}
+document.addEventListener('click',function(){document.querySelectorAll('.af-list').forEach(l=>{if(!l.hidden)l.hidden=true})});
+
+/* ---------- User Management ---------- */
+let USER_ROWS=[];let CUR_USER=null;
+PAGES.users=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>User Management</h2>'+
+    '<div class="searchbar">'+icon('search')+'<input id="u-q" placeholder="Search by name or mobile" oninput="renderUsers()"></div>'+
+    '<div id="u-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/users');USER_ROWS=d.users||[];renderUsers()}
+  catch(e){document.getElementById('u-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderUsers(){
+  const q=((document.getElementById('u-q')||{}).value||'').toLowerCase();
+  const rows=USER_ROWS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q));
+  const body=document.getElementById('u-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No users found.</p>';return}
+  const head='<tr><th>S.No</th><th>User</th><th>Mobile</th><th>Balance</th><th>Betting</th><th>Joined</th><th></th></tr>';
+  const tr=rows.map((u,i)=>'<tr style="cursor:pointer" onclick="openUser(\''+u.id+'\')"><td>'+(i+1)+'</td><td><b>'+(u.name||'-')+'</b></td>'+
+    '<td>'+(u.phone||'-')+'</td><td><b>'+inr(u.balance)+'</b></td>'+
+    '<td>'+(u.bettingBlocked?'<span class="pill off">Blocked</span>':'<span class="pill on">Allowed</span>')+'</td>'+
+    '<td>'+fmtDate(u.createdAt)+'</td><td class="sub" style="font-size:18px">›</td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+async function openUser(id){
+  document.getElementById('page').innerHTML='<div class="loading">Loading…</div>';
+  try{const d=await api('/admin/users/'+id);CUR_USER=d.user;renderUserDetail(d.user,d.summary)}
+  catch(e){document.getElementById('page').innerHTML='<div class="panel"><p class="sub" style="color:var(--red)">'+e.message+'</p></div>'}
+}
+function renderUserDetail(u,s){
+  const initials=(u.name||'?').trim().charAt(0).toUpperCase();const betAllowed=!u.bettingBlocked;
+  const bank=[['Bank Name',u.bankName||'—'],['A/C Holder Name',u.bankHolder||'—'],['A/C Number',u.bankAccount||'—'],['IFSC Code',u.bankIfsc||'—'],['UPI ID',u.bankUpi||'—']];
+  const stats=[['Play',num(s.play)],['Total Bids',num(s.totalBids)],['Won',num(s.won)],['Lost',num(s.lost)],['Deposit',inr(s.deposit)],['Withdraw',inr(s.withdraw)]];
+  document.getElementById('page').innerHTML=
+    '<button class="ba" style="border-color:var(--line2);color:#cfd3db;margin-bottom:16px" onclick="go(\'users\')">‹ Back to Users</button>'+
+    '<div class="udetail">'+
+      '<div class="panel"><div class="uhead"><div class="uav">'+initials+'</div><div><h2 style="margin:0;font-size:20px">'+(u.name||'-')+'</h2><div class="sub">'+(u.phone||'')+'</div></div></div>'+
+        '<div class="drow"><span>Betting</span>'+(betAllowed?'<span class="pill on">Allowed</span>':'<span class="pill off">Blocked</span>')+'</div>'+
+        '<div class="drow"><span>Joined</span><b>'+fmtDate(u.createdAt)+'</b></div>'+
+        '<div class="cream"><div class="lbl2">Available Balance</div><div class="bal">'+inr(u.balance)+'</div>'+
+          '<div style="display:flex;gap:10px;margin-top:14px"><button class="cbtn" onclick="goAddFund(\''+u.id+'\')">＋ Add Fund</button>'+
+          '<button class="cbtn'+(betAllowed?'':' on')+'" onclick="toggleBet(\''+u.id+'\','+betAllowed+')">'+(betAllowed?'Block Betting':'Unblock Betting')+'</button></div></div>'+
+      '</div>'+
+      '<div class="panel"><h2>Bank &amp; Payment</h2>'+bank.map(x=>'<div class="drow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'</div>'+
+    '</div>'+
+    '<div class="panel"><h2>Game Summary</h2><div class="stat-grid">'+
+      stats.map(x=>'<div class="stat" style="padding:16px 18px"><div class="val">'+x[1]+'</div><div class="lbl">'+x[0]+'</div></div>').join('')+'</div></div>';
+}
+function toggleBet(id,curAllowed){
+  const block=curAllowed;
+  confirmModal(block?'Block betting?':'Unblock betting?',block?'This player won’t be able to place any bids until you unblock them.':'This player will be able to place bids again.',async function(){
+    try{await api('/admin/users/'+id,{method:'PATCH',body:JSON.stringify({bettingBlocked:block})});toast(block?'Betting blocked':'Betting unblocked');
+      const idx=USER_ROWS.findIndex(u=>u.id===id);if(idx>=0)USER_ROWS[idx].bettingBlocked=block;openUser(id)}
+    catch(e){toast(e.message)}
+  });
+}
+function goAddFund(userId){AF_PRESELECT=USER_ROWS.find(u=>u.id===userId)||CUR_USER;go('wallet-addfund')}
+
+/* ---------- Markets ---------- */
+let MKT_ROWS=[];let MKT_EDIT=null;
+PAGES.markets=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><h2 style="margin:0">Market List</h2><button class="ba grad" onclick="openMkt()">+ Add Market</button></div>'+
+    '<div class="searchbar">'+icon('search')+'<input id="mkt-q" placeholder="Search market" oninput="renderMkt()"></div>'+
+    '<div id="mkt-body"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/markets');MKT_ROWS=d.markets||[];renderMkt()}
+  catch(e){document.getElementById('mkt-body').innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+};
+function renderMkt(){
+  const q=((document.getElementById('mkt-q')||{}).value||'').toLowerCase();
+  const rows=MKT_ROWS.filter(m=>!q||(m.name||'').toLowerCase().includes(q));
+  const body=document.getElementById('mkt-body');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No markets yet. Add one to get started.</p>';return}
+  const head='<tr><th>S.No</th><th>Market Name</th><th>Today Open</th><th>Today Close</th><th>Status</th><th>Action</th></tr>';
+  const tr=rows.map((m,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+m.name+'</b></td><td>'+m.openTime+'</td><td>'+m.closeTime+'</td>'+
+    '<td>'+(m.status==='open'?'<span class="pill on">Open</span>':'<span class="pill off">Closed</span>')+'</td>'+
+    '<td class="act"><button class="ba" style="border-color:var(--line2);color:#cfd3db" onclick="openMkt(\''+m.id+'\')">Edit</button>'+
+    '<button class="ba '+(m.status==='open'?'rej':'acc')+'" onclick="toggleMkt(\''+m.id+'\',\''+(m.status==='open'?'closed':'open')+'\')">'+(m.status==='open'?'Close':'Open')+'</button>'+
+    '<button class="ba rej" onclick="delMkt(\''+m.id+'\',\''+String(m.name).replace(/[\\\\\'\"]/g,'')+'\')">Delete</button></td></tr>').join('');
+  body.innerHTML='<div class="tbl-wrap"><table class="tbl">'+head+'<tbody>'+tr+'</tbody></table></div>';
+}
+function openMkt(id){
+  MKT_EDIT=id||null;const m=id?MKT_ROWS.find(x=>x.id===id):null;
+  document.getElementById('mkt-title').textContent=m?'Update Market':'Add Market';
+  document.getElementById('mkt-name').value=m?m.name:'';document.getElementById('mkt-open').value=m?m.openTime:'';document.getElementById('mkt-close').value=m?m.closeTime:'';
+  document.getElementById('mkt-modal').classList.add('show');document.getElementById('mkt-ov').classList.add('show');
+}
+function closeMkt(){document.getElementById('mkt-modal').classList.remove('show');document.getElementById('mkt-ov').classList.remove('show')}
+async function saveMkt(){
+  const name=document.getElementById('mkt-name').value.trim();const openTime=document.getElementById('mkt-open').value.trim();const closeTime=document.getElementById('mkt-close').value.trim();
+  if(!name||!openTime||!closeTime){toast('Fill name, open and close time');return}
+  try{
+    if(MKT_EDIT)await api('/admin/markets/'+MKT_EDIT,{method:'PATCH',body:JSON.stringify({name,openTime,closeTime})});
+    else await api('/admin/markets',{method:'POST',body:JSON.stringify({name,openTime,closeTime})});
+    toast('Saved');closeMkt();PAGES.markets();
+  }catch(e){toast(e.message)}
+}
+async function toggleMkt(id,status){try{await api('/admin/markets/'+id,{method:'PATCH',body:JSON.stringify({status})});toast(status==='open'?'Market opened':'Market closed');PAGES.markets()}catch(e){toast(e.message)}}
+function delMkt(id,name){confirmModal('Delete market?','Delete “'+name+'”? This can’t be undone.',async function(){try{await api('/admin/markets/'+id,{method:'DELETE'});toast('Market deleted');PAGES.markets()}catch(e){toast(e.message)}})}
+
+/* ---------- Results + settlement ---------- */
+let RES_MARKETS=[];
+PAGES.results=async function(){
+  document.getElementById('page').innerHTML=
+    '<div class="panel"><h2>Market Result Management</h2>'+
+    '<div class="af" style="max-width:none"><div class="res-form">'+
+      '<div class="field" style="margin:0"><label>Market Name</label><select id="res-mkt" class="rsel"></select></div>'+
+      '<div class="field" style="margin:0"><label>Open Panna</label><input id="res-open" maxlength="3" inputmode="numeric" placeholder="e.g. 128"></div>'+
+      '<div class="field" style="margin:0"><label>Close Panna</label><input id="res-close" maxlength="3" inputmode="numeric" placeholder="e.g. 590"></div>'+
+      '<button class="ba big grad" onclick="previewResult()">Preview</button>'+
+    '</div></div><div id="res-preview"></div></div>'+
+    '<div class="panel"><h2>Game Result History</h2><div id="res-hist"><div class="loading">Loading…</div></div></div>';
+  try{const m=await api('/markets');RES_MARKETS=m.markets||[];
+    document.getElementById('res-mkt').innerHTML=RES_MARKETS.length?RES_MARKETS.map(x=>'<option value="'+x.id+'">'+x.name+'</option>').join(''):'<option value="">No markets</option>';
+  }catch(e){toast(e.message)}
+  loadResHist();
+};
+async function loadResHist(){
+  const el=document.getElementById('res-hist');
+  try{const d=await api('/admin/results');const rows=d.results||[];
+    if(!rows.length){el.innerHTML='<p class="sub" style="padding:8px 2px">No results declared yet.</p>';return}
+    el.innerHTML='<div class="tbl-wrap"><table class="tbl"><tr><th>S.No</th><th>Market Name</th><th>Result</th><th>Declared</th></tr><tbody>'+
+      rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+(r.market||'-')+'</b></td><td style="letter-spacing:.05em;font-weight:600;color:#c9b3ff">'+r.value+'</td><td>'+fmtDate(r.declaredAt)+'</td></tr>').join('')+
+      '</tbody></table></div>';
+  }catch(e){el.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+async function previewResult(){
+  const marketId=document.getElementById('res-mkt').value;
+  const openPanna=document.getElementById('res-open').value.trim();
+  const closePanna=document.getElementById('res-close').value.trim();
+  if(!marketId){toast('Select a market');return}
+  if(!/^\d{3}$/.test(openPanna)||!/^\d{3}$/.test(closePanna)){toast('Open and close panna must each be 3 digits');return}
+  const box=document.getElementById('res-preview');box.innerHTML='<div class="loading">Calculating…</div>';
+  try{
+    const d=await api('/admin/results/preview',{method:'POST',body:JSON.stringify({marketId,openPanna,closePanna})});
+    const dv=d.derived,su=d.summary;
+    box.innerHTML='<div class="res-card">'+
+      '<div class="res-val">'+dv.value+'</div>'+
+      '<div class="res-meta"><span>Open Ank<b>'+dv.openAnk+'</b></span><span>Jodi<b>'+dv.jodi+'</b></span><span>Close Ank<b>'+dv.closeAnk+'</b></span></div>'+
+      '<div class="res-sum"><div><b>'+su.winners+'</b><span>Winners</span></div><div><b>'+inr(su.totalPayout)+'</b><span>Total Payout</span></div><div><b>'+su.settled+'</b><span>Bids Settled</span></div>'+(su.manual?'<div><b>'+su.manual+'</b><span>Manual (Motor/Sangam)</span></div>':'')+'</div>'+
+      (d.winners&&d.winners.length?('<div class="tbl-wrap" style="margin-top:14px"><table class="tbl"><tr><th>Winner</th><th>Game</th><th>Payout</th></tr><tbody>'+d.winners.map(w=>'<tr><td>'+(w.name||'-')+'<div class="sub">'+(w.phone||'')+'</div></td><td>'+w.gameType+'</td><td><b>'+inr(w.win)+'</b></td></tr>').join('')+'</tbody></table></div>'):'<p class="sub" style="margin-top:12px">No winners for this result.</p>')+
+      '<div class="drawer-act" style="margin-top:18px"><button class="ba big grad" onclick="declareResult(\''+marketId+'\',\''+openPanna+'\',\''+closePanna+'\')">Confirm &amp; Declare</button><button class="ba big" style="border-color:var(--line2);color:#cfd3db" onclick="document.getElementById(\'res-preview\').innerHTML=\'\'">Cancel</button></div>'+
+      (su.manual?'<p class="sub" style="margin-top:10px">Motor / Sangam bids aren’t auto-settled — settle those manually.</p>':'')+
+    '</div>';
+  }catch(e){box.innerHTML='<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'}
+}
+function declareResult(marketId,openPanna,closePanna){
+  confirmModal('Declare result & pay winners?','This credits every winning player and closes the market. It can’t be undone.',async function(){
+    try{const d=await api('/admin/results',{method:'POST',body:JSON.stringify({marketId,openPanna,closePanna})});
+      toast('Result '+d.result.value+' declared · '+inr(d.summary.totalPayout)+' paid');
+      document.getElementById('res-preview').innerHTML='';document.getElementById('res-open').value='';document.getElementById('res-close').value='';loadResHist();
+    }catch(e){toast(e.message)}
+  });
+}
+
+/* ---------- Reports (shared helpers) ---------- */
+let REP_MARKETS=[];let REP_BIDS=[];
+async function repMarkets(){ if(REP_MARKETS.length)return REP_MARKETS; try{const m=await api('/markets');REP_MARKETS=m.markets||[]}catch(e){} return REP_MARKETS; }
+function marketOptions(){ return '<option value="">All markets</option>'+REP_MARKETS.map(m=>'<option value="'+m.name+'">'+m.name+'</option>').join(''); }
+function dayMatch(iso,dateStr){ if(!dateStr)return true; const d=new Date(iso); const s=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); return s===dateStr; }
+function repPanel(title,filters,bodyId){ return '<div class="panel"><h2>'+title+'</h2>'+(filters||'')+'<div id="'+bodyId+'"><div class="loading">Loading…</div></div></div>'; }
+function repErr(e){ return '<p class="sub" style="color:var(--red);padding:8px 2px">'+e.message+'</p>'; }
+function userCell(u){ return ((u&&u.name)||'-')+'<div class="sub">'+((u&&u.phone)||'')+'</div>'; }
+function repTable(head,rows){
+  if(!rows.length)return '<p class="sub" style="padding:10px 2px">No records for this filter.</p>';
+  return '<div class="tbl-wrap"><table class="tbl"><tr>'+head.map(h=>'<th>'+h+'</th>').join('')+'</tr><tbody>'+
+    rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
+}
+
+/* Deposit report */
+PAGES['reports-deposit']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Deposit History Report',
+    '<div class="rep-filters"><div class="field"><label>Date</label><input type="date" id="rd-date" onchange="renderRepDep()"></div></div>','rd-body');
+  try{const d=await api('/admin/deposits');window._rdep=d.deposits||[];renderRepDep()}catch(e){document.getElementById('rd-body').innerHTML=repErr(e)}
+};
+function renderRepDep(){
+  const date=(document.getElementById('rd-date')||{}).value;
+  const rows=(window._rdep||[]).filter(r=>dayMatch(r.createdAt,date));
+  const total=rows.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById('rd-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v" style="color:var(--green)">'+inr(total)+'</div><div class="l">Total Deposit (approved)</div></div></div>'+
+    repTable(['S.No','User','Amount','Ref / UTR','Status','Date'],rows.map((r,i)=>[i+1,userCell(r.user),'<b>'+inr(r.amount)+'</b>',r.reference||'-',statusPill(r.status),fmtDate(r.createdAt)]));
+}
+
+/* Withdraw report */
+PAGES['reports-withdraw']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Withdraw History Report',
+    '<div class="rep-filters"><div class="field"><label>Date</label><input type="date" id="rw-date" onchange="renderRepWd()"></div></div>','rw-body');
+  try{const d=await api('/admin/withdrawals');window._rwd=d.withdrawals||[];renderRepWd()}catch(e){document.getElementById('rw-body').innerHTML=repErr(e)}
+};
+function renderRepWd(){
+  const date=(document.getElementById('rw-date')||{}).value;
+  const rows=(window._rwd||[]).filter(r=>dayMatch(r.createdAt,date));
+  const total=rows.filter(r=>r.status==='approved').reduce((s,r)=>s+(r.amount||0),0);
+  document.getElementById('rw-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v" style="color:var(--red)">'+inr(total)+'</div><div class="l">Total Withdraw (approved)</div></div></div>'+
+    repTable(['S.No','User','Amount','Req No.','Status','Date'],rows.map((r,i)=>[i+1,userCell(r.user),'<b>'+inr(r.amount)+'</b>',reqNo(r.id,'WRQ'),statusPill(r.status),fmtDate(r.createdAt)]));
+}
+
+/* User Bid History */
+PAGES['reports-userbids']=async function(){
+  await repMarkets();
+  document.getElementById('page').innerHTML=repPanel('User Bid History',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="rb-mkt" onchange="renderRepBids()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Date</label><input type="date" id="rb-date" onchange="renderRepBids()"></div></div>','rb-body');
+  try{const d=await api('/admin/bids');REP_BIDS=d.bids||[];renderRepBids()}catch(e){document.getElementById('rb-body').innerHTML=repErr(e)}
+};
+function renderRepBids(){
+  const mkt=(document.getElementById('rb-mkt')||{}).value; const date=(document.getElementById('rb-date')||{}).value;
+  const rows=REP_BIDS.filter(b=>(!mkt||b.market===mkt)&&dayMatch(b.createdAt,date));
+  document.getElementById('rb-body').innerHTML=repTable(['S.No','User','Market','Game','Amount','Status','Date'],
+    rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',statusPill(b.status),fmtDate(b.createdAt)]));
+}
+
+/* Winning report */
+PAGES['reports-winning']=async function(){
+  document.getElementById('page').innerHTML=repPanel('Winning Report','','rn-body');
+  try{const d=await api('/admin/bids?status=won');const rows=d.bids||[];
+    document.getElementById('rn-body').innerHTML=repTable(['S.No','User','Market Name','Game Name','Bid','Date'],
+      rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',fmtDate(b.createdAt)]));
+  }catch(e){document.getElementById('rn-body').innerHTML=repErr(e)}
+};
+
+/* Bid Win report */
+PAGES['reports-bidwin']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Bid Winning Report</h2><div id="rbw-body"><div class="loading">Loading…</div></div></div>';
+  try{
+    const [dash,won]=await Promise.all([api('/admin/dashboard'),api('/admin/bids?status=won')]);
+    const play=(dash.summary&&dash.summary.play)||0; const win=(dash.summary&&dash.summary.win)||0; const rows=won.bids||[];
+    document.getElementById('rbw-body').innerHTML=
+      '<div class="total-cards"><div class="total-card"><div class="v">'+inr(play)+'</div><div class="l">Total Bid Amount</div></div>'+
+      '<div class="total-card"><div class="v" style="color:var(--green)">'+inr(win)+'</div><div class="l">Total Win Amount</div></div></div>'+
+      repTable(['S.No','User','Market Name','Game Name','Bid','Date'],rows.map((b,i)=>[i+1,userCell(b.user),b.market||'-',b.gameType,'<b>'+inr(b.total)+'</b>',fmtDate(b.createdAt)]));
+  }catch(e){document.getElementById('rbw-body').innerHTML=repErr(e)}
+};
+
+/* Customer Sell summary */
+PAGES['reports-sell']=async function(){
+  await repMarkets();
+  const gts=['Single Digit','Jodi Digits','Single Panna','Double Panna','Triple Panna'];
+  document.getElementById('page').innerHTML=repPanel('Customer Sell Summary',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="rs-mkt" onchange="renderRepSell()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Game</label><select id="rs-game" onchange="renderRepSell()">'+gts.map(g=>'<option>'+g+'</option>').join('')+'</select></div></div>','rs-body');
+  try{const d=await api('/admin/bids?status=pending');window._rsell=d.bids||[];renderRepSell()}catch(e){document.getElementById('rs-body').innerHTML=repErr(e)}
+};
+function renderRepSell(){
+  const mkt=(document.getElementById('rs-mkt')||{}).value; const game=(document.getElementById('rs-game')||{}).value;
+  const agg={};
+  (window._rsell||[]).forEach(b=>{ if(b.gameType!==game)return; if(mkt&&b.market!==mkt)return;
+    Object.entries(b.selections||{}).forEach(([k,v])=>{const a=Math.floor(Number(v))||0;if(a>0)agg[k]=(agg[k]||0)+a}); });
+  let keys=game==='Single Digit'?['0','1','2','3','4','5','6','7','8','9']:Object.keys(agg);
+  keys.sort((a,b)=>Number(a)-Number(b));
+  const total=Object.values(agg).reduce((s,v)=>s+v,0);
+  const tiles=keys.map(k=>'<div class="sell-tile"><div class="n">'+(game==='Jodi Digits'?String(k).padStart(2,'0'):k)+'</div><div class="p"><b>'+num(agg[k]||0)+'</b> pts</div></div>').join('');
+  document.getElementById('rs-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v">'+inr(total)+'</div><div class="l">Total Points ('+game+')</div></div></div>'+
+    (keys.length?'<div class="sell-grid">'+tiles+'</div>':'<p class="sub">No open bids for this game.</p>');
+}
+
+/* Transfer Point — feature not in the app */
+PAGES['reports-transfer']=function(){
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Transfer Point Report</h2>'+
+    '<div class="placeholder"><span class="pi">'+icon('users2')+'</span><h3>Point transfers aren’t enabled</h3>'+
+    '<p>Player-to-player point transfer isn’t part of the app yet, so there is nothing to report here. If the client wants players to transfer points to each other, that’s a feature I can build (app + backend) as its own task.</p></div></div>';
+};
+
+/* ---------- Winning Prediction ---------- */
+PAGES.prediction=async function(){
+  await repMarkets();
+  document.getElementById('page').innerHTML=repPanel('Winning Prediction',
+    '<div class="rep-filters"><div class="field"><label>Market</label><select id="pr-mkt" onchange="renderPred()">'+marketOptions()+'</select></div>'+
+    '<div class="field"><label>Date</label><input type="date" id="pr-date" onchange="renderPred()"></div></div>','pr-body');
+  try{const d=await api('/admin/bids');window._prbids=d.bids||[];renderPred()}catch(e){document.getElementById('pr-body').innerHTML=repErr(e)}
+};
+function renderPred(){
+  const mkt=(document.getElementById('pr-mkt')||{}).value; const date=(document.getElementById('pr-date')||{}).value;
+  const rows=(window._prbids||[]).filter(b=>(!mkt||b.market===mkt)&&dayMatch(b.createdAt,date));
+  const byUser={};
+  rows.forEach(b=>{const key=(b.user&&b.user.phone)||(b.user&&b.user.name)||b.id;
+    if(!byUser[key])byUser[key]={name:(b.user&&b.user.name)||'-',phone:(b.user&&b.user.phone)||'',pts:0};byUser[key].pts+=b.total||0;});
+  const list=Object.values(byUser).sort((a,b)=>b.pts-a.pts);
+  const total=list.reduce((s,u)=>s+u.pts,0);
+  document.getElementById('pr-body').innerHTML=
+    '<div class="total-cards"><div class="total-card"><div class="v">'+inr(total)+'</div><div class="l">Total Bid Points</div></div></div>'+
+    repTable(['S.No','User','Bid Points'],list.map((u,i)=>[i+1,esc(u.name)+'<div class="sub">'+esc(u.phone)+'</div>','<b>'+inr(u.pts)+'</b>']));
+}
+
+/* ---------- Notice Management ---------- */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+let NTC_ROWS=[];let NTC_EDIT=null;
+PAGES['notices-mgmt']=async function(){
+  document.getElementById('page').innerHTML='<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><h2 style="margin:0">Notice Management</h2><button class="ba grad" onclick="openNtc()">+ Add Notice</button></div>'+
+    '<div class="searchbar">'+icon('search')+'<input id="ntc-q" placeholder="Search notice" oninput="renderNtc()"></div>'+
+    '<div id="ntc-list"><div class="loading">Loading…</div></div></div>';
+  try{const d=await api('/admin/notices');NTC_ROWS=d.notices||[];renderNtc()}catch(e){document.getElementById('ntc-list').innerHTML=repErr(e)}
+};
+function renderNtc(){
+  const q=((document.getElementById('ntc-q')||{}).value||'').toLowerCase();
+  const rows=NTC_ROWS.filter(n=>!q||(n.title||'').toLowerCase().includes(q)||(n.content||'').toLowerCase().includes(q));
+  const body=document.getElementById('ntc-list');
+  if(!rows.length){body.innerHTML='<p class="sub" style="padding:10px 2px">No notices yet. Add one to show it in the app.</p>';return}
+  body.innerHTML=repTable(['S.No','Title','Content','Status','Date','Action'],rows.map((n,i)=>[i+1,'<b>'+esc(n.title)+'</b>',
+    '<span class="sub">'+esc((n.content||'').slice(0,60))+((n.content||'').length>60?'…':'')+'</span>',
+    n.active?'<span class="pill on">Active</span>':'<span class="pill off">Hidden</span>',fmtDate(n.createdAt),
+    '<div style="display:flex;gap:8px"><button class="ba" style="border-color:var(--line2);color:#cfd3db" onclick="openNtc(\''+n.id+'\')">Edit</button><button class="ba rej" onclick="delNtc(\''+n.id+'\')">Delete</button></div>']));
+}
+function openNtc(id){
+  NTC_EDIT=id||null;const n=id?NTC_ROWS.find(x=>x.id===id):null;
+  document.getElementById('ntc-title').textContent=n?'Update Notice':'Add Notice';
+  document.getElementById('ntc-t').value=n?n.title:'';document.getElementById('ntc-c').value=n?n.content:'';document.getElementById('ntc-a').checked=n?!!n.active:true;
+  document.getElementById('ntc-modal').classList.add('show');document.getElementById('ntc-ov').classList.add('show');
+}
+function closeNtc(){document.getElementById('ntc-modal').classList.remove('show');document.getElementById('ntc-ov').classList.remove('show')}
+async function saveNtc(){
+  const title=document.getElementById('ntc-t').value.trim();const content=document.getElementById('ntc-c').value.trim();const active=document.getElementById('ntc-a').checked;
+  if(!title||!content){toast('Fill title and content');return}
+  try{ if(NTC_EDIT)await api('/admin/notices/'+NTC_EDIT,{method:'PATCH',body:JSON.stringify({title,content,active})}); else await api('/admin/notices',{method:'POST',body:JSON.stringify({title,content,active})});
+    toast('Saved');closeNtc();PAGES['notices-mgmt']();
+  }catch(e){toast(e.message)}
+}
+function delNtc(id){confirmModal('Delete notice?','This notice will be removed from the app.',async function(){try{await api('/admin/notices/'+id,{method:'DELETE'});toast('Deleted');PAGES['notices-mgmt']()}catch(e){toast(e.message)}})}
+
+/* ---------- Send Notification ---------- */
+let SN_USERS=[];let SN_SEL=null;
+PAGES['notices-send']=async function(){
+  SN_SEL=null;
+  document.getElementById('page').innerHTML='<div class="panel"><h2>Send Notification</h2><div class="af">'+
+    '<div class="field"><label>Recipient</label><div class="picker on" id="sn-picker" onclick="toggleSnList(event)"><span>All users</span>'+
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>'+
+      '<div class="af-list" id="sn-list" hidden onclick="event.stopPropagation()"><div class="s"><input id="sn-q" placeholder="Search user" oninput="renderSnList()"></div><div id="sn-users"></div></div></div>'+
+    '<div class="field"><label>Title</label><input id="sn-t" placeholder="Notification title"></div>'+
+    '<div class="field"><label>Message</label><textarea id="sn-c" rows="4" placeholder="Message to players"></textarea></div>'+
+    '<button class="ba big grad" style="width:100%" onclick="sendNotif()">Send Notification</button>'+
+    '<p class="sub" style="margin-top:12px">Sends into the player’s in-app notification feed. Leave recipient as “All users” to broadcast.</p>'+
+    '</div></div>';
+  try{const d=await api('/admin/users');SN_USERS=d.users||[];renderSnList()}catch(e){toast(e.message)}
+};
+function toggleSnList(e){e.stopPropagation();const l=document.getElementById('sn-list');l.hidden=!l.hidden;if(!l.hidden){const q=document.getElementById('sn-q');if(q)q.focus()}}
+function renderSnList(){
+  const q=((document.getElementById('sn-q')||{}).value||'').toLowerCase();
+  const rows=SN_USERS.filter(u=>!q||(u.name||'').toLowerCase().includes(q)||(u.phone||'').includes(q)).slice(0,60);
+  document.getElementById('sn-users').innerHTML='<div class="u" onclick="pickSn(\'all\')"><span><b>All users</b></span><span class="sub">Broadcast</span></div>'+
+    rows.map(u=>'<div class="u" onclick="pickSn(\''+u.id+'\')"><span>'+esc(u.name||'-')+'</span><span class="sub">'+(u.phone||'')+'</span></div>').join('');
+}
+function pickSn(id){
+  if(id==='all'){SN_SEL=null;document.getElementById('sn-picker').querySelector('span').textContent='All users';}
+  else{SN_SEL=SN_USERS.find(u=>u.id===id);document.getElementById('sn-picker').querySelector('span').textContent=(SN_SEL.name||'-')+' · '+(SN_SEL.phone||'');}
+  document.getElementById('sn-list').hidden=true;
+}
+function sendNotif(){
+  const title=document.getElementById('sn-t').value.trim();const body=document.getElementById('sn-c').value.trim();
+  if(!title||!body){toast('Fill title and message');return}
+  const who=SN_SEL?(SN_SEL.name||'this user'):'ALL users';
+  confirmModal('Send notification?','Send “'+title+'” to '+who+'?',async function(){
+    try{const d=await api('/admin/notifications/send',{method:'POST',body:JSON.stringify({userId:SN_SEL?SN_SEL.id:'all',title,body})});
+      toast('Sent to '+d.sent+' user'+(d.sent===1?'':'s'));document.getElementById('sn-t').value='';document.getElementById('sn-c').value='';}
+    catch(e){toast(e.message)}
+  });
+}
+
+/* boot */
+if(TOKEN){ api('/admin/me').then(d=>enterApp(d.admin)).catch(()=>{TOKEN='';try{localStorage.removeItem('kg_admin_token')}catch(e){}}); }
+</script>
+</body></html>
