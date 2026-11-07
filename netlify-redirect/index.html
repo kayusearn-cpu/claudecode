@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading… | Agedsocial</title>
+  <!-- Fallback: redirect after 2 seconds even if JavaScript is off -->
+  <meta http-equiv="refresh" content="2;url=https://agedsocial.com">
+  <link rel="preconnect" href="https://agedsocial.com">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      text-align: center;
+      padding: 16px;
+    }
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border: 5px solid rgba(255, 255, 255, 0.15);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h1 { font-size: 1.25rem; font-weight: 600; }
+    p { font-size: 0.9rem; color: #94a3b8; }
+    a { color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <div class="spinner" aria-hidden="true"></div>
+  <h1>Taking you to Agedsocial…</h1>
+  <p>If nothing happens, <a href="https://agedsocial.com">click here</a>.</p>
+
+  <script>
+    setTimeout(function () {
+      window.location.replace("https://agedsocial.com");
+    }, 2000);
+  </script>
+</body>
+</html>

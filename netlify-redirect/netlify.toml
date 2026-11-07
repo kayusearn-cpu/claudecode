@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+
+# Send every path (e.g. /anything) to the loading page
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
