@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  EDIT THESE TWO THINGS:
+  1. Your brand name: search for "YOUR BRAND" (3 places).
+  2. Your Telegram link: search for "https://t.me/YOUR_CHANNEL" (1 place).
+-->
+<title>YOUR BRAND — Telegram Ads Channel</title>
+<meta name="description" content="Raised $3M+ for clients with Telegram Ads. Join the channel for weekly tips and free strategy.">
+<meta property="og:title" content="Join the channel behind $3M+ raised with Telegram Ads">
+<meta property="og:description" content="Weekly tips and free strategy, straight to your Telegram. Free. Leave whenever you want.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a0c12">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c12;
+    --text: #ffffff;
+    --muted: #a9adb8;
+    --dim: #6b7080;
+    --blue: #4f8fe8;
+    --blue-light: #6aa8f5;
+    --blue-dark: #3a6fc4;
+    --pill-bg: #0f1a2e;
+    --pill-border: #2a3f63;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body {
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(79,143,232,0.10), transparent 70%),
+      var(--bg);
+  }
+  main {
+    width: 100%;
+    max-width: 760px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #5eb0f0, #3d97e0);
+    display: grid; place-items: center;
+    box-shadow: 0 10px 40px rgba(61,151,224,0.35);
+  }
+  .logo svg { width: 46px; height: 46px; margin-left: -4px; }
+
+  .pill {
+    margin-top: 40px;
+    padding: 10px 24px;
+    border: 1.5px solid var(--pill-border);
+    background: var(--pill-bg);
+    border-radius: 999px;
+    color: var(--blue-light);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin-top: 36px;
+    font-size: clamp(36px, 7.2vw, 68px);
+    line-height: 1.08;
+    font-weight: 900;
+    letter-spacing: -0.035em;
+  }
+  h1 .accent {
+    background: linear-gradient(90deg, var(--blue-light), var(--blue-dark));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .sub {
+    margin-top: 24px;
+    max-width: 540px;
+    font-size: clamp(17px, 2.4vw, 21px);
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  ul {
+    list-style: none;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    text-align: left;
+  }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: clamp(16px, 2.3vw, 20px);
+    font-weight: 500;
+    color: #e6e8ee;
+  }
+  li::before {
+    content: "";
+    flex: none;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--blue);
+    box-shadow: 0 0 10px rgba(79,143,232,0.6);
+  }
+
+  .cta {
+    margin-top: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 420px;
+    padding: 26px 32px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #5b9df0, #3b72c6);
+    color: #fff;
+    text-decoration: none;
+    font-size: clamp(22px, 3.2vw, 28px);
+    font-weight: 800;
+    box-shadow: 0 12px 50px rgba(79,143,232,0.35);
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .cta:hover { transform: translateY(-2px); box-shadow: 0 16px 60px rgba(79,143,232,0.5); }
+  .cta:active { transform: translateY(0); }
+  .cta:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+  .cta .icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    display: grid; place-items: center;
+  }
+  .cta .icon svg { width: 20px; height: 20px; margin-left: -2px; }
+
+  .free {
+    margin-top: 24px;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--dim);
+  }
+
+  .stats {
+    margin-top: 64px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px 14px;
+    font-size: clamp(15px, 2.2vw, 19px);
+    font-weight: 500;
+    color: var(--dim);
+  }
+  .stats b { color: var(--blue-light); font-weight: 600; }
+  .stats .dot { color: #3a3e4a; }
+
+  @media (max-width: 480px) {
+    .pill { font-size: 12px; letter-spacing: 0.16em; padding: 9px 18px; margin-top: 32px; }
+    ul { gap: 18px; }
+    li { gap: 16px; }
+    .cta { padding: 22px 24px; }
+    .stats .dot { display: none; }
+    .stats { flex-direction: column; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="logo" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="#fff"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3c.9-.3 1.6.2 1.4 1.3Z"/></svg>
+  </div>
+
+  <div class="pill">YOUR BRAND — Telegram Ads</div>
+
+  <h1>Raised <span class="accent">$3M+</span> for clients with Telegram Ads</h1>
+
+  <p class="sub">Join the channel for weekly tips and free strategy, straight from the team running the campaigns.</p>
+
+  <ul>
+    <li>Weekly tips on what's working right now</li>
+    <li>Free strategy from live client campaigns</li>
+    <li>Read only — nothing to keep up with</li>
+  </ul>
+
+  <a class="cta" href="https://t.me/YOUR_CHANNEL" target="_blank" rel="noopener">
+    <span class="icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="#3d8ee0"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3c.9-.3 1.6.2 1.4 1.3Z"/></svg>
+    </span>
+    Join Now
+  </a>
+
+  <p class="free">Free. Leave whenever you want.</p>
+
+  <div class="stats">
+    <span><b>$3M+</b> raised for clients</span>
+    <span class="dot">·</span>
+    <span>Tips <b>every week</b></span>
+    <span class="dot">·</span>
+    <span>Strategy <b>100% free</b></span>
+  </div>
+</main>
+</body>
+</html>
