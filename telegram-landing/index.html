@@ -4,9 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!--
-  EDIT THESE TWO THINGS:
+  EDIT THESE THREE THINGS:
   1. Your brand name: search for "YOUR BRAND" (3 places).
-  2. Your Telegram link: search for "https://t.me/YOUR_CHANNEL" (1 place).
+  2. Your channel link: search for "https://t.me/YOUR_CHANNEL" (1 place).
+  3. Your personal Telegram: search for "https://t.me/YOUR_USERNAME" (1 place).
 -->
 <title>YOUR BRAND — Telegram Ads Channel</title>
 <meta name="description" content="Raised $3M+ for clients with Telegram Ads. Join the channel for weekly tips and free strategy.">
@@ -122,8 +123,34 @@
     box-shadow: 0 0 10px rgba(79,143,232,0.6);
   }
 
-  .cta {
+  .ctas {
     margin-top: 48px;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .cta-dm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 18px 28px;
+    border-radius: 16px;
+    border: 1.5px solid var(--pill-border);
+    background: var(--pill-bg);
+    color: var(--blue-light);
+    text-decoration: none;
+    font-size: clamp(17px, 2.4vw, 20px);
+    font-weight: 600;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .cta-dm svg { width: 22px; height: 22px; flex: none; }
+  .cta-dm:hover { border-color: var(--blue); background: #13213a; color: #fff; }
+  .cta-dm:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+  .cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -199,12 +226,18 @@
     <li>Read only — nothing to keep up with</li>
   </ul>
 
-  <a class="cta" href="https://t.me/YOUR_CHANNEL" target="_blank" rel="noopener">
-    <span class="icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="#3d8ee0"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3c.9-.3 1.6.2 1.4 1.3Z"/></svg>
-    </span>
-    Join Now
-  </a>
+  <div class="ctas">
+    <a class="cta" href="https://t.me/YOUR_CHANNEL" target="_blank" rel="noopener">
+      <span class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="#3d8ee0"><path d="M21.9 4.3 18.7 19.4c-.2 1-.9 1.3-1.7.8l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.2l-4.7-1.5c-1-.3-1-1 .2-1.5L20.5 3c.9-.3 1.6.2 1.4 1.3Z"/></svg>
+      </span>
+      Join Channel
+    </a>
+    <a class="cta-dm" href="https://t.me/YOUR_USERNAME" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/></svg>
+      Message Me Directly
+    </a>
+  </div>
 
   <p class="free">Free. Leave whenever you want.</p>
 
